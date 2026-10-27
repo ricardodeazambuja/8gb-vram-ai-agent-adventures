@@ -36,3 +36,23 @@ verdict      : projector (mmproj) — vision
 - The `gguf` module is auto-resolved: it uses an installed copy, otherwise the
   one vendored at `vendor/llama.cpp/gguf-py` — no extra install needed when the
   llama.cpp source is checked out.
+
+## `audit-gguf.{sh,py}` — is this GGUF safe to load?
+
+Security checks on a downloaded GGUF **before** llama.cpp opens it: header sanity (every tensor
+in bounds, aligned, non-overlapping), hidden Unicode / URLs / shell commands / injection phrases
+in every metadata string, the embedded **chat template** (hidden system prompts, Jinja
+internals, every sentence it emits verbatim), and with `--ref` a diff of template, tokenizer
+and hyperparameters against the base model. Pure Python, nothing is executed. Why and how:
+[`docs/security.md`](../docs/security.md).
+
+```bash
+bash utils/audit-gguf.sh models/groot-19b-a3b/Groot-19B-A3B-261023-Q4_K_M.gguf \
+     --ref models/qwen36-35b-a3b/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf --dump-template /tmp/groot.jinja
+```
+
+Exit code 0 = clean, 1 = a `WARN` line for a human to read, 2 = `FAIL`, don't load it.
+
+`python utils/test-audit-gguf.py` is its self-test: it builds a poisoned GGUF (injected
+`curl … | sh`, text hidden in Unicode tag characters, a bidi override, Jinja internals) and a
+truncated one, and checks that the auditor reports every trick and fails both.
