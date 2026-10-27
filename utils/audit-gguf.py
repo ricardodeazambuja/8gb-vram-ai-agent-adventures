@@ -255,7 +255,10 @@ def check_template(r, rep, dump, ref_tpl=""):
     print("\n[3] chat template")
     tpls = templates(r)
     if not tpls:
-        rep.warn("no chat template embedded (llama.cpp falls back to a built-in one)")
+        if "general.architecture" in r.fields and value(r.fields["general.architecture"]) == "clip":
+            rep.ok("none (a vision/audio projector has no template)")
+        else:
+            rep.warn("no chat template embedded (llama.cpp falls back to a built-in one)")
         return {}
     for k, tpl in tpls.items():
         print(f"    {k}: {len(tpl)} chars, sha256 {hashlib.sha256(tpl.encode()).hexdigest()[:16]}")

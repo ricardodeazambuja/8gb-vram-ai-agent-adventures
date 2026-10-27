@@ -35,6 +35,7 @@ MODELS = {  # key -> (launch env, launch script) ; every one with its vision pro
     "distill": ({"QMODEL": "distill"}, "scripts/run-qwen.sh"),
     "bonsai2": ({"QMODEL": "bonsai2"}, "scripts/run-qwen.sh"),
     "bolt": ({"QMODEL": "bolt"}, "scripts/run-qwen.sh"),
+    "groot": ({"QMODEL": "groot"}, "scripts/run-qwen.sh"),
 }
 MAX_TOKENS = 12000
 TIMEOUT = 900

@@ -24,6 +24,12 @@
 #            Mamba/MoE, 9B active; upstream llama.cpp since PR #30520 (2026-10-14)
 #   e4b      NVIDIA Nemotron 3.5 Bolt E4B-4GB Q4_K_M (NVIDIA, ~6.2 GB) — Gemma-4-E4B-based 8B
 #            (4B effective), text only, 64K; all on the GPU
+#   groot    Groot-19B-A3B-261023 Q4_K_M (GrootTeam, ~11.7 GB + 0.9 GB vision) — Qwen3.6-35B-A3B
+#            pruned to 19B and post-trained for agents (docs/models/groot-19b-a3b.md)
+#   ornith   Ornith-1.5-35B-A3B Q4_K_M (ornith-ai, ~21.7 GB + 0.9 GB vision) — Qwen3.6-class 35B-A3B,
+#            self-improvement post-training (docs/models/ornith-1.5-35b-a3b.md)
+#   lfm25    LFM2.5-24B-A2B QAD Q4_0 (LiquidAI, ~13.6 GB) — conv/attention hybrid MoE, 2B active;
+#            Q4_0 trained with quantization-aware distillation (docs/models/lfm2.5-24b-a2b.md)
 #
 # Reproducible by construction: every file is downloaded at a PINNED Hugging Face repo
 # revision and checked against a PINNED sha256 (the exact bytes tested in
@@ -39,7 +45,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b)
+#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -66,6 +72,9 @@ MODELS=(
   "flint|unsloth/flint-GGUF|20468edfc38ab43d6914cc88b08cbecb05d0fc62|flint-40b-a2.5b|flint-UD-Q3_K_XL.gguf:91b8d85ab6ff7fb095d9a972f9afa6f3fa2b9acb642867a079f3e013ea3c350c"
   "bolt|nvidia/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB-GGUF|e0fecb69cb3e5e4c5e8a056fa2aec98c78e91246|nemotron-bolt-74b-a9b|NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf:91d63363e782c8a3d5f4be42816eba8e0d42dd2530bd07a7d0d2dc440599af75 mmproj-NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf:0ee891eadc7bf0cae6289b249c74eb1ef420534351f6ef8b64d49f0ca6a926b0"
   "e4b|nvidia/NVIDIA-Nemotron-3.5-Bolt-E4B-4GB|1db54d5b12533ff1bcaa8e42cf4c667988a1f1be|nemotron-bolt-e4b|Nemotron-3.5-Bolt-E4B-Q4_K_M.gguf:c8af2b8aea10a690a1d9491db744a9446660173cb38fc489612b556615a69612"
+  "groot|GrootTeam/Groot-19B-A3B-261023-GGUF|2fa1ec958e3bbf7312cf0af97802ff26bfdc5260|groot-19b-a3b|Groot-19B-A3B-261023-Q4_K_M.gguf:0716cae1f19a39a786a463f7b8c068d50b3d7a74532fce73e5ea23ed98130796 mmproj-Groot-19B-A3B-261023-BF16.gguf:05a5c8a279b2589306824864d76d663063ba69ff1f399e6a283fae988fdff360"
+  "ornith|ornith-ai/Ornith-1.5-35B-A3B-GGUF|12393612fd4f730ff5aadc23e9b8f9648aa49ceb|ornith-1.5-35b-a3b|Ornith-1.5-35B-Q4_K_M.gguf:42739874cc2ccfdb8523b23fbe52e29b2a7555c8176737ca9ca0b5d59859d41f mmproj-Ornith-1.5-35B-BF16.gguf:1921a36a85aee56cd2abd27f46701802c9d85a33474792e600df6c3b282a135d"
+  "lfm25|LiquidAI/LFM2.5-24B-A2B-GGUF|0912d33141f77e10705345a6732bfd83f0252fdc|lfm2.5-24b-a2b|LFM2.5-24B-A2B-QAD-Q4_0.gguf:d1c03f73ecaf61017d70419eec9e5dc0b05d50ae26c23d522829b934fbabf8a5"
   "dflash|z-lab/Qwen3.8-27B-DFlash2-GGUF|2d9571f8ce46e151f61c6499c99dee6079e1d610|qwen38-27b-gsq|Qwen3.8-27B-DFlash2-Q4_K_M.gguf:1a25c56858e1ebe93f2718ac1d49d1151f9323325c1bbfd6209370f4db131ebd"
 )
 
@@ -128,7 +137,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25)"; FAIL=1; }
 done
 
 exit "$FAIL"

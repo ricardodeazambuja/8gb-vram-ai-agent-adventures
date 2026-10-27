@@ -15,6 +15,7 @@
 #   flint    Recursive Flint UD-Q3_K_XL       MoE, 2.5B active -> experts in RAM (--n-cpu-moe 42), upstream
 #   bolt     NVIDIA Nemotron 3.5 Bolt 74B     Mamba/MoE, 9B active -> experts in RAM, upstream (NVIDIA's QAD IQ2)
 #   e4b      NVIDIA Nemotron 3.5 Bolt E4B     DENSE 8B (4B eff.), 6.2 GB -> all on GPU (-ngl 999), upstream
+#   groot    Groot-19B-A3B-261023 Q4_K_M      MoE, 3B active, 11.7 GB -> experts partly in RAM, upstream
 #
 # Both MoE candidates are Qwen3.6-class hybrids (30 Gated DeltaNet + 10 full-attention
 # layers), so the KV cache is small: 128K ctx at q8_0 is ~1.4 GB. Qwen recommends at
@@ -23,7 +24,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b  (default: qwen36)
+#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -33,7 +34,7 @@
 #   CTX        context window                          (default: 131072 MoE / 110592 spark / 65536 dory / 32768 qwen38 / 16384 bonsai2, qwen3vl)
 #   NCMOE      MoE only: keep only the first N layers' experts on CPU, rest on GPU
 #              (faster, more VRAM). NCMOE= (empty) = all experts on CPU.
-#              (default: measured fit at 128K — qwen36 32, distill 34, flint 42; the distill's
+#              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 25; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
 #   NGL        dense only: transformer layers on GPU   (default: qwen38 30 of 64 — 36 OOMs
 #              on the first request at 32K ctx, see docs/models/qwen3.6-35b-a3b.md; bonsai2, qwen3vl 99 = all;
@@ -52,7 +53,7 @@
 #              model cards: qwen38 1.0/0.95/20/0, qwen36 + distill 0.6/0.95/20/0, the
 #              "precise coding" thinking preset; bonsai2 1.0/0.95/20, min-p 0.05 per its card;
 #              qwen3vl 0.7/0.8/20/1.5, the card's VL preset; dory, spark 1.0/0.95/0 (off)/0)
-#   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint 1 / 2048 / 2048)
+#   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot 1 / 2048 / 2048)
 #   EXTRA_ARGS any extra llama-server flags
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
 #   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: vendor/llama.cpp — bonsai2:
@@ -235,8 +236,28 @@ case "$QMODEL" in
     _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
     _ncmoe=
     _temp=1.0 ;;
+  groot)
+    # GrootTeam Groot-19B-A3B-261023: Qwen3.6-35B-A3B cut to 128 experts per layer (8 active), same
+    # 40-layer hybrid (30 Gated DeltaNet + 10 full attention), post-trained for agents and tool use.
+    # Half the experts of qwen36, so twice as many layers' experts fit on the GPU. Built with the
+    # newest upstream build here (vendor/flint-llama.cpp, 2026-10-21). Sampling as in the original
+    # repo's generation_config.json (temp 1.0, top-p 0.95, top-k 20). Its chat template is Qwen's,
+    # except that it keeps every earlier turn's reasoning in the prompt. See docs/models/groot-19b-a3b.md.
+    KIND=moe
+    _dir="$REPO_ROOT/models/groot-19b-a3b"
+    _model="$_dir/Groot-19B-A3B-261023-Q4_K_M.gguf"
+    _mmproj="$_dir/mmproj-Groot-19B-A3B-261023-BF16.gguf"
+    ALIAS=groot-19b-a3b
+    _ngl=99; _ctx=; _minp=0
+    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    # Measured (docs/models/groot-19b-a3b.md): NCMOE 22 / 23 at batch 512 give 42 tok/s, 19 OOMs;
+    # batch 2048 costs ~3 tok/s but doubles prefill (393 -> 887 tok/s) and needs NCMOE 25
+    # (7.72 GB, ~0.47 GB spare).
+    _ncmoe=25
+    _batch=2048
+    _temp=1.0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"

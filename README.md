@@ -21,6 +21,7 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md) | 74B hybrid MoE, 9B active | 128K | 14 t/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
 | 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md) | 35B MoE, 3B active | 128K | 23 t/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
 | 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Fastest job turnaround of the big ones. Thinks in haiku. |
+| 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md) | 19B MoE, 3B active | 128K | **39.5 t/s** | — | 74% | Qwen3.6 with half the experts. Fastest big model here. |
 | 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 16K | 27 t/s | 14/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
 | ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md) | 4B dense | 108K | 48–50 t/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
 | 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | The fastest here. A voice-assistant model; coding isn't its day job. |
@@ -85,6 +86,7 @@ copy-paste commands.
 | [How it fits](docs/how-it-fits.md) | The tricks that make big models fit in 8 GB, explained |
 | [The graveyard](docs/graveyard.md) | Things we tried that didn't make the cut, and why |
 | [Troubleshooting](docs/troubleshooting.md) | Every way this went wrong for us, and the fix |
+| [Security](docs/security.md) | What a stranger's GGUF can hide, and the audit every new model gets before it runs |
 | [Model pages](docs/models/) | One page per model: install, run, official and measured numbers, quirks |
 | [`scripts/README.md`](scripts/README.md) | Every script and knob |
 | [`bench/README.md`](bench/README.md) | Running the benchmarks yourself |
@@ -98,7 +100,7 @@ envs/        the pinned CUDA build toolchain
 patches/     the llama.cpp patch for Dory
 bench/       pibench (sandboxed agent benchmark) and the vision probe
 docs/        everything you read above
-utils/       a small GGUF inspector
+utils/       a GGUF inspector and a GGUF security auditor
 models/      where downloads go (not in git)
 vendor/      where llama.cpp builds go (not in git)
 ```

@@ -34,7 +34,7 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 | Script | What it does |
 |---|---|
 | `qwen-bench.py` | Quick smoke test of whatever is serving: generation speed, a tool call, a ~15K-token prompt. |
-| `qwen-codecheck.py` | Asks for `merge_intervals` and checks it against 500 random inputs. |
+| `qwen-codecheck.py` | Asks for `merge_intervals` and checks it against 500 random inputs. `--sandbox` runs the answer in a no-network container (for models not yet trusted). |
 | `benchmark-config.sh` | Finds the fastest `NCMOE`/`CTX` for Gemma 4 26B on *your* GPU. |
 | `benchmark-mtp.sh`, `run-server-mtp.sh` | Speculative decoding with Gemma's MTP head (it didn't pay off; see the [graveyard](../docs/graveyard.md)). |
 | `make-speed-chart.py` | Redraws the backend speed chart. |

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # start-qwen.sh — one command to bring up any model served by scripts/run-qwen.sh
-# (QMODEL=qwen36 | distill | flint | bolt | e4b | bonsai2 | qwen3vl | dory | spark | qwen38) and drop
+# (QMODEL=qwen36 | distill | flint | groot | bolt | e4b | bonsai2 | qwen3vl | dory | spark | qwen38) and drop
 # you into pi, then offer to stop the server when pi exits. Download the models first
 # with scripts/download-models.sh.
 #
@@ -11,7 +11,7 @@
 # invoked this is always left alone).
 #
 # Server knobs (forwarded via env to run-qwen.sh — see its -h for all of them):
-#   QMODEL   qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b   (default qwen36)
+#   QMODEL   qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot   (default qwen36)
 #   CTX      context window, in tokens    (default: 131072 MoE / 110592 spark / 65536 dory / 32768 qwen38 / 16384 bonsai2, qwen3vl)
 #   NCMOE    MoE: first N layers' experts on CPU, rest on GPU  (default: qwen36 32, distill 34, flint 42)
 #   NGL      dense qwen38: layers on GPU  (default 30 of 64; 36 OOMs at 32K)
