@@ -18,6 +18,7 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 |---|---|---|---:|---:|---:|---:|---|
 | 🪨 | [**Flint**](docs/models/flint.md) | 40B MoE, 2.5B active | 128K | 24 t/s | **18/18** | text only | The careful coder. Looks before it leaps. |
 | 💎 | [**Gemma 4 26B-A4B**](docs/models/gemma4-26b-a4b.md) | 26B MoE, 4B active | 32K–128K | 23.5 t/s | **18/18** | **100%** | Where it all started. Quietly aced everything. |
+| 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md) | 26B MoE, 4B active | 64K | 17.5 t/s | 17/18 | — | Gemma told to think less: half the thinking, one fewer solve. |
 | ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md) | 74B hybrid MoE, 9B active | 128K | 14 t/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
 | 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md) | 35B MoE, 3B active | 128K | 23 t/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
 | 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Fastest job turnaround of the big ones. Thinks in haiku. |

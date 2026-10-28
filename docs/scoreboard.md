@@ -15,6 +15,7 @@ Two health warnings before the numbers:
 | Model | Shape | File | Context | Speed | Prompt speed ¹ | pibench | Vision | Launcher |
 |---|---|---|---:|---:|---:|---:|---:|---|
 | [Gemma 4 26B-A4B](models/gemma4-26b-a4b.md) | MoE, 4B active | UD-Q4_K_XL, ~14 GB | 32K (128K fits) | 23.5 t/s ² | — | **18/18** | **100%** | `scripts/start.sh` |
+| [ThinkingCap Gemma 4 26B](models/thinkingcap-gemma4-26b-a4b.md) | MoE, 4B active | IQ4_XS, 13.6 GB | 64K | 17.4 t/s | 352 t/s | 17/18 | not run | `MODEL=… scripts/run-server.sh` |
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | MoE, 3B active | UD-IQ4_XS, 17.7 GB | 128K | 22.8 t/s | 221 t/s | 16/18 | **100%** | `QMODEL=qwen36 scripts/start-qwen.sh` |
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | MoE, 3B active | IQ4_XS, 19.6 GB | 128K | 26.2 t/s | 167 t/s | 16/18 | 88% | `QMODEL=distill scripts/start-qwen.sh` |
 | [Flint](models/flint.md) | MoE, 2.5B active | UD-Q3_K_XL, 18.5 GB | 128K | 24.3 t/s | 542 t/s | **18/18** | text only | `scripts/start_flint.sh` |

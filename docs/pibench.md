@@ -1,4 +1,4 @@
-# 🏋️ pibench — six chores, eleven models, one very warm laptop
+# 🏋️ pibench — six chores, twelve models, one very warm laptop
 
 Published benchmarks are run by the people who made the model, on big GPUs, at full precision,
 with their own scaffolding. We wanted to know something smaller and more personal: **on this
@@ -53,6 +53,7 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 | 🥇 [**Flint**](models/flint.md) | **18/18** | 100% | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 4.3 min | 0 |
 | 🥇 [**Gemma 4 26B-A4B**](models/gemma4-26b-a4b.md) | **18/18** | 100% | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 4.8 min | 0 |
 | 🥇 [**Groot-19B-A3B**](models/groot-19b-a3b.md) ² | **18/18** | 100% | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 3/3 | 3.1 min | 0 |
+| [ThinkingCap Gemma 4 26B](models/thinkingcap-gemma4-26b-a4b.md) ² | 17/18 | 98% | 3/3 | 3/3 | 3/3 | 3/3 | 2/3 | 3/3 | 5.5 min | 0 |
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | 16/18 | 98% | 3/3 | 3/3 | 3/3 | 2/3 | 2/3 | 3/3 | 2.5 min | 0 |
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | 16/18 | 96% | 2/3 | 3/3 | 3/3 | 3/3 | 3/3 | 2/3 | 3.4 min | 0 |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) ¹ | 15/18 | 93% | 2/3 | 3/3 | 3/3 | 3/3 | 1/3 | 3/3 | 6.4 min | 0 |
@@ -64,7 +65,7 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 
 Measured 2026-10-23: 108 attempts, about eight hours of a laptop fan doing its best. ¹ The two
 Nemotrons ran the same night, same harness, another 36 attempts (each had one timeout). ² Groot,
-LFM2.5 and Ornith ran on 2026-10-27/28, same harness, 54 more attempts (LFM2.5 shared the laptop
+LFM2.5, Ornith and ThinkingCap Gemma ran on 2026-10-27/28, same harness, 72 more attempts (LFM2.5 shared the laptop
 with a llama.cpp build, so its times may be a little high). ³ One timeout: a scraper that paged
 forever. Not run: Qwen3-VL (an image model), Dory,
 and the Gemma 12B fine-tunes.
@@ -188,6 +189,8 @@ ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
 - **Ornith** — the quick-draw. The fastest median job of the big models (2.2 min) and the fewest tokens, but it
   guesses: once it invented the books site's URL scheme and paged forever. Its card's agentic
   scores beat Qwen3.6 by ten points; here it finished two attempts behind.
+- **ThinkingCap Gemma** — Gemma on a diet. Half the thinking of the base Gemma for one attempt
+  fewer solved; slower per job only because its GGUF decodes at 17 tok/s here.
 
 The run-by-run notes, with transcript paths and quotes, are in
 [`bench/results/notes.md`](../bench/results/notes.md).
