@@ -8,11 +8,11 @@ before it runs, then gets a [model page](models/) and moves into the README line
 
 | What | Status |
 |---|---|
-| Clef-Flash, LFM3-1.7B, LFM3-VL-2B, d1-2B, EmbeddingGemma 2 | downloaded and audited clean ([security.md](security.md)); queued for speed, code check, pibench / vision |
+| Clef-Flash, LFM3-VL-2B, d1-2B, EmbeddingGemma 2 | downloaded and audited clean ([security.md](security.md)); queued for speed, code check, pibench / vision |
 
 Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18);
 [Ornith](models/ornith-1.5-35b-a3b.md) (14/18, vision 97%) and
-[ThinkingCap Gemma](models/thinkingcap-gemma4-26b-a4b.md) (17/18 with 47% less thinking) have pages.
+[ThinkingCap Gemma](models/thinkingcap-gemma4-26b-a4b.md) (17/18 with 47% less thinking) and [LFM3-1.7B](models/lfm3-1.7b.md) (12/18 at 106 tok/s) have pages.
 
 ## Models to try
 

@@ -29,7 +29,8 @@ Two health warnings before the numbers:
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | dense 8B + vision | Q4_K_M + projector | 16K | ~38 t/s | 830–900 t/s | not run | 89% | `scripts/start_qwen3vl.sh` |
 | [Dory1.0-4B](models/dory1.0-4b.md) | dense 4B, looped | Q5_K_M | 64K (128K ³) | 29.3 t/s | 852 t/s | not run | text only | `scripts/start_dory.sh` |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | dense 4B | Q8_0, 4.4 GB | 108K | 48–50 t/s | 1,450–1,620 t/s | 14/18 | text only | `scripts/start_spark.sh` |
-| [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | dense 8B (4B eff.) | Q4_K_M, 6.2 GB | 64K | **52 t/s** | 1,531 t/s | 7/18 | text only | `scripts/start_e4b.sh` |
+| [LFM3-1.7B](models/lfm3-1.7b.md) | dense 1.7B, conv + attention | Q8_0, 1.85 GB | 128K | **106 t/s** | **4,802 t/s** | 12/18 | text only | `QMODEL=lfm3 scripts/start-qwen.sh` |
+| [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | dense 8B (4B eff.) | Q4_K_M, 6.2 GB | 64K | 52 t/s | 1,531 t/s | 7/18 | text only | `scripts/start_e4b.sh` |
 
 ¹ Processing a ~14–17K-token prompt, which is what a coding agent's first turn costs. "—" = not
 measured the same way.
@@ -129,7 +130,7 @@ The last column says how much we watched each one, so you know how far to trust 
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | **quick** | Fastest big model per job; test-driven on code; the tersest thinker on the code check (under 800 tokens) | Writes scrapers from memory without looking (0.1 probes per attempt), so it's wrong in the ways memory is wrong | pibench, vision |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | **cramped** | Sound reasoning; every code chore solved; best at boxes in pixels, as asked | 16K context: cut off mid-thought in two thirds of its attempts | pibench, vision |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | **busy** | Fast; checks its output more often than anyone (94 % of attempts) | Thinks the most and still waves through plausible wrong values (five stars for every book, one quote ten times) | pibench |
-| [Nemotron Bolt E4B](models/nemotron-bolt-e4b.md) | **hasty** | The fastest model here; good for short assistant turns | Declares victory on empty output (`{}`, a header-only CSV); skims specs; 5.5 tool errors per attempt | pibench |
+| [Nemotron Bolt E4B](models/nemotron-bolt-e4b.md) | **hasty** | Fast (52 tok/s, second only to LFM3); good for short assistant turns | Declares victory on empty output (`{}`, a header-only CSV); skims specs; 5.5 tool errors per attempt | pibench |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | **snappy** | Flawless OCR in 6 seconds per image; boxes right in its own format | Doesn't think, so counting slips (12 dots for 11). 16K context | vision, spot checks |
 | [Dory1.0-4B](models/dory1.0-4b.md) | **tunable** | More loops for more depth, fewer for more speed; tool calls work | No character study yet; its llama.cpp support is an unmerged PR | smoke tests only |
 | [Gemma 4 12B coder](models/gemma4-12b-coder.md) | **neat** | Careful small-scale code (edge cases, sensible data structures); tool calls work | Occasionally drops a line (an LRU `put` lost its last insert); review what it writes | spot checks only |

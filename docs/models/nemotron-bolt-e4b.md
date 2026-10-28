@@ -1,4 +1,4 @@
-# 🐇 Nemotron 3.5 Bolt E4B-4GB — the fastest model here, and it knows it
+# 🐇 Nemotron 3.5 Bolt E4B-4GB — fast, and it knows it
 
 > **TL;DR**
 >

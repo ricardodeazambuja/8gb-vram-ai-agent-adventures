@@ -21,13 +21,14 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md) | 26B MoE, 4B active | 64K | 17.5 t/s | 17/18 | — | Gemma told to think less: half the thinking, one fewer solve. |
 | ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md) | 74B hybrid MoE, 9B active | 128K | 14 t/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
 | 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md) | 35B MoE, 3B active | 128K | 23 t/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
-| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Fastest job turnaround of the big ones. Thinks in haiku. |
+| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Quick jobs (2.5 min), only Ornith is quicker. Thinks in haiku. |
 | 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md) | 19B MoE, 3B active | 128K | **39.5 t/s** | **18/18** | 74% | Qwen3.6 with half the experts. Fastest big model here. |
 | 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md) | 24B conv/attention MoE, 2B active | 128K | 31.5 t/s | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
 | 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md) | 35B MoE, 3B active | 128K | 31 t/s | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
 | 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 16K | 27 t/s | 14/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
 | ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md) | 4B dense | 108K | 48–50 t/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
-| 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | The fastest here. A voice-assistant model; coding isn't its day job. |
+| 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md) | 1.7B tri-hybrid | 128K | **106 t/s** | 12/18 | text only | Tiny, twice as fast as anything else here, and better at chores than models 14× its size. |
+| 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
 | 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | — | 89% | Reads an invoice in 6 seconds flat. |
 | 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md) | 4B, looped | 64K | 29 t/s | — | text only | Runs its middle layers twice. Just keeps swimming. |
 | 🧑‍💻 | [**Gemma 4 12B coder**](docs/models/gemma4-12b-coder.md) | 12B dense | 32K | 17 t/s | — | — | A community coding fine-tune; Q4 is the sweet spot. |
