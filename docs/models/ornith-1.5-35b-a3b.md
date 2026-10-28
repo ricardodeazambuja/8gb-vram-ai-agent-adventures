@@ -11,7 +11,7 @@
 > | Prompt processing | ~490–510 tok/s (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, **1.4K–1.8K tokens** |
 > | [pibench](../pibench.md) | running |
-> | [Vision probe](../vision-probe.md) | running |
+> | [Vision probe](../vision-probe.md) | **97%** overall: OCR, understanding and CAD perfect, boxes 87% |
 > | [Security audit](../security.md) | clean |
 > | Launch | `QMODEL=ornith bash scripts/start-qwen.sh` |
 
@@ -104,6 +104,13 @@ Prompt reading is about half of Groot's (887 tok/s): more of each layer's expert
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **1,401 and 1,813 tokens**: half of Qwen3.6's 3,558 for the
 same architecture, and fewer than Groot (2.3K–3.0K).
+
+**[Vision probe](../vision-probe.md):** **97%** overall, just behind Gemma, Qwen3.6 (100%) and Bonsai 2 (98%).
+OCR, chart/count/spatial understanding and CAD all 100%. Boxes come in Qwen's 0–1000
+format rather than the pixels asked for, and score 87% that way: two images perfect (IoU 0.83,
+0.90), one partly (3 of 5 boxes, after 4,900 tokens of deliberating). Median 34 s and 436 tokens
+per image, quicker than Qwen3.6 (44 s). Unlike [Groot](groot-19b-a3b.md), the post-training kept
+its eyes.
 
 ## Security audit
 
