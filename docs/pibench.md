@@ -1,4 +1,4 @@
-# 🏋️ pibench — six chores, thirteen models, one very warm laptop
+# 🏋️ pibench — six chores, fourteen models, one very warm laptop
 
 Published benchmarks are run by the people who made the model, on big GPUs, at full precision,
 with their own scaffolding. We wanted to know something smaller and more personal: **on this
@@ -63,12 +63,13 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 | [LFM3-1.7B](models/lfm3-1.7b.md) ² | 12/18 | 88% | 2/3 | 3/3 | 3/3 | 3/3 | 0/3 | 1/3 | 2.2 min | 0 |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) ² | 10/18 | 86% | 0/3 | 3/3 | 2/3 | 2/3 | 0/3 | 3/3 | 4.2 min | 0 |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) ¹ | 7/18 | 78% | 1/3 | 3/3 | 0/3 | 1/3 | 0/3 | 2/3 | **2.0 min** | 0 |
+| [LFM3-VL-2B](models/lfm3-vl-2b.md) ² | 0/18 | 47% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 20.0 min | 0 ⁴ |
 
 Measured 2026-10-23: 108 attempts, about eight hours of a laptop fan doing its best. ¹ The two
 Nemotrons ran the same night, same harness, another 36 attempts (each had one timeout). ² Groot,
-LFM2.5, Ornith, ThinkingCap Gemma and LFM3 ran on 2026-10-27/28, same harness, 90 more attempts (LFM2.5 shared the laptop
+LFM2.5, Ornith, ThinkingCap Gemma, LFM3 and LFM3-VL ran on 2026-10-27/28, same harness, 108 more attempts (LFM2.5 shared the laptop
 with a llama.cpp build, so its times may be a little high). ³ One timeout: a scraper that paged
-forever. Not run: Qwen3-VL (an image model), Dory,
+forever. ⁴ 14 of 18 attempts hit the 20-minute timeout, every one in a loop of the same command. Not run: Qwen3-VL (an image model), Dory,
 and the Gemma 12B fine-tunes.
 
 **Read with care.** Three attempts per task means a single lucky or unlucky attempt moves a cell
@@ -195,6 +196,10 @@ ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
 - **LFM3-1.7B** — the pocket rocket. 106 tok/s, entirely on the GPU, and 12/18 from 1.7B
   parameters: more than its 24B sibling. Talks a lot (12K tokens a job) and is sloppy with data
   (an unquoted CSV, literal `\u00e9`), but the code chores are nearly all there.
+- **LFM3-VL-2B** — the broken record. The same backbone plus vision, the same chat template, and
+  0/18. In 14 attempts it got stuck running one command over and over until the 20-minute
+  timeout (769 times out of 772 calls, once); LFM3-1.7B never repeated one more than 25 times.
+  The vision training cost it the agent skills. Use it as an eye, not as an agent.
 
 The run-by-run notes, with transcript paths and quotes, are in
 [`bench/results/notes.md`](../bench/results/notes.md).
