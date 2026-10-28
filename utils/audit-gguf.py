@@ -93,18 +93,31 @@ SSTI = r"__\w+__|\b(?:mro|subclasses|globals|builtins|import|popen|subprocess|os
 
 
 # Escapes in template string literals. llama.cpp's Jinja decodes \xHH (U+0000-U+00FF); Python's
-# jinja2 (transformers, vLLM) also decodes \uHHHH and \UHHHHHHHH. A template can spell text in
-# hex ("\x63\x75\x72\x6c" renders as curl) and slip past the patterns above, so we decode first.
-ESCAPE = r"\\(?:x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})"
+# jinja2 (transformers, vLLM) decodes literals with "unicode-escape", which adds \uHHHH,
+# \UHHHHHHHH, octal \ooo and \N{NAME}. A template can spell text this way ("\x63\x75\x72\x6c"
+# renders as curl, "\U000E0041" as an invisible tag character) and slip past the checks on the
+# raw text, so the decoded template gets the same checks. Decoding the whole template, not just
+# literals, can only add findings.
+ESCAPE = r"\\(?:x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3}|N\{[^}]{1,80}\})"
 
 
 def decode_escapes(s):
     def one(m):
+        e = m.group(0)
         try:
-            return chr(int(m.group(0)[2:], 16))  # noqa: FURB166 (strips "\\x", not "0x")
-        except (ValueError, OverflowError):
-            return m.group(0)
+            if e[1] in "xuU":
+                return chr(int(e[2:], 16))  # noqa: FURB166 (strips "\\x", not "0x")
+            if e[1] == "N":
+                return unicodedata.lookup(e[3:-1])
+            return chr(int(e[1:], 8))
+        except (ValueError, OverflowError, KeyError):
+            return e
     return re.sub(ESCAPE, one, s)
+
+
+def tag_text(s):
+    """The ASCII that Unicode tag characters (U+E0000-E007F) in s spell out."""
+    return "".join(chr(ord(c) - 0xE0000) for c in s if 0xE0000 <= ord(c) <= 0xE007F)
 
 
 def scan(text, skip=()):
@@ -280,32 +293,52 @@ def check_template(r, rep, dump, ref_tpl=""):
         h = hidden_chars(tpl)
         if h:
             rep.fail(f"{k}: {len(h)} invisible/control characters: {h[:5]}")
-            tags = "".join(chr(ord(c) - 0xE0000) for c in tpl if 0xE0000 <= ord(c) <= 0xE007F)
+            tags = tag_text(tpl)
             if tags:
                 rep.fail(f"{k}: text hidden in Unicode tag characters reads: {tags!r}")
-        for kind, frag in scan(tpl, skip=("ip",)):
-            if frag in ref_tpl:  # same words in the base model's template: stock text, not an addition
+        # "Also in the reference" means the same pattern hit there, not a substring match:
+        # "curl" must not pass because the reference says "curly".
+        raw_hits = scan(tpl, skip=("ip",))
+        ref_hits = set(scan(ref_tpl, skip=("ip",)))
+        for kind, frag in raw_hits:
+            if (kind, frag) in ref_hits:  # stock text of the base model's template, not an addition
                 print(f"  info  {k}: {kind}: {frag!r} (also in the reference template)")
             else:
                 rep.warn(f"{k}: {kind}: {frag!r}")
         esc = sorted(set(re.findall(ESCAPE, tpl)))
         if esc:
+            ref_esc = set(re.findall(ESCAPE, ref_tpl))
             shown = ", ".join(f"{e} = {decode_escapes(e)!r}" for e in esc[:12])
-            if all(e in ref_tpl for e in esc):
+            if all(e in ref_esc for e in esc):
                 print(f"  info  {k}: escapes {shown} (also in the reference template)")
             else:
-                rep.warn(f"{k}: {len(esc)} distinct escape sequences (text written in hex): {shown}")
-            invisible = [e for e in esc if hidden_chars(decode_escapes(e)) and e not in ref_tpl]
-            if invisible:
-                rep.warn(f"{k}: escapes that render as invisible/control characters: {invisible}")
-            seen_raw = set(scan(tpl, skip=("ip",)))
-            ref_dec = decode_escapes(ref_tpl)
-            for kind, frag in scan(decode_escapes(tpl), skip=("ip",)):
-                if (kind, frag) in seen_raw:
+                rep.warn(f"{k}: {len(esc)} distinct escape sequences (text written as escapes): {shown}")
+            dec, ref_dec = decode_escapes(tpl), decode_escapes(ref_tpl)
+            # Invisible characters that only exist once decoded. Format characters (tag, bidi,
+            # zero-width) can hide or reorder text: FAIL, as in the raw template. Plain control
+            # characters (e.g. replace("\x00", "") to sanitize input) are only worth a look.
+            before = {cp for _, cp, _ in hidden_chars(tpl) + hidden_chars(ref_dec)}
+            new = sorted({(cp, name) for _, cp, name in hidden_chars(dec) if cp not in before})
+            ctl_cps = {f"U+{ord(c):04X}" for c in dec if unicodedata.category(c) == "Cc"}
+            fmt = [x for x in new if x[0] not in ctl_cps]
+            ctl = [x for x in new if x[0] in ctl_cps]
+            if fmt:
+                rep.fail(f"{k}: escapes render as invisible format characters: {fmt[:5]}")
+            if ctl:
+                rep.warn(f"{k}: escapes render as control characters: {ctl[:5]}")
+            # What the escapes alone spell in tag characters, in order (raw ones are reported above).
+            tags = tag_text("".join(decode_escapes(e) for e in re.findall(ESCAPE, tpl)))
+            if tags and tags not in tag_text(ref_dec):
+                rep.fail(f"{k}: escapes spell text in Unicode tag characters that reads: {tags!r}")
+            seen = set(raw_hits)
+            ref_dec_hits = set(scan(ref_dec, skip=("ip",)))
+            for kind, frag in scan(dec, skip=("ip",)) + scan(tags, skip=("ip",)):
+                if (kind, frag) in seen:
                     continue
-                if frag in ref_dec:
+                seen.add((kind, frag))
+                if (kind, frag) in ref_dec_hits:
                     print(f"  info  {k}: after decoding escapes: {kind}: {frag!r} (also in the reference)")
-                else:  # only visible once decoded: written in hex on purpose
+                else:  # only visible once decoded: written as escapes on purpose
                     rep.fail(f"{k}: after decoding escapes: {kind}: {frag!r}")
         ssti = sorted(set(re.findall(SSTI, tpl)))
         if ssti:

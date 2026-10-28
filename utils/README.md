@@ -42,7 +42,7 @@ verdict      : projector (mmproj) — vision
 Security checks on a downloaded GGUF **before** llama.cpp opens it: header sanity (every tensor
 in bounds, aligned, non-overlapping), hidden Unicode / URLs / shell commands / injection phrases
 in every metadata string, the embedded **chat template** (hidden system prompts, Jinja
-internals, text spelled in `\x` hex escapes, every sentence it emits verbatim), and with `--ref` a diff of template, tokenizer
+internals, text spelled in `\x` / `\u` / octal escapes, every sentence it emits verbatim), and with `--ref` a diff of template, tokenizer
 and hyperparameters against the base model. Pure Python, nothing is executed. Why and how:
 [`docs/security.md`](../docs/security.md).
 
@@ -55,5 +55,5 @@ Exit code 0 = clean, 1 = a `WARN` line for a human to read, 2 = `FAIL`, don't lo
 
 `python utils/test-audit-gguf.py` is its self-test: it builds a poisoned GGUF (injected
 `curl … | sh`, text hidden in Unicode tag characters, a bidi override, Jinja internals, `wget`
-spelled in hex escapes) and a
+spelled in hex, `ssh` in octal, tag characters written as `\U` escapes) and a
 truncated one, and checks that the auditor reports every trick and fails both.
