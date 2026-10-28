@@ -16,6 +16,8 @@
 #   bolt     NVIDIA Nemotron 3.5 Bolt 74B     Mamba/MoE, 9B active -> experts in RAM, upstream (NVIDIA's QAD IQ2)
 #   e4b      NVIDIA Nemotron 3.5 Bolt E4B     DENSE 8B (4B eff.), 6.2 GB -> all on GPU (-ngl 999), upstream
 #   groot    Groot-19B-A3B-261023 Q4_K_M      MoE, 3B active, 11.7 GB -> experts partly in RAM, upstream
+#   ornith   Ornith-1.5-35B-A3B Q4_K_M        MoE, 3B active, 21.7 GB -> experts in RAM, upstream
+#   lfm25    LFM2.5-24B-A2B QAD Q4_0          MoE, 2B active, 13.6 GB -> experts partly in RAM, upstream
 #
 # Both MoE candidates are Qwen3.6-class hybrids (30 Gated DeltaNet + 10 full-attention
 # layers), so the KV cache is small: 128K ctx at q8_0 is ~1.4 GB. Qwen recommends at
@@ -24,7 +26,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot  (default: qwen36)
+#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -34,7 +36,7 @@
 #   CTX        context window                          (default: 131072 MoE / 110592 spark / 65536 dory / 32768 qwen38 / 16384 bonsai2, qwen3vl)
 #   NCMOE      MoE only: keep only the first N layers' experts on CPU, rest on GPU
 #              (faster, more VRAM). NCMOE= (empty) = all experts on CPU.
-#              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 25; the distill's
+#              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 25, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
 #   NGL        dense only: transformer layers on GPU   (default: qwen38 30 of 64 — 36 OOMs
 #              on the first request at 32K ctx, see docs/models/qwen3.6-35b-a3b.md; bonsai2, qwen3vl 99 = all;
@@ -49,10 +51,11 @@
 #   FA         flash attention on | off | auto        (default: on)
 #   MTP        dense only: 1 = speculative decoding with the GGUF's embedded MTP head
 #              (measured SLOWER here: 2.0 vs 2.5 tok/s)  (default: 0)
-#   TEMP / TOP_P / TOP_K / MIN_P / PRESENCE_PENALTY  sampling  (default: per QMODEL, from the
+#   TEMP / TOP_P / TOP_K / MIN_P / PRESENCE_PENALTY / REPEAT_PENALTY  sampling  (default: per QMODEL, from the
 #              model cards: qwen38 1.0/0.95/20/0, qwen36 + distill 0.6/0.95/20/0, the
 #              "precise coding" thinking preset; bonsai2 1.0/0.95/20, min-p 0.05 per its card;
-#              qwen3vl 0.7/0.8/20/1.5, the card's VL preset; dory, spark 1.0/0.95/0 (off)/0)
+#              qwen3vl 0.7/0.8/20/1.5, the card's VL preset; dory, spark 1.0/0.95/0 (off)/0;
+#              lfm25 0.1/1.0/50/0 + repeat-penalty 1.05)
 #   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot 1 / 2048 / 2048)
 #   EXTRA_ARGS any extra llama-server flags
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
@@ -256,8 +259,42 @@ case "$QMODEL" in
     _ncmoe=25
     _batch=2048
     _temp=1.0 ;;
+  ornith)
+    # ornith-ai Ornith-1.5-35B-A3B: Qwen3.6-35B-A3B architecture (256 experts, 8 active, 40 layers,
+    # 30 Gated DeltaNet + 10 full attention) with self-improvement post-training. Q4_K_M is a bigger
+    # file than qwen36's UD-IQ4_XS (21.7 vs 17.7 GB), so more layers' experts stay in RAM.
+    # Sampling: the card's agentic-benchmark settings (temp 1.0, top-p 0.95, top-k 20; it suggests
+    # temp 0.6 for general chat). Template identical to Groot's. See docs/models/ornith-1.5-35b-a3b.md.
+    KIND=moe
+    _dir="$REPO_ROOT/models/ornith-1.5-35b-a3b"
+    _model="$_dir/Ornith-1.5-35B-Q4_K_M.gguf"
+    _mmproj="$_dir/mmproj-Ornith-1.5-35B-BF16.gguf"
+    ALIAS=ornith-1.5-35b-a3b
+    _ngl=99; _ctx=; _minp=0
+    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    _ncmoe=36
+    _batch=2048
+    _temp=1.0 ;;
+  lfm25)
+    # LiquidAI LFM2.5-24B-A2B: not a Qwen. 40 layers (30 short-conv + 10 GQA attention), the first 2
+    # dense, then 64 experts / 4 active per layer (2.45B active). Text only. The QAD Q4_0 file was
+    # distilled to recover the Q4_0 loss. Sampling: the card's 0.1 temp, top-k 50, repeat-penalty
+    # 1.05 (also in the GGUF's general.sampling.*). See docs/models/lfm2.5-24b-a2b.md.
+    KIND=moe
+    _dir="$REPO_ROOT/models/lfm2.5-24b-a2b"
+    _model="$_dir/LFM2.5-24B-A2B-QAD-Q4_0.gguf"
+    _mmproj=
+    ALIAS=lfm2.5-24b-a2b
+    _ngl=99; _ctx=; _minp=0
+    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    # Measured (docs/models/lfm2.5-24b-a2b.md): NCMOE 27 / batch 2048 = 7.6 GB, 31-32 tok/s, prefill
+    # ~940; 26 needs batch 512 (32.4 tok/s, prefill 325); 25 OOMs even at batch 512.
+    _ncmoe=27
+    _batch=2048
+    _topp=1.0; _topk=50; _rpen=1.05
+    _temp=0.1 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"
@@ -278,6 +315,7 @@ TOP_P="${TOP_P:-${_topp:-0.95}}"
 TOP_K="${TOP_K:-${_topk:-20}}"
 MIN_P="${MIN_P:-$_minp}"
 PRESENCE_PENALTY="${PRESENCE_PENALTY:-${_pp:-0}}"
+REPEAT_PENALTY="${REPEAT_PENALTY:-${_rpen:-1.0}}"
 NP="${NP:-1}"
 BATCH="${BATCH:-${_batch:-512}}"
 UBATCH="${UBATCH:-${_batch:-512}}"
@@ -371,11 +409,11 @@ if [ "$QMODEL" = dory ]; then
   echo ">> loops: $LOOPS, KV cache $LOOP_KV"
 fi
 
-SAMPLER_ARGS=(--temp "$TEMP" --top-p "$TOP_P" --top-k "$TOP_K" --min-p "$MIN_P" --presence-penalty "$PRESENCE_PENALTY")
+SAMPLER_ARGS=(--temp "$TEMP" --top-p "$TOP_P" --top-k "$TOP_K" --min-p "$MIN_P" --presence-penalty "$PRESENCE_PENALTY" --repeat-penalty "$REPEAT_PENALTY")
 # shellcheck disable=SC2206  # intentional word-splitting for passthrough flags
 [ -n "$EXTRA_ARGS" ] && SAMPLER_ARGS+=($EXTRA_ARGS)
 
-echo ">> sampling: temp=$TEMP top-p=$TOP_P top-k=$TOP_K min-p=$MIN_P presence-penalty=$PRESENCE_PENALTY ${EXTRA_ARGS:+(+ $EXTRA_ARGS)}"
+echo ">> sampling: temp=$TEMP top-p=$TOP_P top-k=$TOP_K min-p=$MIN_P presence-penalty=$PRESENCE_PENALTY repeat-penalty=$REPEAT_PENALTY ${EXTRA_ARGS:+(+ $EXTRA_ARGS)}"
 echo ">> context: $CTX   listening: http://$HOST:$PORT/v1"
 echo
 

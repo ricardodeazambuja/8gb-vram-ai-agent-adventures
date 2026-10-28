@@ -216,7 +216,7 @@ def check_strings(r, rep):
                 flagged += 1
             for kind, frag in scan(s, skip=("blob",) if k == "general.license.text" else ()):
                 # A link to the model's own repo is normal metadata; anything else, a human decides.
-                if kind == "url" and k.endswith("url") and re.match(r"https://(huggingface\.co|github\.com)/", frag):
+                if kind == "url" and k.endswith(("url", "link")) and re.match(r"https://(huggingface\.co|github\.com)/", frag):
                     print(f"  info  {k}: {frag}")
                     continue
                 rep.warn(f"{k}: {kind}: {frag!r}")
