@@ -272,7 +272,7 @@ case "$QMODEL" in
     ALIAS=ornith-1.5-35b-a3b
     _ngl=99; _ctx=; _minp=0
     _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
-    _ncmoe=36
+    _ncmoe=34
     _batch=2048
     _temp=1.0 ;;
   lfm25)
