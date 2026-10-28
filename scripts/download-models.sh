@@ -30,6 +30,13 @@
 #            self-improvement post-training (docs/models/ornith-1.5-35b-a3b.md)
 #   lfm25    LFM2.5-24B-A2B QAD Q4_0 (LiquidAI, ~13.6 GB) — conv/attention hybrid MoE, 2B active;
 #            Q4_0 trained with quantization-aware distillation (docs/models/lfm2.5-24b-a2b.md)
+#   tcgemma  ThinkingCap gemma-4-26B-A4B-it IQ4_XS (bottlecap.ai, ~13.6 GB + 1.2 GB vision) —
+#            Gemma 4 26B post-trained to think less (docs/up-next.md)
+#   lfm3     LFM3-1.7B Q8_0 (LiquidAI, ~1.9 GB) — tri-hybrid 1.7B for agents; needs llama.cpp >= 2026-10-27
+#   lfm3vl   LFM3-VL-2B Q8_0 (LiquidAI, ~1.9 GB + 0.4 GB vision)
+#   d1       d1-2B Q8_0 (LiquidAI, ~1.9 GB) — decision model
+#   eg2      EmbeddingGemma 2 Q8_0 (ggml-org, ~0.3 GB) — embeddings
+#   clefflash Clef-Flash Q4_K_M (ggml-org, ~6.7 GB) — Cloudflare decision model (/v1/systemone)
 #
 # Reproducible by construction: every file is downloaded at a PINNED Hugging Face repo
 # revision and checked against a PINNED sha256 (the exact bytes tested in
@@ -45,7 +52,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25)
+#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | d1 | eg2 | clefflash)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -75,6 +82,12 @@ MODELS=(
   "groot|GrootTeam/Groot-19B-A3B-261023-GGUF|2fa1ec958e3bbf7312cf0af97802ff26bfdc5260|groot-19b-a3b|Groot-19B-A3B-261023-Q4_K_M.gguf:0716cae1f19a39a786a463f7b8c068d50b3d7a74532fce73e5ea23ed98130796 mmproj-Groot-19B-A3B-261023-BF16.gguf:05a5c8a279b2589306824864d76d663063ba69ff1f399e6a283fae988fdff360"
   "ornith|ornith-ai/Ornith-1.5-35B-A3B-GGUF|12393612fd4f730ff5aadc23e9b8f9648aa49ceb|ornith-1.5-35b-a3b|Ornith-1.5-35B-Q4_K_M.gguf:42739874cc2ccfdb8523b23fbe52e29b2a7555c8176737ca9ca0b5d59859d41f mmproj-Ornith-1.5-35B-BF16.gguf:1921a36a85aee56cd2abd27f46701802c9d85a33474792e600df6c3b282a135d"
   "lfm25|LiquidAI/LFM2.5-24B-A2B-GGUF|0912d33141f77e10705345a6732bfd83f0252fdc|lfm2.5-24b-a2b|LFM2.5-24B-A2B-QAD-Q4_0.gguf:d1c03f73ecaf61017d70419eec9e5dc0b05d50ae26c23d522829b934fbabf8a5"
+  "tcgemma|bottlecapai/ThinkingCap-gemma-4-26B-A4B-it-GGUF|bb52b322579d218a9931261d6c9cd7403d80eb96|thinkingcap-gemma4-26b-a4b|ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf:c84bb3c8b997cc7c8fbd5922f3abb362f92ebf5d290654a90bcef5a10c021085 mmproj-ThinkingCap-gemma-4-26B-A4B-it-f16.gguf:4030b92de0d559d7a0cde19659761adc3d8454f06503adb8dac425acfd67c239"
+  "eg2|ggml-org/embeddinggemma-2-GGUF|58faf90940886df2d62be555c8765d00dac362c5|embeddinggemma-2|embeddinggemma-2-Q8_0.gguf:2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135"
+  "clefflash|ggml-org/Clef-Flash-GGUF|6e2a164d70aae2af7fce86005da3f91805565b1d|clef-flash|Clef-Flash-Q4_K_M.gguf:eef2968c238a80d49d340430f22410ea3db9934ad1c6fdb233a503cbf9a9b54e"
+  "lfm3|LiquidAI/LFM3-1.7B-GGUF|b3f2ae5d73cd3c91bf40e8ba752c648aa05dffdf|lfm3-1.7b|LFM3-1.7B-Q8_0.gguf:8f6b24182258205e9e01e21f1f24a1f208c1e8115578825d202ce39976af20b6"
+  "lfm3vl|LiquidAI/LFM3-VL-2B-GGUF|7c3b4a43c9023e80bf234fec5e826a3365c8dda8|lfm3-vl-2b|LFM3-VL-2B-Q8_0.gguf:e138e54189a751d90ea8c0b236360490613ecd465d28d68fa6094d3db7fa6727 mmproj-LFM3-VL-2B-F16.gguf:1d8e6e58eefc093e09d6332f081516e1ddbd5b35cfca7f35463fb270db230b1e"
+  "d1|LiquidAI/d1-2B-GGUF|63be75e6586882defeb706ed4bda812d90256a6d|d1-2b|d1-2B-Q8_0.gguf:073313d92b53b0ac8193db6e906cb3c78a98183d244b15b7b8f5426115c6738c"
   "dflash|z-lab/Qwen3.8-27B-DFlash2-GGUF|2d9571f8ce46e151f61c6499c99dee6079e1d610|qwen38-27b-gsq|Qwen3.8-27B-DFlash2-Q4_K_M.gguf:1a25c56858e1ebe93f2718ac1d49d1151f9323325c1bbfd6209370f4db131ebd"
 )
 
@@ -137,7 +150,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | d1 | eg2 | clefflash)"; FAIL=1; }
 done
 
 exit "$FAIL"

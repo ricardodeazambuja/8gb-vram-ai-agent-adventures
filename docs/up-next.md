@@ -121,10 +121,10 @@ What it needs before it runs here:
 
 ## Chores
 
-- **Rebuild `vendor/flint-llama.cpp` at a commit after 2026-10-27** (LFM3 support), then re-run
-  the speed tests of the models it serves to check nothing moved. Also fixes: its `llama-server` has an RPATH into the
-  `GitStuff/Gemma4` checkout this repo was copied from. The libraries there are byte-identical
-  today, but deleting or rebuilding that checkout would break or silently change this one.
+- **A llama.cpp build after 2026-10-27** for LFM3 (building in `vendor/llama.cpp-lfm3`). Later:
+  move the other upstream models to it and re-run their speed tests to check nothing moved.
+  Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
+  builds there serve both.
 - **`audit-gguf.py`: decode `\x` escapes before scanning templates.** llama.cpp's Jinja now
   understands `"\x63\x75\x72\x6c"` (= `curl`), so a template can spell injected text in hex and
   slip past the suspicious-text patterns. `\x` covers only U+0000–U+00FF (control characters,
