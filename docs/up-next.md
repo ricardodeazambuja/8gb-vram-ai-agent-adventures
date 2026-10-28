@@ -125,10 +125,5 @@ What it needs before it runs here:
   move the other upstream models to it and re-run their speed tests to check nothing moved.
   Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
   builds there serve both.
-- **`audit-gguf.py`: decode `\x` escapes before scanning templates.** llama.cpp's Jinja now
-  understands `"\x63\x75\x72\x6c"` (= `curl`), so a template can spell injected text in hex and
-  slip past the suspicious-text patterns. `\x` covers only U+0000–U+00FF (control characters,
-  soft hyphen), not tag or bidi characters. Decode string literals, then scan; flag any `\x`
-  that decodes to a non-printable character. Seen in local-autoresearch's llama.cpp patch.
 - **Groot's default `NCMOE=25`** leaves ~0.45 GB of VRAM; with a browser open it failed to load once
   and ran out of memory on a first request at 26. Consider 26–27 as the default.
