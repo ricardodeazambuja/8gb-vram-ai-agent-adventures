@@ -100,7 +100,7 @@ SSTI = r"__\w+__|\b(?:mro|subclasses|globals|builtins|import|popen|subprocess|os
 # over the whole template (can only add findings) and, for every string literal inside a tag,
 # jinja2's own decoding, so the auditor cannot drift from what jinja2 actually renders
 # (a backslash-newline continuation, for one, joins "cu\<newline>rl" into curl).
-ESCAPE = r"\\(?:x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3}|N\{[^}]{1,80}\}|\r?\n)"
+ESCAPE = r"\\(?:x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3}|N\{[^}]{1,80}\}|\r\n|\r|\n)"
 
 
 def decode_escapes(s):
@@ -125,8 +125,9 @@ def jinja_strings(tpl):
     for tag in re.findall(r"\{%.*?%\}|\{\{.*?\}\}", tpl, flags=re.DOTALL):
         for m in re.finditer(r"'((?:[^'\\]|\\.)*)'|\"((?:[^\"\\]|\\.)*)\"", tag, flags=re.DOTALL):
             raw = m.group(1) if m.group(1) is not None else m.group(2)
+            norm = re.sub(r"\r\n|\r|\n", "\n", raw)  # jinja2 normalizes newlines before decoding
             try:
-                out.append((raw, raw.encode("ascii", "backslashreplace").decode("unicode-escape")))
+                out.append((raw, norm.encode("ascii", "backslashreplace").decode("unicode-escape")))
             except UnicodeDecodeError:  # jinja2 would refuse it too; keep the raw text
                 out.append((raw, raw))
     return out
@@ -188,7 +189,18 @@ def load(path):
 
 
 def templates(r):
-    return {k: value(f) for k, f in r.fields.items() if k.startswith("tokenizer.chat_template")}
+    """Every tokenizer.chat_template* string. Arrays (e.g. tokenizer.chat_templates, the list of
+    named templates) are split into one entry per element so each gets the same checks."""
+    out = {}
+    for k, f in r.fields.items():
+        if not k.startswith("tokenizer.chat_template"):
+            continue
+        v = value(f)
+        if isinstance(v, list):
+            out.update({f"{k}[{i}]": str(x) for i, x in enumerate(v)})
+        else:
+            out[k] = str(v)
+    return out
 
 
 # --- checks ------------------------------------------------------------------------------------
@@ -352,7 +364,11 @@ def check_template(r, rep, dump, ref_tpl=""):
         # characters written raw are reported above).
         ref_tags = tag_text(ref_dec)
         tags = []
-        for raw, d in jinja_strings(tpl):
+        # Per literal (exact jinja2 decoding), plus all escapes across the whole template as a
+        # backstop: a quoted "}}" inside a tag would hide later literals from the tag regex.
+        candidates = [(raw, d) for raw, d in jinja_strings(tpl)]
+        candidates.append(("", "".join(decode_escapes(e) for e in re.findall(ESCAPE, tpl))))
+        for raw, d in candidates:
             t = tag_text(d)
             if t and t != tag_text(raw) and t not in ref_tags and t not in tags:
                 tags.append(t)
@@ -471,4 +487,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:  # noqa: BLE001
+        # An auditor that crashes has not audited anything. Exit 1 would read as "WARN, have a
+        # look"; a crash is a FAIL until a human has seen why.
+        import traceback
+        traceback.print_exc(file=sys.stdout)
+        print("\n  FAIL  the auditor crashed (traceback above); the file was NOT fully checked")
+        print("\nverdict: FAIL, do not load this file")
+        sys.exit(2)
