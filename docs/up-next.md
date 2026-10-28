@@ -91,8 +91,63 @@ One rebuild covers this and the RPATH chore below.
 |---|---|---|
 | [**LFM3-1.7B**](https://huggingface.co/LiquidAI/LFM3-1.7B-GGUF) | text, 256K context, post-trained in agent harnesses **including pi** | **First pick.** Its card claims a 1.7B beats Qwen3.5 9B on average (49.4 vs 47.2), with SWE-bench Verified 43.4 and LiveClaw 45.6. Entirely on the GPU with room to spare, so likely the fastest model here; does it get anywhere on pibench, where E4B got 7/18 and Spark 14/18? Also a `QAD-Q4_0` file, like LFM2.5's. |
 | [LFM3-VL-2B](https://huggingface.co/LiquidAI/LFM3-VL-2B-GGUF) | vision (images; video not in llama.cpp yet), thinks first, object grounding | The [vision probe](vision-probe.md) at 1.1 GB + 0.2 GB projector: how close to Qwen3-VL-8B's 89%? |
-| [LFM3-Audio-2B](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) / [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF) | speech in and out (18 languages), tool calls from voice; Omni adds images and video | Outside what we measure today; a voice front-end for pi would be a new chore. Later. |
+| [LFM3-Audio-2B](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) / [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF) | speech in and out (18 languages), tool calls from voice; Omni adds images and video | The speech-native option in [Voice agents](#-voice-agents-agents-that-talk-to-people) below. |
 | [d1-2B](https://huggingface.co/LiquidAI/d1-2B-GGUF) / [d1-Omni-2B](https://huggingface.co/LiquidAI/d1-Omni-2B-GGUF) | **decision models** like Clef: calibrated answers in one pass, plus spans, boxes and quantity intervals | A 1.1 GB alternative to Clef-Flash; test them side by side. The card doesn't say how llama.cpp serves it (`/v1/systemone` like Clef?): check before downloading. |
+
+## 🗣️ Voice agents: agents that talk to people
+
+Goal: a local agent you can talk to, which answers out loud and can still use tools. Two ways
+to build one, and one hybrid. Checked on 2026-10-28 against the GitHub and Hugging Face APIs
+(licences, last release); nothing here has been downloaded or run yet, and every piece goes
+through the [security routine](security.md) first.
+
+The constraint is the GPU: a good agent model (Groot, Flint, Gemma) already takes ~7 GB of the
+8, so in a pipeline the speech parts run on the CPU, or the agent model gives up some layers.
+
+### A. Pipeline: speech to text → our agent model → text to speech
+
+The agent stays a model we've already measured on [pibench](pibench.md); speech is added around it.
+
+| Piece | Candidate | Licence | Status (2026-10-28) | Notes |
+|---|---|---|---|---|
+| Speech detection | [Silero VAD](https://github.com/snakers4/silero-vad) | MIT | v6.2.3 (Sep 2026) | Tiny, CPU. Says when someone is speaking. |
+| End-of-turn detection | [LiveKit turn-detector](https://huggingface.co/livekit/turn-detector) | LiveKit model licence | Feb 2026 | Guesses when the person has *finished*, not just paused. **Licensed for use with LiveKit Agents only.** |
+| Speech to text | [whisper.cpp](https://github.com/ggml-org/whisper.cpp) | MIT | v1.9.5 (Oct 2026) | Same ggml family as our llama.cpp builds; CUDA or CPU. |
+| | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) | MIT | v1.2.1 (Oct 2025) | Python/CTranslate2; what most frameworks use by default. |
+| | [Parakeet TDT 0.6B v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) | CC-BY-4.0 | Aug 2026 | Very fast and accurate; NeMo stack. |
+| | [Moonshine](https://github.com/moonshine-ai/moonshine) | MIT (streaming and English models) | v0.1.5 (Aug 2026) | Built for streaming on small devices; some legacy non-English models are non-commercial. |
+| Text to speech | [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) | Apache 2.0 | model Apr 2025 | 82M parameters, real time on a CPU, good quality. |
+| | [Piper](https://github.com/OHF-Voice/piper1-gpl) | **GPL-3.0** | v1.8.0 (Sep 2026) | The fastest on a CPU. Moved from the archived MIT `rhasspy/piper` to a GPL repo. |
+| | [Chatterbox](https://github.com/resemble-ai/chatterbox) | MIT | model Jun 2026 | More expressive, voice cloning; wants the GPU. |
+| | [Orpheus 3B](https://github.com/canopyai/Orpheus-TTS) | Apache 2.0 | Dec 2025 | An LLM that speaks; 3B is too much next to an agent model on 8 GB. |
+| Glue | [**Pipecat**](https://github.com/pipecat-ai/pipecat) | BSD-2 | v1.14.0 (Oct 24, 2026) | Pipelines of VAD, speech to text, LLM and text to speech, with interruptions and tool calls; takes any OpenAI-compatible server. |
+| | [**LiveKit Agents**](https://github.com/livekit/agents) | Apache 2.0 | 1.8.9 (Oct 24, 2026) | The same idea, built around WebRTC rooms; brings the turn detector. |
+| | [Vocode](https://github.com/vocodedev/vocode-core) | MIT | idle since 2024 | Skip. |
+
+### B. One speech-native model
+
+| Model | Licence | Notes |
+|---|---|---|
+| [**LFM3-Audio-2B**](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) / [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF) | LFM Open License v1.0 (commercial use under $10M revenue) | Speech in and out, 18 languages, tool calls from voice. 1.1 GB at Q4_K_M + 0.34 GB projector: fits on the GPU with lots of room to spare. **Our `vendor/llama.cpp-lfm3` build already has it**: the LFM3-Audio speech generator in `mtmd`, and `llama-server`'s new `/v1/realtime` WebSocket endpoint (OpenAI Realtime schema) for live conversations and live transcription. We built only the server; `llama-tts` and `llama-mtmd-cli` need building too. |
+| [Voxtral Mini 3B](https://huggingface.co/ggml-org/Voxtral-Mini-3B-2507-GGUF) | Apache 2.0 (Mistral) | Speech in, text out; ggml-org GGUF. Its realtime variant is named in llama.cpp's `/v1/realtime` docs. |
+| [Ultravox v0.5 (Llama 3.2 1B)](https://huggingface.co/ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF) | MIT | Speech in, text out; repo quiet since Dec 2025. |
+| [Moshi](https://github.com/kyutai-labs/moshi) / [Kyutai STT](https://huggingface.co/kyutai/stt-1b-en_fr) + [TTS](https://huggingface.co/kyutai/tts-1.6b-en_fr) | Apache 2.0 / CC-BY-4.0 | Full duplex (listens while it talks); its own Rust/PyTorch stack, not llama.cpp. English and French. |
+| [Qwen3-Omni-30B-A3B](https://huggingface.co/ggml-org/Qwen3-Omni-30B-A3B-Instruct-GGUF) | Apache 2.0 | The strong one; a 30B MoE, so experts in RAM like Qwen3.6, plus audio towers. Possible, not quick. |
+
+### C. Hybrid
+
+LFM3-Audio holds the conversation (fast, on the GPU), and hands real work to a pibench-tested
+model as a tool call. On 8 GB the two can't both sit on the GPU: either the agent runs with
+more experts in RAM (Groot at a higher `NCMOE`), or a server swaps models per task.
+
+### First experiments (when the GPU is free)
+
+1. **LFM3-Audio-2B alone**, through `/v1/realtime`: response time from end of speech to the
+   first audio, speech-to-text accuracy on clips we generate with a TTS model (known text, so
+   it's scored automatically), and whether a spoken request produces a correct tool call.
+2. **Pipecat + Silero VAD + whisper.cpp + Kokoro around Groot**: the same clips and the same
+   measurements, plus the cost to Groot's speed of whatever the speech parts take from it.
+3. Write it up as an "audio probe", the way the [vision probe](vision-probe.md) works.
 
 ## Ideas to borrow
 
