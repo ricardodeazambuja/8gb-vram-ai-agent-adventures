@@ -199,7 +199,8 @@ ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
 - **LFM3-VL-2B** — the broken record. The same backbone plus vision, the same chat template, and
   0/18. In 14 attempts it got stuck running one command over and over until the 20-minute
   timeout (769 times out of 772 calls, once); LFM3-1.7B never repeated one more than 25 times.
-  The vision training cost it the agent skills. Use it as an eye, not as an agent.
+  Its card says as much: not recommended for coding or multi-turn conversations. Use it as an
+  eye, not as an agent.
 
 The run-by-run notes, with transcript paths and quotes, are in
 [`bench/results/notes.md`](../bench/results/notes.md).

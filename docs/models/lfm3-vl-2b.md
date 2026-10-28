@@ -19,7 +19,9 @@
 The vision member of **Liquid AI**'s LFM3 family (Oct 2026, LFM Open License v1.0: commercial use
 only under $10M revenue). [LFM3-1.7B](lfm3-1.7b.md)'s tri-hybrid text model plus an image encoder;
 it thinks before answering and is trained for object grounding (boxes). Video input exists in the
-model but isn't in llama.cpp yet.
+model but isn't in llama.cpp yet. The card is clear about its scope: on-device visual tasks, and
+"not recommended for coding, multi-turn conversations, or complex reasoning" (its one agentic
+benchmark, MM-ToolSandbox, scores 42.5).
 
 ## Install & run
 
@@ -62,8 +64,11 @@ running one command over and over: the books scraper re-ran the same `curl | gre
 and one feature attempt repeated a command 769 times out of 772 calls. LFM3-1.7B never repeated a
 command more than 25 times. The four attempts that finished did it badly too: the bug fix
 patched one comparison, ran a test file that defines tests but never calls them, saw no output
-and declared "the tests pass" (17/27 hidden tests). The vision training seems to have cost it
-the agent skills.
+and declared "the tests pass" (17/27 hidden tests). That's what the card warns about (see
+above). We checked that the harness isn't to blame: the server ran it text-only, the same
+llama.cpp build and chat template as LFM3-1.7B, identical GGUF settings apart from the stated
+context length, nothing truncated, and the loops start long before pi first compacts the
+conversation (feature run 2: call 3, at ~3K tokens).
 
 ## Security audit
 
