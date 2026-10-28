@@ -26,7 +26,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25  (default: qwen36)
+#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -293,8 +293,40 @@ case "$QMODEL" in
     _batch=2048
     _topp=1.0; _topk=50; _rpen=1.05
     _temp=0.1 ;;
+  lfm3)
+    # LiquidAI LFM3-1.7B: dense tri-hybrid, 24 layers (13 gated short convolutions, 5 sliding-window
+    # + 6 global attention), so the KV cache is small. Post-trained for agent harnesses (pi
+    # among them). 256K context on the card; 128K here like the other agents. Architecture
+    # lfm3 is in upstream llama.cpp since PR #31252 (2026-10-27), hence vendor/llama.cpp-lfm3.
+    # Sampling: the card's "general" preset (temp 0.1, top-k 50, repeat-penalty 1.1).
+    # See docs/models/lfm3-1.7b.md.
+    KIND=dense
+    _dir="$REPO_ROOT/models/lfm3-1.7b"
+    _model="$_dir/LFM3-1.7B-Q8_0.gguf"
+    _mmproj=
+    ALIAS=lfm3-1.7b
+    _ngl=99; _ctx=131072; _minp=0
+    _topp=1.0; _topk=50; _rpen=1.1
+    _kv=q8_0
+    _bin="$REPO_ROOT/vendor/llama.cpp-lfm3/build/bin/llama-server"
+    _ncmoe=
+    _temp=0.1 ;;
+  lfm3vl)
+    # LiquidAI LFM3-VL-2B: the LFM3 1.7B backbone + an in-house vision encoder (video input is
+    # not in llama.cpp yet). Small enough to keep the projector on the GPU. Same sampling as lfm3.
+    KIND=dense
+    _dir="$REPO_ROOT/models/lfm3-vl-2b"
+    _model="$_dir/LFM3-VL-2B-Q8_0.gguf"
+    _mmproj="$_dir/mmproj-LFM3-VL-2B-F16.gguf"
+    ALIAS=lfm3-vl-2b
+    _ngl=99; _ctx=32768; _minp=0
+    _topp=1.0; _topk=50; _rpen=1.1
+    _kv=q8_0; _mmgpu=1
+    _bin="$REPO_ROOT/vendor/llama.cpp-lfm3/build/bin/llama-server"
+    _ncmoe=
+    _temp=0.1 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"

@@ -10,7 +10,7 @@
 > | Generation | **39.5 tok/s** (42 tok/s at batch 512) |
 > | Prompt processing | **887 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 2.3K–3.0K tokens |
-> | [pibench](../pibench.md) | not run yet (waiting for the sandbox firewall) |
+> | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), 3.1 min median per run |
 > | [Vision probe](../vision-probe.md) | 74% overall: OCR and CAD fine, boxes poor |
 > | [Security audit](../security.md) | clean |
 > | Launch | `QMODEL=groot bash scripts/start-qwen.sh` |
@@ -101,6 +101,11 @@ format. It answers in pixels as asked, with x roughly right and y shifted and st
 unevenly, so few boxes reach IoU 0.5. Qwen3.6, its parent, scores 100% on the same boxes, so the
 pruning or post-training cost it some spatial precision. Median 49 s per image.
 
+**[pibench](../pibench.md): 18/18 solved**, 100% of hidden tests, median **3.1 min** per run
+(the fastest of the perfect scores: Flint 4.3, Gemma 4.8), 5.2K output tokens per run. Not one
+hidden test failed in 18 attempts. The slowest chore was the books scrape (3.6–7.7 min: it
+visits every book page). Run at `NCMOE=27` (see Gotchas).
+
 ## Security audit
 
 `utils/audit-gguf.py`, before it was ever loaded ([security.md](../security.md)):
@@ -120,7 +125,9 @@ pruning or post-training cost it some spatial precision. Median 49 s per image.
 - Its template keeps all past reasoning in the prompt, so long agent sessions fill the context
   faster than with Qwen3.6.
 - Don't trust its bounding boxes.
-- `NCMOE=25` leaves ~0.47 GB of VRAM; if your desktop uses more, go to 26 or 27.
+- `NCMOE=25` leaves ~0.47 GB of VRAM; if your desktop uses more, go to 26 or 27. During pibench,
+  with Firefox holding ~185 MB of VRAM, 25 ran out of memory at load and 26 crashed on the first
+  request (cuBLAS workspace); 27 ran all 18 attempts.
 
 ## Knobs
 

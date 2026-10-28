@@ -10,7 +10,7 @@
 > | Generation | **31.5 tok/s** (32.4 tok/s at batch 512) |
 > | Prompt processing | **~940 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 3.1K–3.3K tokens |
-> | [pibench](../pibench.md) | not run yet (waiting for the sandbox firewall) |
+> | [pibench](../pibench.md) | 10/18 solved (86% of hidden tests), 4.2 min median per run |
 > | Vision | none (text only) |
 > | [Security audit](../security.md) | clean |
 > | Launch | `QMODEL=lfm25 bash scripts/start-qwen.sh` |
@@ -108,6 +108,21 @@ Groot.
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **3,290 and 3,071 tokens**: as wordy as Qwen3.6 (3,558).
+
+**[pibench](../pibench.md): 10/18 solved**, 86% of hidden tests, median 4.2 min per run, 6.7K
+output tokens. Perfect on the feature, the JavaScript page and (2 of 3) the CLI and the login,
+and two clean zeros, each the same mistake three times:
+
+- 🐛 **bug fix, 0/3**: it fixed the two reported bugs and stopped. The parser still accepts
+  `5x`, `abc` and `1h 2` (22–25 of 27 tests), so the bugs nobody reported stayed.
+- 📚 **books, 0/3**: every run got prices, stock and UPCs but **mangled the titles**: it read the
+  UTF-8 pages as Latin-1 (`Noahâ\x80\x99s Ark`) and left HTML entities in (`It&#39;s`). It
+  printed those titles each time and walked past them. One run also stored "In stock" as the
+  stock count. The slowest run took 20 minutes and 70 tool calls.
+
+Same lesson as the rest of the [pibench](../pibench.md) field: it runs its code, but doesn't read
+what comes out. (Run with a concurrent llama.cpp build and downloads on the same laptop, so the
+times may be a little high.)
 
 ## Security audit
 

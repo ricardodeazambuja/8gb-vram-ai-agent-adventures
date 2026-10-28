@@ -24,6 +24,8 @@
 #   NCMOE      if set to N, keep only the first N layers' experts on CPU and put
 #              the rest on the GPU (faster, uses more VRAM). Empty = all on CPU.
 #   HOST/PORT  bind address                   (default: 127.0.0.1 / 8080)
+#   ALIAS      model name the server reports    (default: gemma-4-26b-a4b-qat; set it
+#              when MODEL is another GGUF, e.g. a fine-tune)
 #
 #   Sampling defaults (server-wide; a client request can still override per-call).
 #   Defaults follow unsloth's Gemma 4 recommendation (https://unsloth.ai/docs/models/gemma-4/qat):
@@ -64,6 +66,7 @@ source "$REPO_ROOT/scripts/_banner.sh"
 
 ENV_NAME="${ENV_NAME:-llamacpp}"
 MODEL="${MODEL:-$REPO_ROOT/models/gemma4-26b-a4b-qat/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf}"
+ALIAS="${ALIAS:-gemma-4-26b-a4b-qat}"
 # Auto-detect: use the locally-built CUDA binary if present, else fall back to
 # Vulkan (zero-build path for non-NVIDIA / unbuilt machines). Override with BACKEND=.
 CUDA_BIN="${CUDA_BIN:-$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server}"
@@ -204,7 +207,7 @@ echo
 
 exec "${RUN[@]}" "$SERVER_BIN" \
   -m "$MODEL" \
-  --alias gemma-4-26b-a4b-qat \
+  --alias "$ALIAS" \
   "${DEVICE_ARGS[@]}" \
   "${NGL_ARGS[@]}" \
   "${MOE_ARGS[@]}" \
