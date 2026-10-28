@@ -91,11 +91,44 @@ One rebuild covers this and the RPATH chore below.
 | [LFM3-Audio-2B](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) / [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF) | speech in and out (18 languages), tool calls from voice; Omni adds images and video | Outside what we measure today; a voice front-end for pi would be a new chore. Later. |
 | [d1-2B](https://huggingface.co/LiquidAI/d1-2B-GGUF) / [d1-Omni-2B](https://huggingface.co/LiquidAI/d1-Omni-2B-GGUF) | **decision models** like Clef: calibrated answers in one pass, plus spans, boxes and quantity intervals | A 1.1 GB alternative to Clef-Flash; test them side by side. The card doesn't say how llama.cpp serves it (`/v1/systemone` like Clef?): check before downloading. |
 
+## Ideas to borrow
+
+### 🔬 Local autoresearch ([conglu1997/local-autoresearch](https://github.com/conglu1997/local-autoresearch), MIT)
+
+A local model improves a small program one experiment at a time: it gets the best solver so far
+and a direction (refine, try another approach, simplify, question an assumption), returns a new
+`solver.py`, and a runner scores it and keeps it if it wins. Built around
+[Flint](models/flint.md), which is already in our lineup. Results on Macs: circle packing +21%,
+factory scheduling −26% makespan, bike-demand RMSLE −31% (−9% on held-out data). Eight workers
+sharing one llama-server with 8 slots ran 2–2.5× more experiments per hour than one worker and
+ended ahead in 5 of 6 pairs. The gain came from throughput, not from better individual attempts.
+
+Why here: a **new kind of benchmark**. pibench asks "can it finish a chore?"; this asks "how much
+does it improve a score in N hours?", which rewards speed and steady, valid code. Run the same
+task with Flint, Groot, LFM2.5 and Qwen3.6 and compare the curves.
+
+What it needs before it runs here:
+- **A Linux sandbox.** Candidates are model-written code. Upstream isolates them with macOS
+  `sandbox-exec` (no network, no fork, writes only to a temp dir, 15 CPU s / 25 wall s) and
+  refuses to run elsewhere. Port `runner/evaluate.py` to the same `docker run --network none
+  --read-only --cap-drop ALL ...` that `scripts/qwen-codecheck.py --sandbox` uses, and
+  `runner/resources.py` (macOS `libproc` memory/swap guard) to `/proc` + PSI. Run nothing
+  before that.
+- **Fewer workers.** Eight slots × 64K context is a 48 GB Mac's budget. Here: 2–4 slots and a
+  smaller context, then measure whether the extra slots still buy throughput when the experts
+  live in RAM.
+- Use it as a pinned, reviewed checkout under `vendor/`, not `pip install` from the repo.
+
 ## Chores
 
 - **Rebuild `vendor/flint-llama.cpp` at a commit after 2026-10-27** (LFM3 support), then re-run
   the speed tests of the models it serves to check nothing moved. Also fixes: its `llama-server` has an RPATH into the
   `GitStuff/Gemma4` checkout this repo was copied from. The libraries there are byte-identical
   today, but deleting or rebuilding that checkout would break or silently change this one.
+- **`audit-gguf.py`: decode `\x` escapes before scanning templates.** llama.cpp's Jinja now
+  understands `"\x63\x75\x72\x6c"` (= `curl`), so a template can spell injected text in hex and
+  slip past the suspicious-text patterns. `\x` covers only U+0000–U+00FF (control characters,
+  soft hyphen), not tag or bidi characters. Decode string literals, then scan; flag any `\x`
+  that decodes to a non-printable character. Seen in local-autoresearch's llama.cpp patch.
 - **Groot's default `NCMOE=25`** leaves ~0.45 GB of VRAM; with a browser open it failed to load once
   and ran out of memory on a first request at 26. Consider 26–27 as the default.
