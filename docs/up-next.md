@@ -116,8 +116,8 @@ One rebuild covers this and the RPATH chore below.
 
 Goal: a local agent you can talk to, which answers out loud and can still use tools. Two ways
 to build one, and one hybrid. Checked on 2026-10-28 against the GitHub and Hugging Face APIs
-(licences, last release); nothing here has been downloaded or run yet, and every piece goes
-through the [security routine](security.md) first.
+(licences, last release). Only LFM3-Audio has been downloaded and run so far (results below);
+every piece goes through the [security routine](security.md) first.
 
 The constraint is the GPU: a good agent model (Groot, Flint, Gemma) already takes ~7 GB of the
 8, so in a pipeline the speech parts run on the CPU, or the agent model gives up some layers.
@@ -151,6 +151,23 @@ The agent stays a model we've already measured on [pibench](pibench.md); speech 
 | [Ultravox v0.5 (Llama 3.2 1B)](https://huggingface.co/ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF) | MIT | Speech in, text out; repo quiet since Dec 2025. |
 | [Moshi](https://github.com/kyutai-labs/moshi) / [Kyutai STT](https://huggingface.co/kyutai/stt-1b-en_fr) + [TTS](https://huggingface.co/kyutai/tts-1.6b-en_fr) | Apache 2.0 / CC-BY-4.0 | Full duplex (listens while it talks); its own Rust/PyTorch stack, not llama.cpp. English and French. |
 | [Qwen3-Omni-30B-A3B](https://huggingface.co/ggml-org/Qwen3-Omni-30B-A3B-Instruct-GGUF) | Apache 2.0 | The strong one; a 30B MoE, so experts in RAM like Qwen3.6, plus audio towers. Possible, not quick. |
+
+**First test of LFM3-Audio-2B (2026-10-28, Q8_0 + F16 projector, `vendor/llama.cpp-lfm3`
+@`8ca4060`, all on the GPU in 3.3 GB).** Audited clean first ([security.md](security.md)). Test
+audio was made by the model itself (`llama-tts`), so the text is known and scoring is automatic:
+
+| Test | Result |
+|---|---|
+| Text to speech (`llama-tts`, female and male voices) | 3.4–5.4 s of speech in 2.5–2.9 s, faster than real time |
+| Speech to text (llama-server chat API, "Perform ASR in English.") | 6/6 sentences right word for word; the raw WER is 10% only because it writes numbers as digits ("7.30", "8GB"). 0.2 s a clip |
+| Spoken request → tool call (3 tools offered) | 3/3 right: `get_weather(city="Paris")`, `set_timer(minutes=10)`, `send_message(to="Maria", text="I'll be late")`, 0.2–0.3 s each |
+| Spoken question with tools offered but none fitting | **miss**: it called `get_weather` with an empty city instead of answering; without tools it answers "312 divided by 4 equals 78." Too eager with tools |
+| **Live conversation over `/v1/realtime`** (audio streamed at real-time pace, 100 ms chunks) | **first audio back 0.13–0.17 s after the end of the question**; a full spoken reply (3–9 s of speech) generated in 0.7–1.9 s. Its replies, transcribed back, matched what it meant, with two slips ("WhatsApp" for "website", "311" for "312") |
+
+So the speech-native route works on this laptop today, with latency well under a human pause.
+In this setup it has no tools over `/v1/realtime`, so it politely refuses ("I can't check the
+weather…"). Next: tools over the realtime endpoint, recorded human speech instead of its own
+voice, and the hybrid below.
 
 ### C. Hybrid
 

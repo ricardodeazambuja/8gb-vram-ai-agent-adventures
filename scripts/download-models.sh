@@ -34,6 +34,7 @@
 #            Gemma 4 26B post-trained to think less (docs/up-next.md)
 #   lfm3     LFM3-1.7B Q8_0 (LiquidAI, ~1.9 GB) — tri-hybrid 1.7B for agents; needs llama.cpp >= 2026-10-27
 #   lfm3vl   LFM3-VL-2B Q8_0 (LiquidAI, ~1.9 GB + 0.4 GB vision)
+#   lfm3audio LFM3-Audio-2B Q8_0 (LiquidAI, ~1.9 GB + 0.6 GB audio): speech in and out
 #   d1       d1-2B Q8_0 (LiquidAI, ~1.9 GB) — decision model
 #   eg2      EmbeddingGemma 2 Q8_0 (ggml-org, ~0.3 GB) — embeddings
 #   clefflash Clef-Flash Q4_K_M (ggml-org, ~6.7 GB) — Cloudflare decision model (/v1/systemone)
@@ -52,7 +53,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | d1 | eg2 | clefflash)
+#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -87,6 +88,7 @@ MODELS=(
   "clefflash|ggml-org/Clef-Flash-GGUF|6e2a164d70aae2af7fce86005da3f91805565b1d|clef-flash|Clef-Flash-Q4_K_M.gguf:eef2968c238a80d49d340430f22410ea3db9934ad1c6fdb233a503cbf9a9b54e"
   "lfm3|LiquidAI/LFM3-1.7B-GGUF|b3f2ae5d73cd3c91bf40e8ba752c648aa05dffdf|lfm3-1.7b|LFM3-1.7B-Q8_0.gguf:8f6b24182258205e9e01e21f1f24a1f208c1e8115578825d202ce39976af20b6"
   "lfm3vl|LiquidAI/LFM3-VL-2B-GGUF|7c3b4a43c9023e80bf234fec5e826a3365c8dda8|lfm3-vl-2b|LFM3-VL-2B-Q8_0.gguf:e138e54189a751d90ea8c0b236360490613ecd465d28d68fa6094d3db7fa6727 mmproj-LFM3-VL-2B-F16.gguf:1d8e6e58eefc093e09d6332f081516e1ddbd5b35cfca7f35463fb270db230b1e"
+  "lfm3audio|LiquidAI/LFM3-Audio-2B-GGUF|fcfae9027c00a6f3f872c48a841cfeb77e2b5a1c|lfm3-audio-2b|LFM3-Audio-2B-Q8_0.gguf:d4e36902ba8f0ee7b333596030a59d650f88ac76660b4d9ba5ff77c3c2258fc0 mmproj-LFM3-Audio-2B-F16.gguf:bd0fce0670c96e405a753f996701dee6568bc6a1318a80091d74fb58f7510d79"
   "d1|LiquidAI/d1-2B-GGUF|63be75e6586882defeb706ed4bda812d90256a6d|d1-2b|d1-2B-Q8_0.gguf:073313d92b53b0ac8193db6e906cb3c78a98183d244b15b7b8f5426115c6738c"
   "dflash|z-lab/Qwen3.8-27B-DFlash2-GGUF|2d9571f8ce46e151f61c6499c99dee6079e1d610|qwen38-27b-gsq|Qwen3.8-27B-DFlash2-Q4_K_M.gguf:1a25c56858e1ebe93f2718ac1d49d1151f9323325c1bbfd6209370f4db131ebd"
 )
@@ -150,7 +152,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | d1 | eg2 | clefflash)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash)"; FAIL=1; }
 done
 
 exit "$FAIL"
