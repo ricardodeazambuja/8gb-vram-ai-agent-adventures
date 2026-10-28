@@ -8,8 +8,10 @@ before it runs, then gets a [model page](models/) and moves into the README line
 
 | What | Status |
 |---|---|
-| [pibench](pibench.md) for [Groot](models/groot-19b-a3b.md) and [LFM2.5](models/lfm2.5-24b-a2b.md) | running (both at `NCMOE=27`, for VRAM headroom) |
-| [Ornith-1.5-35B-A3B](https://huggingface.co/ornith-ai/Ornith-1.5-35B-A3B-GGUF) | downloaded, audited clean; its experts need ~18 GB of RAM, so it waits for a session with the browser closed |
+| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | speed, code check and vision done (97%); pibench running |
+| ThinkingCap Gemma 4 26B, Clef-Flash, LFM3-1.7B, LFM3-VL-2B, d1-2B, EmbeddingGemma 2 | downloaded and audited clean ([security.md](security.md)); queued for speed, code check, pibench / vision |
+
+Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18).
 
 ## Models to try
 
@@ -121,7 +123,7 @@ What it needs before it runs here:
 
 ## Chores
 
-- **A llama.cpp build after 2026-10-27** for LFM3 (building in `vendor/llama.cpp-lfm3`). Later:
+- **A llama.cpp build after 2026-10-27** for LFM3: built in `vendor/llama.cpp-lfm3` (upstream `8ca4060`). Later:
   move the other upstream models to it and re-run their speed tests to check nothing moved.
   Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
   builds there serve both.
