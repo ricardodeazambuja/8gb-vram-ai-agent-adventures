@@ -86,8 +86,9 @@ start_server() {  # start_server KEY — launch on the bridge address, wait unti
       (cd "$REPO_ROOT" && BACKEND=cuda CTX=65536 NCMOE=20 KVQUANT=q8_0 HOST=$GW \
         setsid bash scripts/run-server.sh >>"$SERVER_LOG" 2>&1 &) ;;
     tcgemma)
-      # bottlecapai's ThinkingCap fine-tune of the same model, same settings as gemma26b.
-      (cd "$REPO_ROOT" && BACKEND=cuda CTX=65536 NCMOE=20 KVQUANT=q8_0 HOST=$GW \
+      # bottlecapai's ThinkingCap fine-tune of the same model. Its IQ4_XS file keeps the non-expert
+      # tensors at higher precision (2.6 GB vs 1.4 GB), so 3 more layers' experts go to RAM.
+      (cd "$REPO_ROOT" && BACKEND=cuda CTX=65536 NCMOE=23 KVQUANT=q8_0 HOST=$GW \
         MODEL="$REPO_ROOT/models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf" \
         ALIAS=thinkingcap-gemma-4-26b-a4b setsid bash scripts/run-server.sh >>"$SERVER_LOG" 2>&1 &) ;;
     *)
