@@ -88,6 +88,7 @@ copy-paste commands.
 | [The graveyard](docs/graveyard.md) | Things we tried that didn't make the cut, and why |
 | [Troubleshooting](docs/troubleshooting.md) | Every way this went wrong for us, and the fix |
 | [Security](docs/security.md) | What a stranger's GGUF can hide, and the audit every new model gets before it runs |
+| [Up next](docs/up-next.md) | Models and chores waiting their turn |
 | [Model pages](docs/models/) | One page per model: install, run, official and measured numbers, quirks |
 | [`scripts/README.md`](scripts/README.md) | Every script and knob |
 | [`bench/README.md`](bench/README.md) | Running the benchmarks yourself |
