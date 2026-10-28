@@ -30,6 +30,7 @@ Two health warnings before the numbers:
 | [Dory1.0-4B](models/dory1.0-4b.md) | dense 4B, looped | Q5_K_M | 64K (128K ³) | 29.3 t/s | 852 t/s | not run | text only | `scripts/start_dory.sh` |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | dense 4B | Q8_0, 4.4 GB | 108K | 48–50 t/s | 1,450–1,620 t/s | 14/18 | text only | `scripts/start_spark.sh` |
 | [LFM3-1.7B](models/lfm3-1.7b.md) | dense 1.7B, conv + attention | Q8_0, 1.85 GB | 128K | **106 t/s** | **4,802 t/s** | 12/18 | text only | `QMODEL=lfm3 scripts/start-qwen.sh` |
+| [LFM3-VL-2B](models/lfm3-vl-2b.md) | dense 2B + vision | Q8_0, 1.85 GB + projector | 32K | 106 t/s | 4,875 t/s | not run | 91% | `QMODEL=lfm3vl scripts/start-qwen.sh --image` |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | dense 8B (4B eff.) | Q4_K_M, 6.2 GB | 64K | 52 t/s | 1,531 t/s | 7/18 | text only | `scripts/start_e4b.sh` |
 
 ¹ Processing a ~14–17K-token prompt, which is what a coding agent's first turn costs. "—" = not

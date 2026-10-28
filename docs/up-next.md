@@ -8,7 +8,8 @@ before it runs, then gets a [model page](models/) and moves into the README line
 
 | What | Status |
 |---|---|
-| Clef-Flash, LFM3-VL-2B, d1-2B, EmbeddingGemma 2 | downloaded and audited clean ([security.md](security.md)); queued for speed, code check, pibench / vision |
+| LFM3-VL-2B | vision probe **91%** at 9 s per image, the best boxes yet (IoU 0.93–0.94 in 0–1000 format); [page](models/lfm3-vl-2b.md) |
+| Clef-Flash, d1-2B, EmbeddingGemma 2 | first smoke tests passed (below); the real measurements are still to do |
 
 Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18);
 [Ornith](models/ornith-1.5-35b-a3b.md) (14/18, vision 97%) and
@@ -34,6 +35,10 @@ enough to share the GPU (or run on the CPU). llama.cpp: arch `gemma-embedding2`,
 To measure: embeddings/s on CPU and GPU while a big model is loaded; retrieval quality on this
 repo (find the file that answers a question) and on the vision-probe images; does Q8_0 match BF16.
 
+**Smoke test (2026-10-28, `vendor/llama.cpp-lfm3`, Q8_0, all on the GPU, 1.5 GB):** 768-d vectors;
+5 of 6 toy queries found the right passage among 8 (the miss was a near tie, 0.678 vs 0.674);
+256 short passages embedded in 0.9 s (280/s).
+
 ### ⚖️ Clef / Clef-Flash (Cloudflare, Apache 2.0)
 
 [`Cloudflare/clef-flash`](https://huggingface.co/Cloudflare/clef-flash) (Qwen3.5-9B backbone) and
@@ -54,6 +59,19 @@ generation-bound. The dense 27B, hopeless as a chat model here (2.5 tok/s, see t
 transcripts, routing a request to the right local model, "is this tool call safe?".
 
 To measure: decisions/s and latency for both sizes; agreement with our own pibench grading.
+
+**Smoke test (2026-10-28, `/v1/systemone` on `vendor/llama.cpp-lfm3`, all on the GPU):** 12
+labelled requests, routing a customer message (billing / shipping / technical), "is the customer
+angry?", and "is this shell command safe for an agent to run?" (`rm -rf ~/`, `curl … | sh`,
+`tar ~/.ssh | curl -T`, against `ls`, `git diff`, `grep`):
+
+| Model | VRAM | Right | Angry? | Median latency | Confidence on the right answer |
+|---|---:|---:|---:|---:|---:|
+| Clef-Flash Q4_K_M (9B backbone) | 7.0 GB | 12/12 | 4/4 | 183 ms | 0.84–0.98 |
+| [d1-2B](https://huggingface.co/LiquidAI/d1-2B-GGUF) Q8_0 | 2.6 GB | 12/12 | 4/4 | **27 ms** | 0.94–1.00 |
+
+Both perfect on easy cases; d1 is 7× faster in a third of the memory. Next: harder, ambiguous
+items, and the pibench-grading agreement test.
 
 ### 🧢 ThinkingCap fine-tunes (bottlecap.ai, Apache 2.0)
 
@@ -183,5 +201,3 @@ What it needs before it runs here:
   move the other upstream models to it and re-run their speed tests to check nothing moved.
   Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
   builds there serve both.
-- **Groot's default `NCMOE=25`** leaves ~0.45 GB of VRAM; with a browser open it failed to load once
-  and ran out of memory on a first request at 26. Consider 26–27 as the default.

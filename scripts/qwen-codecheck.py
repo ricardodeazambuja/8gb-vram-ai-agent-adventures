@@ -16,6 +16,7 @@ read-only filesystem and only the saved answer mounted: the way to run it on a
 model that hasn't earned trust yet (docs/security.md).
 
 Usage:  python3 scripts/qwen-codecheck.py [--port 8080] [--out /tmp/merge_intervals.py] [--sandbox]
+                                            [--max-tokens 6000]
 """
 import argparse
 import json
@@ -79,13 +80,14 @@ def main():
     ap.add_argument("--out", default="/tmp/merge_intervals.py")
     ap.add_argument("--sandbox", action="store_true", help="run the model's code in a no-network container")
     ap.add_argument("--image", default="pibench:1", help="container image for --sandbox")
+    ap.add_argument("--max-tokens", type=int, default=6000, help="cap on the answer, reasoning included")
     ap.add_argument("--check", metavar="FILE", help=argparse.SUPPRESS)  # used inside the sandbox
     a = ap.parse_args()
     if a.check:
         check(a.check)
         return
 
-    body = {"messages": [{"role": "user", "content": PROMPT}], "max_tokens": 6000}
+    body = {"messages": [{"role": "user", "content": PROMPT}], "max_tokens": a.max_tokens}
     req = urllib.request.Request(f"http://127.0.0.1:{a.port}/v1/chat/completions",
                                  json.dumps(body).encode(), {"Content-Type": "application/json"})
     d = json.load(urllib.request.urlopen(req, timeout=1800))

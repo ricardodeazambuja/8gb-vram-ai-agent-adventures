@@ -9,7 +9,7 @@
 > | Context | **128K** here (the model does 256K) |
 > | Generation | **106 tok/s**, the fastest model here |
 > | Prompt processing | **4,800 tok/s** (15K-token prompt) |
-> | Code check | **failed twice**: still thinking when it hit the 6,000-token cap, no code |
+> | Code check | correct twice, 0/500 wrong, but needs **5.9K–6.9K tokens** (fails at the usual 6K cap) |
 > | [pibench](../pibench.md) | **12/18 solved** (88% of hidden tests), 2.2 min median per run |
 > | [Security audit](../security.md) | clean |
 > | Launch | `QMODEL=lfm3 bash scripts/start-qwen.sh` (needs the newer llama.cpp build, below) |
@@ -63,10 +63,11 @@ top-k 50, repeat-penalty 1.1). `scripts/qwen-bench.py`, single run.
 Twice [Spark](spark-x2.6-4b.md) (48–50) and [E4B](nemotron-bolt-e4b.md) (52), and a 15K-token
 prompt is read in about 3 seconds.
 
-**Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): **no answer,
-twice.** Both runs were still reasoning when they hit the check's 6,000-token cap, so no code came
-out. At 104 tok/s that's under a minute each; the cap, not the speed, ended it. Agentic work
-doesn't hit this, because pi doesn't cap a turn that low.
+**Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): at the usual
+6,000-token cap, **no answer, twice**: both runs were still reasoning when the cap hit. With
+`--max-tokens 32768` it was **correct twice**, own doctests pass, 0/500 wrong, in **5,872 and
+6,913 tokens**, the most of any model here (Qwen3.6 3.6K, Ornith 1.4–1.8K). At 105 tok/s that is
+still about a minute.
 
 **[pibench](../pibench.md): 12/18 solved**, 88% of hidden tests, median **2.2 min** per run. That
 is more than its 24B sibling LFM2.5 (10/18) and the 8B Nemotron E4B (7/18), from a model a tenth
@@ -92,7 +93,7 @@ identical to the source repo's, no hidden characters, no Jinja internals.
 
 - Needs a llama.cpp build from after 2026-10-27; older builds don't know the `lfm3` architecture.
 - It always thinks, and at length: give it a generous `max_tokens`, or you get reasoning and no
-  answer (see the code check).
+  answer (see the code check: it needs ~7K tokens for a small function).
 - Check its data. It runs its code but, like most models here, doesn't read what comes out.
 
 ## Knobs

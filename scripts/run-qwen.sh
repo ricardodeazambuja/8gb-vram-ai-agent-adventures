@@ -254,9 +254,9 @@ case "$QMODEL" in
     _ngl=99; _ctx=; _minp=0
     _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
     # Measured (docs/models/groot-19b-a3b.md): NCMOE 22 / 23 at batch 512 give 42 tok/s, 19 OOMs;
-    # batch 2048 costs ~3 tok/s but doubles prefill (393 -> 887 tok/s) and needs NCMOE 25
-    # (7.72 GB, ~0.47 GB spare).
-    _ncmoe=25
+    # batch 2048 costs ~3 tok/s but doubles prefill (393 -> 887 tok/s). NCMOE 25 fits (7.72 GB) but
+    # ran out of memory in pibench with a browser open; 27 is as fast (39.2 tok/s, 7.17 GB).
+    _ncmoe=27
     _batch=2048
     _temp=1.0 ;;
   ornith)

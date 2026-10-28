@@ -27,13 +27,14 @@ answer has to be JSON. Each model uses its own vision projector and launcher def
 | [**Qwen3.6-35B-A3B**](models/qwen3.6-35b-a3b.md) | 100% | 7% | 100% | 100% | 100% | **100%** | 44 s |
 | [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 100% | 13% | 87% | 100% | 100% | **97%** | 34 s |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | 100% | **67%** | 100% | 100% | 93% | **98%** | 38 s |
+| [LFM3-VL-2B](models/lfm3-vl-2b.md) ² | 100% | 7% | 100% | 69% | 93% | **91%** | 9 s |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | 100% | 21% | 64% | 100% | 100% | **91%** | 115 s |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | 100% | 7% | 100% | 61% | 96% | **89%** | **6 s** |
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | 100% | 13% | 87% | 67% | 100% | **88%** | 36 s |
 | [Groot-19B-A3B](models/groot-19b-a3b.md) ¹ | 97% | 21% | 21% | 78% | 100% | **74%** | 49 s |
 
 "Overall" counts boxes in whatever coordinate format the model chose (more on that in a second).
-Measured 2026-10-23 (¹ 2026-10-26, ² 2026-10-27), one answer per image. Flint, Spark and the Nemotron E4B are text-only, so they
+Measured 2026-10-23 (¹ 2026-10-26, ² 2026-10-27/28), one answer per image. Flint, Spark and the Nemotron E4B are text-only, so they
 sat this one out.
 
 <p align="center"><img src="../bench/vision/results/overlays/gemma26b-bbox-shapes-3.png" alt="Gemma 4 26B's boxes (magenta) drawn over the true boxes (green): all six shapes overlap closely" width="560"><br><em>Gemma's boxes (magenta) over the truth (green). Not bad for a model that refused to use pixels.</em></p>

@@ -5,10 +5,10 @@
 > | | |
 > |---|---|
 > | On disk | 11.7 GB (`Q4_K_M`) + 0.9 GB vision projector |
-> | Where it lives | experts of 25 of 40 layers in RAM, everything else on the GPU (7.7 GB VRAM) |
+> | Where it lives | experts of 27 of 40 layers in RAM, everything else on the GPU (7.2 GB VRAM) |
 > | Context | **128K** |
-> | Generation | **39.5 tok/s** (42 tok/s at batch 512) |
-> | Prompt processing | **887 tok/s** (15K-token prompt) |
+> | Generation | **39–40 tok/s** (42 tok/s at batch 512) |
+> | Prompt processing | **870–890 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 2.3K–3.0K tokens |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), 3.1 min median per run |
 > | [Vision probe](../vision-probe.md) | 74% overall: OCR and CAD fine, boxes poor |
@@ -86,7 +86,9 @@ RTX 2070 Max-Q (8 GB), 32 GB RAM, q8_0 KV, flash attention on, sampling from the
 | `NCMOE=23`, batch 512 | 7.5 GB | 42.1 tok/s | 393 tok/s | ✓ |
 | `NCMOE=22`, batch 512 | 7.75 GB | 42.4 tok/s | 403 tok/s | ✓ |
 | `NCMOE=19`, batch 512 | — | — | — | **out of memory at load** |
-| **`NCMOE=25`, batch 2048 (default)** | **7.7 GB** | **39.5 tok/s** | **887 tok/s** | ✓ |
+| `NCMOE=25`, batch 2048 | 7.7 GB | 39.5 tok/s | 887 tok/s | ✓ |
+| `NCMOE=26`, batch 2048 | 7.4 GB | 40.2 tok/s | 888 tok/s | ✓ |
+| **`NCMOE=27`, batch 2048 (default)** | **7.2 GB** | **39.2 tok/s** | **871 tok/s** | ✓ |
 
 The fastest generation of any big model here (Qwen3.6 23, the distill 26, Flint 24 tok/s), and
 the fastest prompt reading.
@@ -104,7 +106,7 @@ pruning or post-training cost it some spatial precision. Median 49 s per image.
 **[pibench](../pibench.md): 18/18 solved**, 100% of hidden tests, median **3.1 min** per run
 (the fastest of the perfect scores: Flint 4.3, Gemma 4.8), 5.2K output tokens per run. Not one
 hidden test failed in 18 attempts. The slowest chore was the books scrape (3.6–7.7 min: it
-visits every book page). Run at `NCMOE=27` (see Gotchas).
+visits every book page). Run at `NCMOE=27`, now the default (see Gotchas).
 
 ## Security audit
 
@@ -125,9 +127,9 @@ visits every book page). Run at `NCMOE=27` (see Gotchas).
 - Its template keeps all past reasoning in the prompt, so long agent sessions fill the context
   faster than with Qwen3.6.
 - Don't trust its bounding boxes.
-- `NCMOE=25` leaves ~0.47 GB of VRAM; if your desktop uses more, go to 26 or 27. During pibench,
+- The default is `NCMOE=27` (0.6 GB of VRAM spare) and costs nothing in speed. During pibench,
   with Firefox holding ~185 MB of VRAM, 25 ran out of memory at load and 26 crashed on the first
-  request (cuBLAS workspace); 27 ran all 18 attempts.
+  request (cuBLAS workspace); 27 ran all 18 attempts. On a lean desktop 25–26 work too.
 
 ## Knobs
 
@@ -135,7 +137,7 @@ Env vars for `scripts/start-qwen.sh` / `scripts/run-qwen.sh` with `QMODEL=groot`
 
 | Knob | Default | What it does |
 |---|---|---|
-| `NCMOE` | 25 | layers whose experts stay in RAM (19 runs out of VRAM; 22–23 at batch 512) |
+| `NCMOE` | 27 | layers whose experts stay in RAM (25–26 fit with less headroom; 19 runs out of VRAM; 22–23 at batch 512) |
 | `BATCH` / `UBATCH` | 2048 / 2048 | 512 gives ~42 tok/s but half the prompt speed |
 | `CTX` | 131072 | context window |
 | `KVQUANT` | q8_0 | KV cache type |
