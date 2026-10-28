@@ -52,6 +52,24 @@ transcripts, routing a request to the right local model, "is this tool call safe
 
 To measure: decisions/s and latency for both sizes; agreement with our own pibench grading.
 
+### 🧢 ThinkingCap fine-tunes (bottlecap.ai, Apache 2.0)
+
+[bottlecapai](https://huggingface.co/bottlecapai) post-trains popular models to **think less
+for the same answers**. On their Gemma 4 26B card: 39% fewer thinking tokens on average (14–69%
+by benchmark), accuracy 75.0 vs the base's 75.2, and far fewer runaway traces (truncated
+4.35% → 0.72%, looping 3.64% → 0.76%). At 20–40 tok/s, a third fewer tokens is a third less
+waiting. Weights only: every other file matches the base model.
+
+| Model | GGUF that fits | Fit here | Why test it |
+|---|---|---|---|
+| [ThinkingCap gemma-4-26B-A4B-it](https://huggingface.co/bottlecapai/ThinkingCap-gemma-4-26B-A4B-it-GGUF) | IQ4_XS 13.6 GB (Q4_K_M 17.0) + mmproj 1.2 | like our [Gemma 4 26B](models/gemma4-26b-a4b.md) | **First pick.** A clean A/B against a model we know well (18/18 on pibench): same score, shorter jobs? Ours is Google's QAT build (UD-Q4_K_XL); theirs starts from the regular one, so compare IQ4_XS vs QAT and keep that in mind. |
+| [ThinkingCap Nemotron-3.5-Lightning-30B-A3B](https://huggingface.co/bottlecapai/ThinkingCap-NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF) | Q4_K_M 25.4 GB (only that or f16) | experts in RAM; bigger than Ornith, so browser closed | A new family for the lineup; LFM2.5's card benchmarks against its base. |
+| [ThinkingCap Qwen3.8-27B RCO-4.2bpw](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF-RCO-4.2bpw) | 14.3 GB + mmproj 0.9 | dense 27B, mostly on the CPU | Low priority: the plain 27B ran at 2.5 tok/s ([graveyard](graveyard.md)); shorter thinking won't rescue that. Check that llama.cpp reads RCO first. |
+| ThinkingCap Qwen3.8-Flash-Next | ≥ 100 GB at IQ4_XS | no | Same reason as the base in the graveyard. |
+
+To measure (Gemma first): thinking tokens and wall time per pibench job against the base, plus
+the code check's token count; same sampling for both.
+
 ## Chores
 
 - **Rebuild `vendor/flint-llama.cpp`**: its `llama-server` has an RPATH into the
