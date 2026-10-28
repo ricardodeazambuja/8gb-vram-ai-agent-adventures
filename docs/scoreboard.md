@@ -20,6 +20,7 @@ Two health warnings before the numbers:
 | [Flint](models/flint.md) | MoE, 2.5B active | UD-Q3_K_XL, 18.5 GB | 128K | 24.3 t/s | 542 t/s | **18/18** | text only | `scripts/start_flint.sh` |
 | [Groot-19B-A3B](models/groot-19b-a3b.md) | MoE, 3B active | Q4_K_M, 11.7 GB | 128K | **39.5 t/s** | **887 t/s** | **18/18** | 74% | `QMODEL=groot scripts/start-qwen.sh` |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) | conv/attention MoE, 2B active | Q4_0 (QAD), 13.6 GB | 128K | 31.5 t/s | ~940 t/s | 10/18 | text only | `QMODEL=lfm25 scripts/start-qwen.sh` |
+| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | MoE, 3B active | Q4_K_M, 21.7 GB | 128K | ~31 t/s | ~490 t/s | 14/18 | 97% | `QMODEL=ornith scripts/start-qwen.sh` |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | hybrid MoE, 9B active | IQ2 (QAD), 22.0 GB | 128K | 14.0 t/s | 310 t/s | 15/18 | 91% | `scripts/start_bolt.sh` |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | dense 27B, ternary | PTQ1_0, 5.95 GB | 16K | 27.0 t/s | 269 t/s | 14/18 | 98% | `scripts/start_bonsai2.sh` |
 | [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | dense 12B | Q4_K_M + turbo3 KV | 16K | 28.3 t/s | — | not run | not run | `scripts/start-turbo.sh` |

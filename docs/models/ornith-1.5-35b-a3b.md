@@ -10,7 +10,7 @@
 > | Generation | **~31 tok/s** (32–33 tok/s with one more layer on the GPU) |
 > | Prompt processing | ~490–510 tok/s (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, **1.4K–1.8K tokens** |
-> | [pibench](../pibench.md) | running |
+> | [pibench](../pibench.md) | 14/18 solved (94% of hidden tests), **2.2 min** median per run, the quickest of the big models |
 > | [Vision probe](../vision-probe.md) | **97%** overall: OCR, understanding and CAD perfect, boxes 87% |
 > | [Security audit](../security.md) | clean |
 > | Launch | `QMODEL=ornith bash scripts/start-qwen.sh` |
@@ -111,6 +111,24 @@ format rather than the pixels asked for, and score 87% that way: two images perf
 0.90), one partly (3 of 5 boxes, after 4,900 tokens of deliberating). Median 34 s and 436 tokens
 per image, quicker than Qwen3.6 (44 s). Unlike [Groot](groot-19b-a3b.md), the post-training kept
 its eyes.
+
+**[pibench](../pibench.md): 14/18 solved**, 94% of hidden tests, median **2.2 min** per run and
+2.7K output tokens: the fewest tokens of any model we've run, and the quickest jobs of any
+big model (only the 8B E4B, at 2.0 min, was quicker). The bug fix, the CLI and
+the JavaScript page were 3/3 (the CLI in under a minute, three tool calls). The four misses:
+
+- 📚 **books, 1/3.** Once it read the UTF-8 pages as Latin-1 (`Noahâ\x80\x99s Ark`), like
+  [LFM2.5](lfm2.5-24b-a2b.md). Once it **made up the site's URL scheme**
+  (`/index.html?category=travel-2&page=N`) after looking at the real one; the site ignores the
+  query and serves the home page, which always has a "next" link, so its scraper paged forever
+  and the attempt hit the 20-minute limit.
+- 🔐 **login, 2/3.** One run scraped the public author list instead of the logged-in one.
+- 🧩 **feature, 2/3.** One run wrote the CSV with a byte-order mark (`utf-8-sig`), so the header
+  read back as `\ufeffsku`.
+
+The card's big agentic numbers didn't carry over to these chores: it lands with Bonsai 2 and
+Spark, behind its own base Qwen3.6 (16/18). Fast and decisive, and when it's wrong it's wrong
+quickly.
 
 ## Security audit
 

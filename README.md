@@ -23,6 +23,7 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Fastest job turnaround of the big ones. Thinks in haiku. |
 | 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md) | 19B MoE, 3B active | 128K | **39.5 t/s** | **18/18** | 74% | Qwen3.6 with half the experts. Fastest big model here. |
 | 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md) | 24B conv/attention MoE, 2B active | 128K | 31.5 t/s | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
+| 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md) | 35B MoE, 3B active | 128K | 31 t/s | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
 | 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 16K | 27 t/s | 14/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
 | ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md) | 4B dense | 108K | 48–50 t/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
 | 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | The fastest here. A voice-assistant model; coding isn't its day job. |

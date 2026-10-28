@@ -1,4 +1,4 @@
-# 🏋️ pibench — six chores, ten models, one very warm laptop
+# 🏋️ pibench — six chores, eleven models, one very warm laptop
 
 Published benchmarks are run by the people who made the model, on big GPUs, at full precision,
 with their own scaffolding. We wanted to know something smaller and more personal: **on this
@@ -56,15 +56,17 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | 16/18 | 98% | 3/3 | 3/3 | 3/3 | 2/3 | 2/3 | 3/3 | 2.5 min | 0 |
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | 16/18 | 96% | 2/3 | 3/3 | 3/3 | 3/3 | 3/3 | 2/3 | 3.4 min | 0 |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) ¹ | 15/18 | 93% | 2/3 | 3/3 | 3/3 | 3/3 | 1/3 | 3/3 | 6.4 min | 0 |
+| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 14/18 | 94% | 3/3 | 2/3 | 3/3 | 2/3 | 1/3 | 3/3 | 2.2 min | 0 ³ |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | 14/18 | 96% | 3/3 | 2/3 | 2/3 | 3/3 | 2/3 | 2/3 | 3.3 min | 0 |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | 14/18 | 90% | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 | 2/3 | 4.9 min | 13 of 18 attempts |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) ² | 10/18 | 86% | 0/3 | 3/3 | 2/3 | 2/3 | 0/3 | 3/3 | 4.2 min | 0 |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) ¹ | 7/18 | 78% | 1/3 | 3/3 | 0/3 | 1/3 | 0/3 | 2/3 | **2.0 min** | 0 |
 
 Measured 2026-10-23: 108 attempts, about eight hours of a laptop fan doing its best. ¹ The two
-Nemotrons ran the same night, same harness, another 36 attempts (each had one timeout). ² Groot
-and LFM2.5 ran on 2026-10-27, same harness, 36 more attempts (LFM2.5 shared the laptop with a
-llama.cpp build, so its times may be a little high). Not run: Qwen3-VL (an image model), Dory,
+Nemotrons ran the same night, same harness, another 36 attempts (each had one timeout). ² Groot,
+LFM2.5 and Ornith ran on 2026-10-27/28, same harness, 54 more attempts (LFM2.5 shared the laptop
+with a llama.cpp build, so its times may be a little high). ³ One timeout: a scraper that paged
+forever. Not run: Qwen3-VL (an image model), Dory,
 and the Gemma 12B fine-tunes.
 
 **Read with care.** Three attempts per task means a single lucky or unlucky attempt moves a cell
@@ -183,6 +185,9 @@ ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
 - **LFM2.5** — the literalist. Fixed exactly the two reported bugs and stopped (0/3), and read
   the books site's UTF-8 as Latin-1 every time (`Noahâ\x80\x99s Ark`), printing the mangled
   titles and moving on (0/3). Everything else, near perfect.
+- **Ornith** — the quick-draw. The fastest median job of the big models (2.2 min) and the fewest tokens, but it
+  guesses: once it invented the books site's URL scheme and paged forever. Its card's agentic
+  scores beat Qwen3.6 by ten points; here it finished two attempts behind.
 
 The run-by-run notes, with transcript paths and quotes, are in
 [`bench/results/notes.md`](../bench/results/notes.md).
