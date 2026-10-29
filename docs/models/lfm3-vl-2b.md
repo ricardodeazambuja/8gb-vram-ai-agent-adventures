@@ -11,6 +11,7 @@
 > | Prompt processing | **4,875 tok/s** (15K-token prompt) |
 > | [Vision probe](../vision-probe.md) | **91%** overall, **9 s** per image; boxes IoU 0.93–0.94 |
 > | [pibench](../pibench.md) | **0/18** (47% of hidden tests): loops on tool calls, unlike LFM3-1.7B (12/18) |
+> | [Visual control](../visual-control.md) | **60/60** one-picture decisions with thinking (45/60 without); grid mazes 3/8 |
 > | [Security audit](../security.md) | clean (model and projector) |
 > | Launch | `QMODEL=lfm3vl bash scripts/start-qwen.sh --image` (needs the newer llama.cpp build) |
 
@@ -70,6 +71,13 @@ llama.cpp build and chat template as LFM3-1.7B, identical GGUF settings apart fr
 context length, nothing truncated, and the loops start long before pi first compacts the
 conversation (feature run 2: call 3, at ~3K tokens).
 
+**[Visual control](../visual-control.md): where it does fit.** One picture, one tool call: read
+a gauge and open a valve, find a button and click it, stop at a red light. With thinking it got
+**60/60** (144/150 on a set of 30 scenes per kind) at under 3 s a decision; without thinking it
+still sees well but stops applying the rules (45/60). Steering a robot step by step works on open
+grids (8/8) and mostly not in mazes (3/8), and only when every step is a fresh request: given the
+conversation history, it starts copying its own previous answers.
+
 ## Security audit
 
 `utils/audit-gguf.py --ref` the source repo's chat template, before it was ever loaded
@@ -80,4 +88,5 @@ identical to the source repo's, no hidden characters, no Jinja internals; the pr
 
 - Needs a llama.cpp build from after 2026-10-27.
 - Boxes come back in 0–1000 coordinates whatever you ask for; scale them yourself.
-- Not an agent: with tools it falls into loops. Use [LFM3-1.7B](lfm3-1.7b.md) for that.
+- Not an agent: in long conversations with tools it falls into loops. Use [LFM3-1.7B](lfm3-1.7b.md)
+  for that, or give it one picture and one decision at a time ([visual control](../visual-control.md)).

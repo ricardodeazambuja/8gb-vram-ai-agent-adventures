@@ -5,8 +5,7 @@ are in `results/summary.md`; this is the why behind them. Runs from 2026-10-28.
 
 ## LFM3-VL-2B, glance v1 (one picture, one decision)
 
-These are the v1 scenes and prompts (see "A flaw of ours" at the end); the v2 numbers are in
-`results/summary.md`.
+These are the v1 scenes and prompts (see "A flaw of ours" below); v2 is further down.
 
 **Thinking off (45/60, 0.4 s a decision).** It sees well and points well, and it ignores the rules.
 
@@ -130,3 +129,22 @@ Twelve scenes per kind leave the percentages coarse, so the forced-call runs wer
   the reading usually within 5 (93 → 90, 6 → 5), the rule ignored; a few readings were far off
   (3 → 35, 12 → 45). Two picks were `no_action` stalls ("I need to identify the bottommost
   object before picking it"), one was at (6, 6).
+
+## Glance v2 (unambiguous scenes, prompts that name the tool)
+
+- **LFM3-VL-2B with thinking: 60/60** (59/60 with a forced call: one yellow light answered with
+  `stop`). The v1 click and pick misses are gone: told to "use the click tool", it uses it. So
+  the v1 "writes coordinates instead of calling" failure was mostly our prompt.
+- **LFM3-VL-2B without thinking: 45/60, 50/60 forced.** Unchanged from v1 where v1 was fair:
+  the gauge gets `report` 8 times of 12, the yellow light gets `go`. One odd, repeatable effect:
+  forcing a call fixes the traffic light (7/12 → 12/12 here, 6 → 12 in v1, 27/30 at n=30). The
+  only differences in the request are `tool_choice` and the extra `no_action` tool; we haven't
+  pinned down which one does it.
+- **Qwen3-VL-8B: 51/60, 49/60 forced, 124/150 at n=30 forced.** Click, pick and signal near
+  perfect; the misses are the same two habits as in v1. Tanks: it refills tanks that aren't low
+  (12 of 30 scenes wrong, refilling at 47–91%, sometimes all three tanks). Gauge: 12 of 30 dials
+  got `report` instead of a valve, most of them low values read as "10" and reported (9 times),
+  although 10 is under 20; twice 97 was read as 90 and reported; one 59 got `open_valve`.
+- **One pick both models miss:** scene 1, "the bottommost object". The yellow square (y 525 of
+  600) is 75 px below the red circle, and both Qwen3-VL and LFM3-VL without thinking picked the
+  red circle. A real miss this time, not an ambiguous scene; with thinking LFM3-VL gets it.

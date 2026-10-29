@@ -108,6 +108,11 @@ thinking models, which encode on the CPU and reason first):
 **[pibench](../pibench.md): not run.** The coding benchmark is for the agentic models; Qwen3-VL
 is here for its eyes.
 
+**[Visual control](../visual-control.md): 51/60** one-picture tool decisions at 1 s each (124/150
+on 30 scenes per kind). Clicks, picks and traffic lights near perfect; it refills tanks that
+aren't low and calls `report` on gauges that need a valve. Steering a robot: 8/8 open grids, 0–1/8
+mazes (it wanders in four-move cycles).
+
 ## How it behaves
 
 - **OCR is flawless**, including the blurred, rotated "scanned" invoice.

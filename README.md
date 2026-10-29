@@ -28,7 +28,7 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 16K | 27 t/s | 14/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
 | ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md) | 4B dense | 108K | 48–50 t/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
 | 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md) | 1.7B tri-hybrid | 128K | **106 t/s** | 12/18 | text only | Tiny, twice as fast as anything else here, and better at chores than models 14× its size. |
-| 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md) | 2B + vision | 32K | 106 t/s | 0/18 | 91% | 2.6 GB, 9 s an image, and the tightest boxes of any model here. An eye, not an agent: it loops on tool calls. |
+| 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md) | 2B + vision | 32K | 106 t/s | 0/18 | 91% | 2.6 GB, 9 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
 | 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
 | 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | — | 89% | Reads an invoice in 6 seconds flat. |
 | 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md) | 4B, looped | 64K | 29 t/s | — | text only | Runs its middle layers twice. Just keeps swimming. |
@@ -88,6 +88,7 @@ copy-paste commands.
 | [The scoreboard](docs/scoreboard.md) | Every number: ours, the vendors', everyone vs. Qwen3.6; how each one behaves; which one to pick |
 | [pibench](docs/pibench.md) | The agent benchmark: the chores, the sandbox, the results, what we saw in the transcripts |
 | [The vision probe](docs/vision-probe.md) | OCR, boxes, charts, counting, CAD drawings |
+| [The visual control probe](docs/visual-control.md) | Look, decide, call a tool: dials, buttons, traffic lights, a grid robot |
 | [How it fits](docs/how-it-fits.md) | The tricks that make big models fit in 8 GB, explained |
 | [The graveyard](docs/graveyard.md) | Things we tried that didn't make the cut, and why |
 | [Troubleshooting](docs/troubleshooting.md) | Every way this went wrong for us, and the fix |
