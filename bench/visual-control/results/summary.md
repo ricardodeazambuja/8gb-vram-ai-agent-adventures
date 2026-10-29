@@ -24,5 +24,6 @@
 | lfm3vl | off | auto | stateless | 3/8 | 0/8 | 1.29 | 157/318 | 50 | 10 | 0.7 s |
 | lfm3vl | on | required | stateless | 8/8 | 3/8 | 1.57 | 90/243 | 8 | 5 | 43.2 s |
 | lfm3vl | on | auto | stateless | 8/8 | 3/8 | 1.50 | 77/229 | 6 | 5 | 44.5 s |
+| qwen3vl | off | auto | history | 4/8 | 2/8 | 1.12 | 68/274 | 71 | 14 | 1.6 s |
 | qwen3vl | off | required | stateless | 8/8 | 0/8 | 1.62 | 0/278 | 73 | 3 | 0.7 s |
 | qwen3vl | off | auto | stateless | 8/8 | 1/8 | 1.80 | 0/283 | 67 | 2 | 0.7 s |

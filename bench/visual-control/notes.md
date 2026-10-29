@@ -148,3 +148,15 @@ Twelve scenes per kind leave the percentages coarse, so the forced-call runs wer
 - **One pick both models miss:** scene 1, "the bottommost object". The yellow square (y 525 of
   600) is 75 px below the red circle, and both Qwen3-VL and LFM3-VL without thinking picked the
   red circle. A real miss this time, not an ambiguous scene; with thinking LFM3-VL gets it.
+
+## Qwen3-VL-8B, grid with full history: 4/8 open, 2/8 with walls
+
+Worse than stateless (8/8 open), and for a new reason. In all five episodes that ended with
+steps without a move, it stopped **exactly one cell short of the goal** and declared victory: "The
+blue robot is now on the same cell as the green square. The task is completed." Then, with a
+fresh picture after every step showing the robot still next to the goal, it repeated the claim
+6 to 18 times in a row ("The blue robot is already on the green square, so no further moves are
+needed."). With its own earlier answer in the context it believes that over the image, the
+same trap LFM3-VL fell into (there it copied a paragraph word for word, here it rephrases).
+Stateless, it never stopped calling. In walls episode 0 it pressed `down` into a wall 14 times
+in a row. Lesson for both models: don't keep the conversation, keep the state.
