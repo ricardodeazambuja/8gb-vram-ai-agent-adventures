@@ -8,12 +8,13 @@ before it runs, then gets a [model page](models/) and moves into the README line
 
 | What | Status |
 |---|---|
-| LFM3-VL-2B | vision probe **91%** at 9 s per image, the best boxes yet (IoU 0.93–0.94 in 0–1000 format); [page](models/lfm3-vl-2b.md) |
 | Clef-Flash, d1-2B, EmbeddingGemma 2 | first smoke tests passed (below); the real measurements are still to do |
 
 Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18);
 [Ornith](models/ornith-1.5-35b-a3b.md) (14/18, vision 97%) and
 [ThinkingCap Gemma](models/thinkingcap-gemma4-26b-a4b.md) (17/18 with 47% less thinking) and [LFM3-1.7B](models/lfm3-1.7b.md) (12/18 at 106 tok/s) have pages.
+[LFM3-VL-2B](models/lfm3-vl-2b.md) is done: vision 91%, pibench 0/18, and the new
+[visual control probe](visual-control.md) (60/60 one-picture decisions with thinking).
 
 ## Models to try
 
