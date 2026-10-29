@@ -4,6 +4,9 @@
 
 | Model | Thinking | Tool call | tanks | click | pick | signal | gauge | All | Median time | Invalid calls |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| lfm3vl-n30 | off | required | 24/30 | 30/30 | 26/30 | 27/30 | 10/30 | **117/150** | 0.4 s | 0 |
+| lfm3vl-n30 | on | required | 25/30 | 30/30 | 29/30 | 30/30 | 30/30 | **144/150** | 2.7 s | 0 |
+| lfm3vl | off | auto | 12/12 | 11/12 | 11/12 | 7/12 | 4/12 | **45/60** | 0.4 s | 0 |
 
 ## grid: steer a robot to the goal, one move per step
 

@@ -110,3 +110,23 @@ said "Click the 'Help' button. Give the point in 0-1000 coordinates", and the th
 the second sentence literally ("I should not click anything else; just give coordinates."). Glance
 v2 requires the "leftmost/topmost…" object to lead by 60 px and names the tool in the prompt ("Use
 the click tool to click…"). The v1 results are kept in `results/v1/`; the tables use v2.
+
+## LFM3-VL-2B, glance v2 with 30 scenes of each kind (forced calls)
+
+Twelve scenes per kind leave the percentages coarse, so the forced-call runs were repeated with 30
+(`glance-lfm3vl-n30-*`).
+
+- **Thinking on: 144/150, median 2.7 s.** Click, signal and gauge are perfect (30/30 each), pick
+  29/30 (one pick at the wrong object), tanks 25/30. The tank misses show something the 12-scene
+  set couldn't, because none of those scenes had two low tanks: with two or three tanks to refill,
+  the reasoning plans every call ("call refill with tank "A", then refill with tank "B"") and the
+  answer carries only the first one, in 4 of 6 such scenes. In a real loop it would get the tool
+  result back and could do the next one; in one picture, one decision, it's a miss. The fifth
+  miss refilled tank B at 70%, nowhere near low.
+- **Thinking off: 117/150, median 0.4 s.** Click 30/30, pick 26/30, signal 27/30 (`go` on a green
+  light with a person on the crosswalk, all three times that came up), tanks 24/30, gauge 10/30.
+  Without thinking it **never makes more than one call**, so every scene with two or three low
+  tanks is a miss (6 of 6). The gauge is the same story as in v1: 20 of 30 answered with `report`,
+  the reading usually within 5 (93 → 90, 6 → 5), the rule ignored; a few readings were far off
+  (3 → 35, 12 → 45). Two picks were `no_action` stalls ("I need to identify the bottommost
+  object before picking it"), one was at (6, 6).
