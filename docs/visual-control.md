@@ -83,7 +83,10 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
   refill and emits only the first call.
 - **Without thinking it sees but doesn't decide.** It reads the gauge correctly and then calls
   `report` whatever the value, and says `go` on yellow lights. It also never makes more than one
-  call per answer. At 0.4 s it's fine for "where is X?", not for "what should I do?".
+  call per answer. At 0.4 s it's fine for "where is X?", not for "what should I do?". One cheap
+  fix we found: just *offering* a `no_action` tool ("call this when none of the other tools
+  should be used") takes the traffic light from 19/30 to 29/30, though it never calls it there.
+  The gauge doesn't improve.
 - **Qwen3-VL-8B (no thinking, 1 s a decision) is accurate but over-eager**: it refills tanks that are half full
   and misapplies the gauge thresholds. Click, pick and signal are near perfect.
 - **Stateless beats history for LFM3-VL.** With its own previous answers in the context it starts

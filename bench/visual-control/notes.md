@@ -138,8 +138,8 @@ Twelve scenes per kind leave the percentages coarse, so the forced-call runs wer
 - **LFM3-VL-2B without thinking: 45/60, 50/60 forced.** Unchanged from v1 where v1 was fair:
   the gauge gets `report` 8 times of 12, the yellow light gets `go`. One odd, repeatable effect:
   forcing a call fixes the traffic light (7/12 → 12/12 here, 6 → 12 in v1, 27/30 at n=30). The
-  only differences in the request are `tool_choice` and the extra `no_action` tool; we haven't
-  pinned down which one does it.
+  only differences in the request are `tool_choice` and the extra `no_action` tool, and the next
+  section separates them: it's the tool.
 - **Qwen3-VL-8B: 51/60, 49/60 forced, 124/150 at n=30 forced.** Click, pick and signal near
   perfect; the misses are the same two habits as in v1. Tanks: it refills tanks that aren't low
   (12 of 30 scenes wrong, refilling at 47–91%, sometimes all three tanks). Gauge: 12 of 30 dials
@@ -160,3 +160,21 @@ needed."). With its own earlier answer in the context it believes that over the 
 same trap LFM3-VL fell into (there it copied a paragraph word for word, here it rephrases).
 Stateless, it never stopped calling. In walls episode 0 it pressed `down` into a wall 14 times
 in a row. Lesson for both models: don't keep the conversation, keep the state.
+
+## What fixes the traffic light: the extra tool, not the forcing
+
+LFM3-VL-2B without thinking, 30 scenes per kind, three ways (`glance-lfm3vl-n30-think-off*`):
+
+| Request | 🚦 signal | yellow, no person (want `slow_down`) | person on the crosswalk (want `stop`) |
+|---|---:|---:|---:|
+| plain (`auto`) | 19/30 | 1/5 (4× `go`) | 8/15 (7× `go`) |
+| `auto` + the `no_action` tool | **29/30** | 5/5 | 14/15 |
+| forced call + `no_action` | 27/30 | 5/5 | 12/15 |
+
+Offering one more tool, "no_action: call this when none of the other tools should be used", that
+it never even calls on a traffic light, is enough. Forcing the call adds nothing. Our guess is
+that a tool whose description talks about *when not to act* makes the model weigh the rule
+instead of grabbing the most familiar action, but the gauge doesn't move (11/30 → 10/30: still
+`report` whatever the reading), so it isn't a general fix. Practical upshot: for this model
+without thinking, give it a "do nothing" tool. The rest of the scores barely change (tanks 25 →
+25, click 28 → 30, pick 27 → 25).
