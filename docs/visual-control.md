@@ -74,6 +74,7 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
 | LFM3-VL-2B | off | ✓ | history | 0/8 | 0/8 | 218/354 | 36 | 4.1 s |
 | Qwen3-VL-8B | (none) | | stateless | **8/8** | 1/8 | 0/283 | 67 | 0.7 s |
 | Qwen3-VL-8B | (none) | ✓ | stateless | **8/8** | 0/8 | 0/278 | 73 | 0.7 s |
+| Qwen3-VL-8B | (none) | | history | 4/8 | 2/8 | 68/274 | 71 | 1.6 s |
 
 ## What we learned
 
@@ -89,9 +90,11 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
   The gauge doesn't improve.
 - **Qwen3-VL-8B (no thinking, 1 s a decision) is accurate but over-eager**: it refills tanks that are half full
   and misapplies the gauge thresholds. Click, pick and signal are near perfect.
-- **Stateless beats history for LFM3-VL.** With its own previous answers in the context it starts
-  copying them: in the history grid it pasted the same paragraph at every step, the pibench loop
-  in miniature. Let the harness keep the state and ask one fresh question per step.
+- **Stateless beats history, for both models.** With its own previous answers in the context
+  LFM3-VL starts copying them: in the history grid it pasted the same paragraph at every step,
+  the pibench loop in miniature. Qwen3-VL stopped one cell short of the goal, said "the robot is
+  on the green square", and kept saying it for up to 18 steps while every new picture showed
+  otherwise. Let the harness keep the state and ask one fresh question per step.
 - **Mazes are hard for both.** With thinking, LFM3-VL solves 3 of 8 and rarely bumps a wall, but
   it re-maps the whole grid at every step and a third of the steps run out of the 6,000-token
   thinking budget before any call. Qwen3-VL wanders in four-move cycles; LFM3-VL without thinking
