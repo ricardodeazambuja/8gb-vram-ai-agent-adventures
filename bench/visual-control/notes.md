@@ -79,6 +79,15 @@ decline by not calling, so every request then also offers a `no_action(reason)` 
   presses the same direction again and again: in walls episode 0 it called `down` into a wall 23
   times in a row, although every prompt listed its last moves as "down (blocked)". Blocked moves
   went from 50 to 167. It doesn't use the feedback.
+- **Grid, stateless, thinking on: 8/8 open, 3/8 with walls**, exactly as without forcing, at
+  ~43 s a step (2 h 55 min for 16 episodes). Forcing changes nothing here, because the grammar
+  only applies after the thinking ends: 90 of 243 steps still ended with no call, and this run
+  saved the reasoning, so we can see why. In 84 of those 90 the reasoning stops mid-sentence
+  ("…Then down to (3,4). Then down to (4,4). Then left? Actually need to get to column5
+  eventually. At "): the 6,000-token budget ran out while it was re-deriving the whole maze
+  cell by cell, which it does from scratch at every step because each step starts fresh. When it
+  does call, it rarely hits a wall (8 blocked moves in 153). Careful but too slow, and a bigger
+  budget would only make it slower.
 
 ## Qwen3-VL-8B for comparison (an instruct model: no thinking)
 
