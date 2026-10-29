@@ -180,8 +180,9 @@ def scene_click(rng, i):
         d.text(((r[0] + r[2] - tw) / 2, r[1] + 12), lab, fill="black", font=font(18))
     tools = [tool("click", "Click at a point of the screen", POINT, ["x", "y"]),
              tool("type_text", "Type text into the focused field", {"text": {"type": "string"}}, ["text"])]
-    prompt = (f"This is a screenshot of a dialog. Click the '{target}' button. Give the point in 0-1000 "
-              f"coordinates of the image. If there is no such button, don't click anything and say so.")
+    prompt = (f"This is a screenshot of a dialog. Use the click tool to click the '{target}' button (x and y "
+              f"are 0-1000 coordinates of the image). If there is no such button, don't click anything and "
+              f"say so.")
 
     def score(r):
         clicks = [c for c in r["calls"] if c["name"] == "click" and isinstance(c["args"], dict)]
@@ -207,33 +208,41 @@ def scene_pick(rng, i):
     S = 600
     img = Image.new("RGB", (S, S), (205, 180, 140))  # a wooden table
     d = ImageDraw.Draw(img)
-    combos = rng.sample([(c, s) for c in COLORS for s in SHAPES], rng.randint(4, 6))
-    objs = []
-    for c, s in combos:
-        for _ in range(500):
-            r = rng.randint(32, 48)
-            x, y = rng.randint(r + 15, S - r - 15), rng.randint(r + 15, S - r - 15)
-            if all(abs(x - o["x"]) > r + o["r"] + 20 or abs(y - o["y"]) > r + o["r"] + 20 for o in objs):
-                break
-        objs.append({"color": c, "shape": s, "x": x, "y": y, "r": r})
+    extreme = None if i % 2 == 0 else rng.choice([("leftmost", "x", False), ("rightmost", "x", True),
+                                                  ("topmost", "y", False), ("bottommost", "y", True)])
+    while True:  # for "the leftmost object" etc., the runner-up must be clearly behind (60 px)
+        combos = rng.sample([(c, s) for c in COLORS for s in SHAPES], rng.randint(4, 6))
+        objs = []
+        for c, s in combos:
+            for _ in range(500):
+                r = rng.randint(32, 48)
+                x, y = rng.randint(r + 15, S - r - 15), rng.randint(r + 15, S - r - 15)
+                if all(abs(x - o["x"]) > r + o["r"] + 20 or abs(y - o["y"]) > r + o["r"] + 20 for o in objs):
+                    break
+            objs.append({"color": c, "shape": s, "x": x, "y": y, "r": r})
+        if extreme is None:
+            break
+        first, second = sorted(objs, key=lambda o: o[extreme[1]], reverse=extreme[2])[:2]
+        if abs(first[extreme[1]] - second[extreme[1]]) >= 60:
+            break
+    for o in objs:
+        x, y, r, c = o["x"], o["y"], o["r"], o["color"]
         box = [x - r, y - r, x + r, y + r]
-        if s == "circle":
+        if o["shape"] == "circle":
             d.ellipse(box, fill=COLORS[c], outline="black", width=2)
-        elif s == "square":
+        elif o["shape"] == "square":
             d.rectangle(box, fill=COLORS[c], outline="black", width=2)
         else:
             d.polygon([(x, y - r), (x - r, y + r), (x + r, y + r)], fill=COLORS[c], outline="black")
-    if i % 2 == 0:
+    if extreme is None:
         t = rng.choice(objs)
         ask = f"the {t['color']} {t['shape']}"
     else:
-        side, key, rev = rng.choice([("leftmost", "x", False), ("rightmost", "x", True),
-                                     ("topmost", "y", False), ("bottommost", "y", True)])
-        t = sorted(objs, key=lambda o: o[key], reverse=rev)[0]
-        ask = f"the {side} object"
+        t = first
+        ask = f"the {extreme[0]} object"
     tools = [tool("pick", "Move the robot gripper to a point of the picture and grasp", POINT, ["x", "y"])]
-    prompt = (f"You control a robot arm above this table (camera view from the top). Pick up {ask}. Give "
-              f"the point in 0-1000 coordinates of the image.")
+    prompt = (f"You control a robot arm above this table (camera view from the top). Use the pick tool to pick "
+              f"up {ask} (x and y are 0-1000 coordinates of the image).")
 
     def score(r):
         p = [c for c in r["calls"] if c["name"] == "pick" and isinstance(c["args"], dict)]
@@ -321,7 +330,9 @@ SCENES = {"tanks": scene_tanks, "click": scene_click, "pick": scene_pick, "signa
 
 
 def run_glance(key, think, n):
-    out = {"test": "glance", "key": key, "think": think, "tool_choice": TOOL_CHOICE, "items": []}
+    # version 2 (2026-10-28 night): "the leftmost object" scenes have a clear winner, and the click and
+    # pick prompts name the tool instead of asking for "the point" (v1 results are in results/v1/)
+    out = {"test": "glance", "version": 2, "key": key, "think": think, "tool_choice": TOOL_CHOICE, "items": []}
     for name, gen in SCENES.items():
         ok = 0
         for i in range(n):
