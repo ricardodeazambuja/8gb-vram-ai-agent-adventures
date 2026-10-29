@@ -66,15 +66,17 @@ POINT = {"x": {"type": "integer", "description": "0-1000, left to right"},
 # ---------------------------------------------------------------- the model, through llama-server
 TOOL_CHOICE = "auto"  # "required": llama-server constrains the answer to a tool call (--tool-choice)
 # With a call forced, the model needs a way to decline: every request then also offers no_action, and
-# calling it counts as making no call (so the scorers are the same in both modes).
+# calling it counts as making no call (so the scorers are the same in both modes). "auto-noaction" offers
+# no_action without forcing a call, to tell the two effects apart.
 NO_ACTION = tool("no_action", "Call this when none of the other tools should be used",
                  {"reason": {"type": "string"}}, ["reason"])
 
 
 def chat(messages, tools, think, max_tokens=None):
-    if TOOL_CHOICE == "required":
+    if TOOL_CHOICE != "auto":
         tools = tools + [NO_ACTION]
-    body = {"messages": messages, "tools": tools, "parallel_tool_calls": True, "tool_choice": TOOL_CHOICE,
+    choice = "required" if TOOL_CHOICE == "required" else "auto"
+    body = {"messages": messages, "tools": tools, "parallel_tool_calls": True, "tool_choice": choice,
             "max_tokens": max_tokens or (6000 if think else 600),
             "chat_template_kwargs": {"enable_thinking": think}}
     req = urllib.request.Request(URL, json.dumps(body).encode(), {"Content-Type": "application/json"})
@@ -530,12 +532,13 @@ def main():
     ap.add_argument("--think", choices=["on", "off"], default="on")
     ap.add_argument("--memory", choices=["stateless", "history"], default="stateless")
     ap.add_argument("--n", type=int, default=None)
-    ap.add_argument("--tool-choice", choices=["auto", "required"], default="auto",
-                    help="required: the server only accepts a tool call as the answer")
+    ap.add_argument("--tool-choice", choices=["auto", "required", "auto-noaction"], default="auto",
+                    help="required: the server only accepts a tool call as the answer (no_action offered); "
+                         "auto-noaction: no_action offered, no call forced")
     a = ap.parse_args()
     global TOOL_CHOICE
     TOOL_CHOICE = a.tool_choice
-    req = "-required" if a.tool_choice == "required" else ""
+    req = "" if a.tool_choice == "auto" else f"-{a.tool_choice}"
     if a.test == "summary":
         return summary()
     if a.test == "examples":
