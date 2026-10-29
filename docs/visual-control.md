@@ -68,6 +68,7 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
 |---|---|---|---|---:|---:|---:|---:|---:|
 | LFM3-VL-2B | on | | stateless | **8/8** | **3/8** | 77/229 | 6 | 44 s |
 | LFM3-VL-2B | on | ✓ | stateless | **8/8** | **3/8** | 90/243 | 8 | 43 s |
+| LFM3-VL-2B | on | | history | 6/8 | 2/8 | 58/274 | 27 | 39 s |
 | LFM3-VL-2B | off | | stateless | 3/8 | 0/8 | 157/318 | 50 | 0.7 s |
 | LFM3-VL-2B | off | ✓ | stateless | 6/8 | 0/8 | 4/280 | 167 | 0.3 s |
 | LFM3-VL-2B | off | | history | 5/8 | 0/8 | 148/308 | 45 | 2.5 s |
@@ -92,7 +93,7 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
   and misapplies the gauge thresholds. Click, pick and signal are near perfect.
 - **Stateless beats history, for both models.** With its own previous answers in the context
   LFM3-VL starts copying them: in the history grid it pasted the same paragraph at every step,
-  the pibench loop in miniature. Qwen3-VL stopped one cell short of the goal, said "the robot is
+  the pibench loop in miniature (with thinking on it doesn't, but it doesn't do better either: 6/8 and 2/8). Qwen3-VL stopped one cell short of the goal, said "the robot is
   on the green square", and kept saying it for up to 18 steps while every new picture showed
   otherwise. Let the harness keep the state and ask one fresh question per step.
 - **Mazes are hard for both.** With thinking, LFM3-VL solves 3 of 8 and rarely bumps a wall, but

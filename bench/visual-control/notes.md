@@ -178,3 +178,13 @@ instead of grabbing the most familiar action, but the gauge doesn't move (11/30 
 `report` whatever the reading), so it isn't a general fix. Practical upshot: for this model
 without thinking, give it a "do nothing" tool. The rest of the scores barely change (tanks 25 →
 25, click 28 → 30, pick 27 → 25).
+
+## LFM3-VL-2B, grid with full history and thinking: 6/8 open, 2/8 with walls
+
+The last run of the night (2 h 57 min). With thinking on, keeping the conversation no longer
+triggers the copy loop: only 6 of 274 replies were text, all different, and nothing was repeated.
+Against stateless with thinking (8/8, 3/8) it's a little worse on open grids, a little faster
+(39 s a step, against 44 s) and has fewer steps without a move (58/274, against 77/229). It
+bumps walls more often (27 blocked moves, against 6). 51 of the 58 no-move steps are again the
+thinking budget running out mid-sentence. So thinking protects it from its own history, but
+stateless is still at least as good and the context doesn't grow.
