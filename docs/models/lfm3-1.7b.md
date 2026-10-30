@@ -34,9 +34,11 @@ its 24 layers keep full-length attention. 3.7 GB in all, so there's room left fo
 After [getting-started.md](../getting-started.md):
 
 ```bash
-# 1. A llama.cpp build from after 2026-10-27 (LFM3 support: PR #31252)
-CUDA_VER=12.2 LLAMA_REF=8ca4060b7e30e76baaa5670ee1ec1b760b7f8552 \
-  SRC_DIR=$PWD/vendor/llama.cpp-lfm3 bash scripts/build-llama-cuda.sh
+# 1. A llama.cpp from after 2026-10-27 (LFM3 support: PR #31252): our fork's adventures
+#    branch, upstream 8ca4060 (where these numbers were measured) plus two model PRs
+CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
+  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  bash scripts/build-llama-cuda.sh
 
 # 2. Download + sha256-check (1.85 GB), then audit it
 bash scripts/download-models.sh lfm3

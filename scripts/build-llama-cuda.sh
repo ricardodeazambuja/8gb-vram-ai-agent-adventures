@@ -22,7 +22,8 @@
 #   ENV_NAME   conda env for toolchain + runtime       (default: llamacpp-cuda)
 #   LLAMA_REF  llama.cpp git ref/tag/commit to build   (default: latest b* release)
 #   LLAMA_REPO git URL to build from                    (default: ggml-org/llama.cpp;
-#              e.g. a fork such as https://github.com/PrismML-Eng/llama.cpp)
+#              e.g. a fork such as https://github.com/PrismML-Eng/llama.cpp, or ours,
+#              https://github.com/ricardodeazambuja/llama.cpp — see docs/getting-started.md)
 #   PATCH      a patch file to `git apply` on top of LLAMA_REF before building
 #              (default: none; e.g. patches/llama.cpp-dory-pr30306.patch with its base
 #              commit as LLAMA_REF — see docs/models/dory1.0-4b.md)
@@ -106,6 +107,13 @@ echo ">> nvcc host c++   : $HOST_CXX"
 # --- 2. fetch source --------------------------------------------------------
 # Always end up on exactly LLAMA_REF (tag, branch or commit) — fail loudly rather than
 # silently building whatever was already checked out or the default branch's HEAD.
+# This script treats SRC_DIR as a disposable build checkout (it resets origin, fetches shallow and
+# detaches HEAD). A clone with a branch checked out is someone's working copy: refuse to touch it.
+if [ -d "$SRC_DIR/.git" ] && _branch="$(git -C "$SRC_DIR" symbolic-ref -q --short HEAD)"; then
+  echo "ERROR: $SRC_DIR is a working clone on branch '$_branch'; this script would detach it and"
+  echo "       reset its origin. Build it in place instead, or pick another SRC_DIR."
+  exit 1
+fi
 if [ ! -d "$SRC_DIR/.git" ]; then
   echo ">> cloning $LLAMA_REPO into $SRC_DIR"
   mkdir -p "$(dirname "$SRC_DIR")"

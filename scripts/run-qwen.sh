@@ -59,9 +59,10 @@
 #   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot 1 / 2048 / 2048)
 #   EXTRA_ARGS any extra llama-server flags
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
-#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: vendor/llama.cpp — bonsai2:
-#              vendor/prism-llama.cpp, dory + spark: vendor/dory-llama.cpp, flint:
-#              vendor/flint-llama.cpp — and env llamacpp-cuda)
+#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: vendor/llama.cpp, stock b9606 —
+#              bonsai2: vendor/prism-llama.cpp; dory, spark, flint, bolt, e4b, groot, ornith,
+#              lfm25, lfm3, lfm3vl, locate: our fork's adventures branch in ../llama.cpp
+#              (ADV_LLAMA) — and env llamacpp-cuda)
 #
 # Flags (CLI args, not env vars):
 #   --image    load the vision projector ($MMPROJ) (CPU unless MMPROJ_GPU=1). Other args pass through.
@@ -171,8 +172,8 @@ case "$QMODEL" in
     # compute buffer (~4 KiB/token), so 128K needs ~7.4 GB and OOMs next to the desktop;
     # 108K (110592) is the measured fit with ~0.3 GB to spare. Text only, thinking on by
     # default (chat template). Architecture spark2_5 is in upstream
-    # llama.cpp since PR #27868 (2026-09-06); vendor/dory-llama.cpp is upstream master of
-    # 2026-10-15 plus the Dory patch, so it has it. Sampling as on the card (temp 1.0 /
+    # llama.cpp since PR #27868 (2026-09-06), so our adventures build (upstream of 2026-10-28)
+    # has it. Sampling as on the card (temp 1.0 /
     # top-p 0.95 / top-k off). See docs/models/spark-x2.6-4b.md.
     KIND=dense
     _dir="$REPO_ROOT/models/spark-x2.6-4b"
@@ -190,8 +191,8 @@ case "$QMODEL" in
     # Only 14 layers are full attention (4 KV heads); the other 35 use a 513-token sliding
     # window, so the KV is ~15 KiB/token at q8_0 (128K ~1.9 GB). 95% of the weights are
     # experts -> RAM, as for qwen36. Text only, reasoning model. Architecture flint is in
-    # upstream llama.cpp since PR #30928 (2026-10-21); vendor/flint-llama.cpp is built at its
-    # merge commit. Sampling as on the card (temp 1.0 / top-p 0.95 / top-k 20 / min-p 0).
+    # upstream llama.cpp since PR #30928 (2026-10-21); our adventures build (upstream of
+    # 2026-10-28) has it. Sampling as on the card (temp 1.0 / top-p 0.95 / top-k 20 / min-p 0).
     # Batch 2048 (not 512): with the experts in RAM, big batches send the expert matmuls
     # to the GPU, so prefill goes 192 -> 542 tok/s; its bigger compute buffer costs one
     # layer of experts, hence NCMOE=42 (7.25 GB, ~0.5 GB spare). See docs/models/flint.md.
@@ -211,7 +212,7 @@ case "$QMODEL" in
     # heads, so 128K of q8_0 KV is ~0.5 GB. Every expert (routed and shared) is IQ2_XXS, trained
     # for 2 bits with quantization-aware distillation; the rest is higher precision. Per token:
     # ~1.7B routed-expert params (RAM, CPU) + ~6.8B always-on (GPU). Text, images and video.
-    # Upstream llama.cpp since PR #30520 (2026-10-14); vendor/flint-llama.cpp is newer and has it.
+    # Upstream llama.cpp since PR #30520 (2026-10-14); our adventures build (2026-10-28) has it.
     # Sampling as on NVIDIA's card (temp 1.0, top-p 0.95, no top-k). See docs/models/nemotron-bolt-74b.md.
     KIND=moe
     _dir="$REPO_ROOT/models/nemotron-bolt-74b-a9b"
@@ -220,7 +221,7 @@ case "$QMODEL" in
     ALIAS=nemotron-bolt-74b
     _ngl=99; _ctx=; _minp=0
     _topk=0
-    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     # Measured: experts on the GPU barely help (13-15 tok/s for 0-2 layers; per token the CPU
     # only sees ~1.7B params), but batch 2048 doubles prompt speed (136 -> 310 tok/s). So:
     # every expert in RAM, batch 2048, 6.6 GB VRAM.
@@ -231,7 +232,7 @@ case "$QMODEL" in
     # NVIDIA Nemotron 3.5 Bolt E4B-4GB: a Gemma-4-E4B-based 8B (4B effective) tuned for voice and
     # device assistants, NVIDIA's own Q4_K_M GGUF (6.2 GB). Text only, 64K. NVIDIA's recipe: every
     # layer on the GPU, -c 65536, --jinja. Sampling as on the card (temp 1.0, top-p 0.95).
-    # Built with vendor/flint-llama.cpp (upstream, 2026-10-21). See docs/models/nemotron-bolt-e4b.md.
+    # Runs on our adventures build (upstream, 2026-10-28). See docs/models/nemotron-bolt-e4b.md.
     KIND=dense
     _dir="$REPO_ROOT/models/nemotron-bolt-e4b"
     _model="$_dir/Nemotron-3.5-Bolt-E4B-Q4_K_M.gguf"
@@ -245,8 +246,8 @@ case "$QMODEL" in
   groot)
     # GrootTeam Groot-19B-A3B-261023: Qwen3.6-35B-A3B cut to 128 experts per layer (8 active), same
     # 40-layer hybrid (30 Gated DeltaNet + 10 full attention), post-trained for agents and tool use.
-    # Half the experts of qwen36, so twice as many layers' experts fit on the GPU. Built with the
-    # newest upstream build here (vendor/flint-llama.cpp, 2026-10-21). Sampling as in the original
+    # Half the experts of qwen36, so twice as many layers' experts fit on the GPU. Runs on our
+    # adventures build (upstream of 2026-10-28). Sampling as in the original
     # repo's generation_config.json (temp 1.0, top-p 0.95, top-k 20). Its chat template is Qwen's,
     # except that it keeps every earlier turn's reasoning in the prompt. See docs/models/groot-19b-a3b.md.
     KIND=moe
@@ -255,7 +256,7 @@ case "$QMODEL" in
     _mmproj="$_dir/mmproj-Groot-19B-A3B-261023-BF16.gguf"
     ALIAS=groot-19b-a3b
     _ngl=99; _ctx=; _minp=0
-    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     # Measured (docs/models/groot-19b-a3b.md): NCMOE 22 / 23 at batch 512 give 42 tok/s, 19 OOMs;
     # batch 2048 costs ~3 tok/s but doubles prefill (393 -> 887 tok/s). NCMOE 25 fits (7.72 GB) but
     # ran out of memory in pibench with a browser open; 27 is as fast (39.2 tok/s, 7.17 GB).
@@ -274,7 +275,7 @@ case "$QMODEL" in
     _mmproj="$_dir/mmproj-Ornith-1.5-35B-BF16.gguf"
     ALIAS=ornith-1.5-35b-a3b
     _ngl=99; _ctx=; _minp=0
-    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     _ncmoe=34
     _batch=2048
     _temp=1.0 ;;
@@ -300,7 +301,7 @@ case "$QMODEL" in
     # LiquidAI LFM3-1.7B: dense tri-hybrid, 24 layers (13 gated short convolutions, 5 sliding-window
     # + 6 global attention), so the KV cache is small. Post-trained for agent harnesses (pi
     # among them). 256K context on the card; 128K here like the other agents. Architecture
-    # lfm3 is in upstream llama.cpp since PR #31252 (2026-10-27), hence vendor/llama.cpp-lfm3.
+    # lfm3 is in upstream llama.cpp since PR #31252 (2026-10-27); our adventures build has it.
     # Sampling: the card's "general" preset (temp 0.1, top-k 50, repeat-penalty 1.1).
     # See docs/models/lfm3-1.7b.md.
     KIND=dense

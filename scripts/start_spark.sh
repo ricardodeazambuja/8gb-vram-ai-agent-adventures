@@ -8,8 +8,8 @@
 #
 # A thin wrapper over scripts/start-qwen.sh with QMODEL=spark. The server settings come from
 # run-qwen.sh's spark defaults: Q8_0 weights all on the GPU, 108K context, q8_0 KV, flash
-# attention on, the upstream llama.cpp build in vendor/dory-llama.cpp (spark2_5 is upstream
-# since 2026-09; that build is upstream master of 2026-10-15).
+# attention on, our llama.cpp in ../llama.cpp (fork, adventures branch: upstream of 2026-10-28;
+# spark2_5 is upstream since 2026-09).
 # Details and measurements: docs/models/spark-x2.6-4b.md. Every start-qwen.sh / run-qwen.sh knob
 # (CTX, KVQUANT, PORT, ...) still works if you set it; you never have to.
 #
@@ -33,12 +33,12 @@ if [ ! -f "$MODEL_FILE" ]; then
   echo "       download it: bash scripts/download-models.sh spark"
   exit 1
 fi
-SERVER_BIN="$REPO_ROOT/vendor/dory-llama.cpp/build/bin/llama-server"
+SERVER_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
 if [ ! -x "$SERVER_BIN" ]; then
-  echo "ERROR: llama.cpp build not found: $SERVER_BIN"
-  echo "       build it (see docs/models/dory1.0-4b.md):"
-  echo "       CUDA_VER=12.2 LLAMA_REF=6e66cb5d4e9a2b4f02820a9f3053422b92ec4d51 \\"
-  echo "         PATCH=patches/llama.cpp-dory-pr30306.patch SRC_DIR=\$PWD/vendor/dory-llama.cpp \\"
+  echo "ERROR: our llama.cpp build not found: $SERVER_BIN"
+  echo "       build it (see docs/getting-started.md), next to this repo:"
+  echo "       CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \\"
+  echo "         LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=\$PWD/../llama.cpp \\"
   echo "         bash scripts/build-llama-cuda.sh"
   exit 1
 fi

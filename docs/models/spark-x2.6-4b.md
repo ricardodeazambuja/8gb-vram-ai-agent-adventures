@@ -40,13 +40,15 @@ the measured fit, with ~0.3 GB to spare. See [How it fits](../how-it-fits.md).
 ## Install & run
 
 Spark's architecture is in upstream llama.cpp (since PR #27868, 2026-09-06). The repo runs it on
-the same build as [Dory](dory1.0-4b.md): upstream master of 2026-10-15 plus the Dory patch, in
-`vendor/dory-llama.cpp`. If you already built that one, skip step 1.
+our llama.cpp fork's `adventures` branch (upstream of 2026-10-28 plus two PRs; see
+[getting-started](../getting-started.md#3-build-llamacpp-once-per-flavour)), the same build as
+[Dory](dory1.0-4b.md). If you already built it, skip step 1. (First measured on upstream of
+2026-10-15; the fork build gives 49.8 tok/s and 1,641 tok/s prompt, 2026-10-30.)
 
 ```bash
-# 1. Build llama.cpp (upstream + Dory patch) into vendor/dory-llama.cpp (~15 min)
-CUDA_VER=12.2 LLAMA_REF=6e66cb5d4e9a2b4f02820a9f3053422b92ec4d51 \
-  PATCH=patches/llama.cpp-dory-pr30306.patch SRC_DIR=$PWD/vendor/dory-llama.cpp \
+# 1. Build our llama.cpp (fork, adventures branch, pinned) next to this repo (~20 min)
+CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
+  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
   bash scripts/build-llama-cuda.sh
 
 # 2. Download the official Q8_0 GGUF, pinned revision, sha256-checked

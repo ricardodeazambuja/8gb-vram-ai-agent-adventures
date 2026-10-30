@@ -29,9 +29,10 @@ nothing waits on the CPU.
 ## Install & run
 
 ```bash
-# once: the build (the same one Flint and Bolt use; see getting-started)
-CUDA_VER=12.2 LLAMA_REF=a37cc46104eb50900d5ab4a9ba02a0abdac039db \
-  SRC_DIR=$PWD/vendor/flint-llama.cpp bash scripts/build-llama-cuda.sh
+# once: our llama.cpp (fork, adventures branch; the same one Flint and Bolt use; see getting-started)
+CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
+  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  bash scripts/build-llama-cuda.sh
 
 # once: 6.2 GB, pinned and sha256-checked
 bash scripts/download-models.sh e4b

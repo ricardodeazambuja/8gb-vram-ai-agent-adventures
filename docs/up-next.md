@@ -229,8 +229,9 @@ pixel ground truth), one "Locate a single instance … {color} {shape}." query p
 IoU >= 0.5, mean IoU 0.94, 0.2 s each (2.4 s for the first query on a new image, the encode).
 The detect-all prompt (`circle</c>square</c>triangle</c>star`) found 15/15, 0.6–0.8 s per image,
 and answers `<box>None</box>` for a class that isn't there. Output is 0–1000 normalised
-`x1 y1 x2 y2`. So the GGUF port's Q/K order is right. Next: a `locate` entry in
-`run-qwen.sh`, the visual control probe's click and pick scenes as points, and real screenshots.
+`x1 y1 x2 y2`. So the GGUF port's Q/K order is right. The port now lives in our llama.cpp fork (see
+Chores), and `QMODEL=locate bash scripts/start-qwen.sh --image` starts it (with `--special`).
+Next: the visual control probe's click and pick scenes as points, and real screenshots.
 
 To check before downloading (done except the runtime):
 - **Runtime.** The official code needs `trust_remote_code` (custom model, attention kernels),
@@ -430,7 +431,16 @@ What it needs before it runs here:
 
 ## Chores
 
-- **A llama.cpp build after 2026-10-27** for LFM3: built in `vendor/llama.cpp-lfm3` (upstream `8ca4060`). Later:
-  move the other upstream models to it and re-run their speed tests to check nothing moved.
+- **Our llama.cpp (done 2026-10-30).** A fork,
+  [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch
+  [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (pinned at
+  `f0456c6`): upstream `8ca4060` (2026-10-28) + LocateAnything PR #24749 (ported) + Dory PR #30306
+  (at `43e865ec`). Cloned next to this repo (`../llama.cpp`; `ADV_LLAMA` overrides), built in
+  place. Dory, Spark, Flint, Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL,
+  Clef-Flash and LocateAnything run on it, rechecked against their documented speeds: all within
+  ~3% or faster (Bolt 15.5 vs 14.0 tok/s), except Groot at -5%, and an old/new/old A/B on the same
+  afternoon (37.7 / 37.5 / 37.2 tok/s) shows that is the laptop that day, not the build. Left: the stock-`b9606`
+  models (Qwen3.6, Qwen3.8 distill, Qwen3-VL, Gemma) still use `vendor/llama.cpp`; moving them
+  means re-running their speed tests.
   Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
   builds there serve both.

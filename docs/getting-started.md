@@ -37,15 +37,17 @@ mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
 
 ## 3. Build llama.cpp (once per flavour)
 
-Most models run on stock llama.cpp. A few need a fork or a patch, and each of those gets its
-own folder under `vendor/`, so builds never step on each other. Build only what you need
+Most models run on stock llama.cpp. Newer ones need a newer llama.cpp or an unmerged pull
+request: those all run on one build of our llama.cpp fork, cloned next to this repo (it carries
+the model PRs we use on top of a pinned upstream commit; `run-qwen.sh` finds it there, or set
+`ADV_LLAMA=/path`). The command pins the commit everything here was tested on. The other forks
+get their own folder under `vendor/`, so builds never step on each other. Build only what you need
 (~10–20 min each; free the GPU first, the build ends with a quick smoke test).
 
 | Build | For | Command |
 |---|---|---|
 | `vendor/llama.cpp` (stock, release `b9606`) | Gemma 4 26B, Gemma 12B coder, Qwen3.6, the Qwen3.8 distill, Qwen3-VL | `CUDA_VER=12.2 LLAMA_REF=b9606 bash scripts/build-llama-cuda.sh` |
-| `vendor/flint-llama.cpp` (stock, the commit that added Flint) | Flint, Nemotron Bolt 74B and E4B | `CUDA_VER=12.2 LLAMA_REF=a37cc46104eb50900d5ab4a9ba02a0abdac039db SRC_DIR=$PWD/vendor/flint-llama.cpp bash scripts/build-llama-cuda.sh` |
-| `vendor/dory-llama.cpp` (stock + Dory patch) | Dory 4B, Spark 4B | `CUDA_VER=12.2 LLAMA_REF=6e66cb5d4e9a2b4f02820a9f3053422b92ec4d51 PATCH=patches/llama.cpp-dory-pr30306.patch SRC_DIR=$PWD/vendor/dory-llama.cpp bash scripts/build-llama-cuda.sh` |
+| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306) | Dory, Spark, Flint, Nemotron Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL, LocateAnything, Clef-Flash | `CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp bash scripts/build-llama-cuda.sh` |
 | `vendor/prism-llama.cpp` (PrismML fork) | Bonsai 2 27B | `CUDA_VER=12.2 LLAMA_REPO=https://github.com/PrismML-Eng/llama.cpp LLAMA_REF=prism-b10777-e3de715 SRC_DIR=$PWD/vendor/prism-llama.cpp bash scripts/build-llama-cuda.sh` |
 | `vendor/llama-cpp-turboquant` (TurboQuant fork) | Gemma 12B agentic | `SRC_DIR=$PWD/vendor/llama-cpp-turboquant LLAMA_REF=feature/turboquant-kv-cache ENV_NAME=llamacpp-cuda bash scripts/build-llama-cuda.sh` |
 

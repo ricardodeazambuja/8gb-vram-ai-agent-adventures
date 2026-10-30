@@ -54,10 +54,11 @@ After [getting-started.md](../getting-started.md):
 # 1. The build toolchain env (skip if you already have it)
 mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
 
-# 2. Flint needs a newer llama.cpp than the other Qwen-style models: build upstream at the
-#    merge commit of PR #30928 into its own folder, so nothing else gets overwritten
-CUDA_VER=12.2 LLAMA_REF=a37cc46104eb50900d5ab4a9ba02a0abdac039db \
-  SRC_DIR=$PWD/vendor/flint-llama.cpp bash scripts/build-llama-cuda.sh
+# 2. Flint needs a newer llama.cpp than the stock b9606 build: our llama.cpp (fork, adventures
+#    branch, pinned; upstream of 2026-10-28) next to this repo, so nothing else gets overwritten
+CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
+  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  bash scripts/build-llama-cuda.sh
 
 # 3. Hugging Face CLI env for the download script (it wants `hf` inside this env)
 mamba create -y -n llamacpp -c conda-forge huggingface_hub
@@ -143,8 +144,8 @@ median 5,099 output tokens. One of only two perfect scores.
 - **Text only.** No vision projector exists; use another model for screenshots.
 - **Thinking can't be turned off.** `enable_thinking: false` is ignored; give it enough tokens.
   (That's why a 64-token "no thinking" test returns an empty answer.)
-- **It needs its own llama.cpp build** in `vendor/flint-llama.cpp`; the older builds don't know
-  the architecture.
+- **It needs a llama.cpp from after 2026-10-21** (our fork's `adventures` branch here); the
+  stock b9606 build doesn't know the architecture.
 - The log line `common_fit_params: failed to fit params ... n_gpu_layers already set by user`
   is harmless: auto-fit is skipped because the script sets `-ngl 99`.
 - **RAM matters more than VRAM here.** With less than ~20 GB free RAM, the 18.5 GB of experts

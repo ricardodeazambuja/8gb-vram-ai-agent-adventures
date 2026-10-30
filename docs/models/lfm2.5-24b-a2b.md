@@ -51,9 +51,11 @@ the speed gap (1.25) roughly.
 After [getting-started.md](../getting-started.md):
 
 ```bash
-# 1. The newest upstream llama.cpp build (skip if you built it for Flint or Groot)
-CUDA_VER=12.2 LLAMA_REF=a37cc46104eb50900d5ab4a9ba02a0abdac039db \
-  SRC_DIR=$PWD/vendor/flint-llama.cpp bash scripts/build-llama-cuda.sh
+# 1. Our llama.cpp (fork, adventures branch, pinned; upstream of 2026-10-28)
+#    (skip if you already built it for another model)
+CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
+  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  bash scripts/build-llama-cuda.sh
 
 # 2. Download + sha256-check (~13.6 GB), then audit it
 bash scripts/download-models.sh lfm25

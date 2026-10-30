@@ -8,8 +8,8 @@
 #
 # A thin wrapper over scripts/start-qwen.sh with QMODEL=flint. The server settings come from
 # run-qwen.sh's flint defaults: UD-Q3_K_XL, experts in RAM, 128K context, q8_0 KV, flash
-# attention on, the upstream llama.cpp build in vendor/flint-llama.cpp (flint is upstream
-# since PR #30928, 2026-10-21; that build is its merge commit).
+# attention on, our llama.cpp in ../llama.cpp (fork, adventures branch: upstream of 2026-10-28;
+# flint is upstream since PR #30928, 2026-10-21).
 # Details and measurements: docs/models/flint.md. Every start-qwen.sh / run-qwen.sh knob
 # (CTX, KVQUANT, PORT, ...) still works if you set it; you never have to.
 #
@@ -33,12 +33,13 @@ if [ ! -f "$MODEL_FILE" ]; then
   echo "       download it: bash scripts/download-models.sh flint"
   exit 1
 fi
-SERVER_BIN="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+SERVER_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
 if [ ! -x "$SERVER_BIN" ]; then
-  echo "ERROR: llama.cpp build not found: $SERVER_BIN"
-  echo "       build it (see docs/models/flint.md):"
-  echo "       CUDA_VER=12.2 LLAMA_REF=a37cc46104eb50900d5ab4a9ba02a0abdac039db \\"
-  echo "         SRC_DIR=\$PWD/vendor/flint-llama.cpp bash scripts/build-llama-cuda.sh"
+  echo "ERROR: our llama.cpp build not found: $SERVER_BIN"
+  echo "       build it (see docs/getting-started.md), next to this repo:"
+  echo "       CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \\"
+  echo "         LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=\$PWD/../llama.cpp \\"
+  echo "         bash scripts/build-llama-cuda.sh"
   exit 1
 fi
 

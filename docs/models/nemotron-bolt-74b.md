@@ -43,9 +43,10 @@ side sets the pace. The one knob that matters is the batch size, which doubles p
 It runs on the same llama.cpp build as Flint (Bolt support landed upstream on 2026-10-14):
 
 ```bash
-# once: the build (see getting-started for the toolchain)
-CUDA_VER=12.2 LLAMA_REF=a37cc46104eb50900d5ab4a9ba02a0abdac039db \
-  SRC_DIR=$PWD/vendor/flint-llama.cpp bash scripts/build-llama-cuda.sh
+# once: our llama.cpp (fork, adventures branch; see getting-started for the toolchain)
+CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
+  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  bash scripts/build-llama-cuda.sh
 
 # once: 22 GB + 1.7 GB, pinned and sha256-checked
 bash scripts/download-models.sh bolt

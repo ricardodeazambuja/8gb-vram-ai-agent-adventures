@@ -46,14 +46,18 @@ Both are the defaults here. More on the general tricks in [How it fits](../how-i
 ## Install & run
 
 No llama.cpp release supports Dory yet. NVIDIA's pull request
-[ggml-org/llama.cpp#30306](https://github.com/ggml-org/llama.cpp/pull/30306) does, and this repo
-keeps it as one patch file (`patches/llama.cpp-dory-pr30306.patch`, MIT like llama.cpp), applied
-on top of stock llama.cpp at the PR's base commit:
+[ggml-org/llama.cpp#30306](https://github.com/ggml-org/llama.cpp/pull/30306) does. Our llama.cpp
+fork carries it: branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures)
+is upstream of 2026-10-28 with that PR (at `43e865ec`, the version measured here) merged in, and
+it serves the other new models too ([getting-started](../getting-started.md#3-build-llamacpp-once-per-flavour)).
+The numbers on this page were first measured on the PR's own base (upstream of 2026-10-15, kept
+as `patches/llama.cpp-dory-pr30306.patch`); the fork build gives the same, 29.7 tok/s and
+867 tok/s prompt (2026-10-30).
 
 ```bash
-# 1. Build llama.cpp + the Dory patch into vendor/dory-llama.cpp (~15 min)
-CUDA_VER=12.2 LLAMA_REF=6e66cb5d4e9a2b4f02820a9f3053422b92ec4d51 \
-  PATCH=patches/llama.cpp-dory-pr30306.patch SRC_DIR=$PWD/vendor/dory-llama.cpp \
+# 1. Build our llama.cpp (fork, adventures branch, pinned) next to this repo (~20 min)
+CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
+  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
   bash scripts/build-llama-cuda.sh
 
 # 2. Download the Q5_K_M GGUF (3.67 GB), pinned revision, sha256-checked
