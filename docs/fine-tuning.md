@@ -118,6 +118,21 @@ isn't doing the work: with the base model it solves nothing, and a random walk u
 rule averages 0.4 of 8. That's the visual control lesson again: let the harness keep the state
 and the rules, and ask the model only what it's good at.
 
+## One adapter for both jobs
+
+Trained on the glance scenes and the grid walks together (4,756 examples, one pass), one seed:
+
+| Trained on both | Glance, clean | Glance, degraded | Grid open / mazes | Grid open / mazes, harness skips blocked moves | Training |
+|---|---:|---:|---:|---:|---:|
+| LoRA | 127 | 124 | 8/8, 0/8 | 8/8, **5/8** | 17 min |
+| **Norm-only** (34,560 parameters) | **139** | 118 | 8/8, 0/8 | 8/8, **6/8** | 13 min |
+
+Learning to steer didn't cost the glance skills: the norm-only model's 139 is its best clean
+score yet (single run: the three glance-only seeds were 130–135). The same 34,560 numbers hold
+both behaviours, a "which tool, which arguments" answer for a single picture and a move per step
+in a closed loop. As before, without the harness rule the mazes are lost (0/8): it bumps into a
+wall and keeps pressing.
+
 ## Serving it: not through llama.cpp yet
 
 The plan was to merge the result, convert it to GGUF and run it through the same visual control
