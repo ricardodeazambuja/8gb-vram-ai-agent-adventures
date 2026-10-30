@@ -197,6 +197,19 @@ measured:
 | Antidoom (FTPO, "eliminate doom loops") | LFM3-VL-2B's pibench 0/18 is doom loops: 14 of 18 attempts repeating one command. |
 | SFT for decision models (d1-3B on Banking77) | d1-2B is already in the queue. |
 
+### Which vision models
+
+| Model | Role | Status |
+|---|---|---|
+| **[LFM3-VL-2B](models/lfm3-vl-2b.md)** | the main subject: the most measured small vision model here (vision 91%, visual control 60/60 with thinking, 45/60 without: the gap to close), ~2B fits LoRA in 16-bit on 8 GB, cookbook notebooks for this exact model | audited, on our llama.cpp build |
+| **LFM2.5-VL-450M** | "how small can it go": a quarter of the size, fast enough to train and maybe even a full fine-tune instead of LoRA. If training lifts it to ~55/60, it's the cheapest set of eyes to deploy | in the cookbook (satellite, wildfire examples); not downloaded or audited |
+| **Qwen3-VL-2B or 4B** | a different family at a similar size, to tell "fine-tuning works" from "it works on Liquid's models"; same 0–1000 coordinates, so the scorers work unchanged | from memory, not checked: confirm sizes and licence on Hugging Face first |
+
+Skipped for now: [Qwen3-VL-8B](models/qwen3-vl-8b.md) (only fits with 4-bit base weights, and
+its misses, over-eager tank refills and misapplied gauge thresholds, look like judgement, which
+is harder to train); LFM3-Omni-2B (adds audio, more to train, measure and audit; a follow-up
+that ties in with the voice agents); the big vision models (too big to train here).
+
 ### What to train: LoRA vs LayerNorm vs FiLM-style scaling
 
 These models have no BatchNorm (the language model uses RMSNorm, the vision encoder LayerNorm),
@@ -236,7 +249,8 @@ drawing code), and rerun the [vision probe](vision-probe.md) to check nothing wa
 1. Fit test: LFM3-VL-2B in transformers, one LoRA step on one scene, peak VRAM.
 2. A small GRPO run on the glance scenes with thinking off, scored on held-out seeds.
 3. LoRA vs (IA)³ vs norm-only vs vision-side-only, at equal steps.
-4. Antidoom on LFM3-1.7B or LFM3-VL, then pibench again.
+4. The best method on LFM2.5-VL-450M (and Qwen3-VL-2B/4B), same reward and held-out scenes.
+5. Antidoom on LFM3-1.7B or LFM3-VL, then pibench again.
 
 ## Ideas to borrow
 
