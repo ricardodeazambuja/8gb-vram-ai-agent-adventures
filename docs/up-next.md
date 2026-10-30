@@ -148,7 +148,16 @@ boxes in the [vision probe](vision-probe.md) (IoU 0.93–0.94) and 60/60 on
 [visual control](visual-control.md); a model trained only to locate things might beat it on
 crowded scenes and screenshots, which is what a computer-use agent needs.
 
-To check before downloading:
+**Status (2026-10-29):** Q8_0 + projector pinned (`download-models.sh locate`), downloaded and
+audited: clean, chat template identical to NVIDIA's. **Blocked on the runtime:** the projector
+declares `clip.projector_type = locateanything`, which upstream llama.cpp (our Oct 27 build, and
+master today) doesn't know. Support is in an open upstream PR,
+[#24749](https://github.com/ggml-org/llama.cpp/pull/24749) (June 2026, +244 lines, ~130 of them
+C++ in `tools/mtmd`), and the GGUF port was made for its author's fork
+(`yuuko-eth/llama.cpp@mtmd-grounders`). Next step, with a human decision: review that PR's diff
+and build it in its own `vendor/` directory, or wait for the merge.
+
+To check before downloading (done except the runtime):
 - **Runtime.** The official code needs `trust_remote_code` (custom model, attention kernels),
   which our rules forbid on the host, and lists only Ampere and newer GPUs. GGUF ports exist:
   [`yuuko-eth/LocateAnything-3B-GGUF`](https://huggingface.co/yuuko-eth/LocateAnything-3B-GGUF)
