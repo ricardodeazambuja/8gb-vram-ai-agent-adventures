@@ -91,8 +91,29 @@ angry?", and "is this shell command safe for an agent to run?" (`rm -rf ~/`, `cu
 | Clef-Flash Q4_K_M (9B backbone) | 7.0 GB | 12/12 | 4/4 | 183 ms | 0.84–0.98 |
 | [d1-2B](https://huggingface.co/LiquidAI/d1-2B-GGUF) Q8_0 | 2.6 GB | 12/12 | 4/4 | **27 ms** | 0.94–1.00 |
 
-Both perfect on easy cases; d1 is 7× faster in a third of the memory. Next: harder, ambiguous
-items, and the pibench-grading agreement test.
+Both perfect on easy cases; d1 is 7× faster in a third of the memory.
+
+**Grading pibench (2026-10-29, [`bench/grading/`](../bench/grading/)):** every one of the 252
+finished pibench attempts, shown as the task plus a condensed transcript (each command and a
+short view of its output, then the agent's last message, cut to 6,000 characters). One question:
+"did it fully solve the task?". The truth is the hidden tests, which the judge never sees. The
+baseline to beat is "solved unless it timed out": 81%, but it can't see any of the 47 *quiet*
+failures, the runs that finished and declared victory.
+
+| Judge | Accuracy | AUC | Quiet failures caught | Solved runs wrongly flagged | Time per transcript |
+|---|---:|---:|---:|---:|---:|
+| "solved unless it timed out" | 81% | — | 0/47 | 0/189 | — |
+| d1-2B | 80% | 0.78 | 15/47 | 17/189 | **0.3 s** |
+| **Clef-Flash** | **86%** | 0.75 | 15/47 | **4/189** | 1.6 s |
+
+Clef-Flash beats the baseline; d1 doesn't. Both catch a third of the quiet failures, but
+Clef-Flash's flags are trustworthy: of the 18 finished runs it marks as failed, 83% really
+failed (d1: 48%; base rate 20%). Most of what it catches is the books scraper (9 of 17), where
+the agents printed wrong values and moved on. Longer transcripts (20,000 characters) didn't
+help d1 (AUC 0.77). **Gotcha:** `/v1/systemone` needs the whole input in one physical batch, so
+`-ub` must be at least the longest input in tokens ("input (5275 tokens) is too large to
+process"); Clef-Flash with `-ub 8192` doesn't fit in 8 GB, so its run used `-ub 4096 -c 8192`.
+Use: a cheap second opinion that sends the suspicious runs to a human.
 
 ### 🧢 ThinkingCap fine-tunes (bottlecap.ai, Apache 2.0)
 
@@ -260,6 +281,12 @@ measured:
 | GRPO on LFM3-VL-2B (formula transcription, rule-based rewards) | The [visual control probe](visual-control.md) is a ready-made reward: seeded scenes without end and an exact scorer. LFM3-VL is 60/60 with thinking at ~3 s, 45/60 without at 0.4 s. Can training close that gap? |
 | Antidoom (FTPO, "eliminate doom loops") | LFM3-VL-2B's pibench 0/18 is doom loops: 14 of 18 attempts repeating one command. |
 | SFT for decision models (d1-3B on Banking77) | d1-2B is already in the queue. |
+
+**Status (2026-10-29): first results on [their own page](fine-tuning.md).** LFM2.5-VL-450M, a
+few minutes of training on the glance scenes: 14/150 → 136/150 with LoRA, and 135/150 training
+only the norm gains (34,560 parameters), which also held up best on degraded pictures. LFM3-VL-2B
+is blocked here: transformers has no LFM3 support yet, so its repo's own Python would have to
+run (`trust_remote_code`), which needs a human decision.
 
 ### Which vision models
 
