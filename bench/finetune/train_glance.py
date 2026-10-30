@@ -185,20 +185,36 @@ def grid_examples(n_episodes, prefix, recover=0):
     return out
 
 
+@torch.no_grad()
+def ranked_moves(proc, model, img, prompt):
+    """The four moves, most likely first by the model's own log-probability of the whole answer."""
+    scores = {}
+    for mv in rc.MOVES:
+        ans = ([{"type": "function", "function": {"name": "move", "arguments": {"direction": mv}}}], "")
+        enc = encode(proc, img, prompt, rc.GRID_TOOLS, ans).to("cuda")
+        enc["pixel_values"] = enc["pixel_values"].to(torch.float16)
+        scores[mv] = -model(**enc).loss.item() * int((enc["labels"] != -100).sum())
+    return sorted(scores, key=lambda m: -scores[m])
+
+
 def cmd_eval_grid(a):
     proc, model = load(a.model, a.adapter)
     model.eval()
-    res = {"test": "grid-hf", "key": a.key, "adapter": a.adapter, "episodes": []}
+    res = {"test": "grid-hf", "key": a.key, "adapter": a.adapter, "mask_blocked": a.mask_blocked, "episodes": []}
     for walled in (False, True):
         ok = 0
         for i in range(8):
             walls, robot, goal, dist = rc.make_grid(random.Random(f"grid-{walled}-{i}"), walled)
             cap, steps, blocked, nocall, history = 2 * dist + 8, 0, 0, 0, []
+            known_blocked = set()  # (cell, move) pairs the harness has seen fail
             while steps < cap and robot != goal:
-                calls = parse_calls(answer(proc, model, rc.draw_grid(walls, robot, goal), grid_prompt(history),
-                                           rc.GRID_TOOLS, max_new=40))
+                img, prompt = rc.draw_grid(walls, robot, goal), grid_prompt(history)
                 steps += 1
-                mv = (calls[0]["args"] or {}).get("direction") if calls and calls[0]["name"] == "move" else None
+                if a.mask_blocked:  # the harness never repeats a move it has seen blocked from this cell
+                    mv = next((m for m in ranked_moves(proc, model, img, prompt) if (robot, m) not in known_blocked), None)
+                else:
+                    calls = parse_calls(answer(proc, model, img, prompt, rc.GRID_TOOLS, max_new=40))
+                    mv = (calls[0]["args"] or {}).get("direction") if calls and calls[0]["name"] == "move" else None
                 if mv not in rc.MOVES:
                     nocall += 1
                     history.append("no valid move")
@@ -206,6 +222,8 @@ def cmd_eval_grid(a):
                 nxt = (robot[0] + rc.MOVES[mv][0], robot[1] + rc.MOVES[mv][1])
                 moved = 0 <= nxt[0] < rc.N and 0 <= nxt[1] < rc.N and nxt not in walls
                 blocked += not moved
+                if not moved:
+                    known_blocked.add((robot, mv))
                 robot = nxt if moved else robot
                 history.append(f"{mv} ({'moved' if moved else 'blocked'})")
             ok += robot == goal
@@ -359,6 +377,8 @@ def main():
     ap.add_argument("--n-train", type=int, default=400)
     ap.add_argument("--method", choices=["lora", "ia3", "norm", "vnorm"], default="lora")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--mask-blocked", action="store_true",
+                    help="grid eval: rank the four moves by the model's probability, skip ones seen blocked from this cell")
     ap.add_argument("--recover", type=int, default=0, help="grid: extra off-path states per grid (after a bump)")
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--accum", type=int, default=8)
