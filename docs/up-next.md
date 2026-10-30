@@ -40,6 +40,26 @@ repo (find the file that answers a question) and on the vision-probe images; doe
 5 of 6 toy queries found the right passage among 8 (the miss was a near tie, 0.678 vs 0.674);
 256 short passages embedded in 0.9 s (280/s).
 
+**Repo search (2026-10-29, [`bench/retrieval/`](../bench/retrieval/)):** 30 questions a user
+would ask about this repo ("why did my whole terminal window close while a big model was
+loading?"), each with the doc(s) that answer it; the corpus is `docs/` split at `## `, 236
+chunks. A hit@k means a right file among the k best chunks.
+
+| Search | hit@1 | hit@3 | hit@5 | Speed |
+|---|---:|---:|---:|---:|
+| BM25 keywords (no model) | 67% | 90% | 97% | — |
+| EmbeddingGemma 2, 768 dims | **80%** | 90% | 97% | 49 chunks/s GPU (1.5 GB), 33/s CPU |
+| EmbeddingGemma 2, 256 dims | **80%** | 93% | 97% | same vectors, cut |
+| EmbeddingGemma 2, 128 dims | 67% | 83% | 87% | |
+| 768 dims + BM25, fused (RRF) | **80%** | **100%** | **100%** | |
+
+It finds the meaning where keywords fail ("the agent benchmark" → pibench), and keywords find
+what it misses (the literal `<unused32>` token: rank 9 by meaning, 2 fused). Fused, every
+question has a right doc in the top 3. Cutting to 256 dims (Matryoshka) costs nothing; 128 does.
+The CPU alone is only 1.5× slower than the GPU here (2,000-character chunks), so it can run next
+to a big model without taking any VRAM. Still to do: a bigger, harder question set, and code
+search over `scripts/` and `bench/`.
+
 ### ⚖️ Clef / Clef-Flash (Cloudflare, Apache 2.0)
 
 [`Cloudflare/clef-flash`](https://huggingface.co/Cloudflare/clef-flash) (Qwen3.5-9B backbone) and
