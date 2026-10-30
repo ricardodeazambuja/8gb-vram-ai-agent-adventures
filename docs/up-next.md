@@ -113,6 +113,41 @@ One rebuild covers this and the RPATH chore below.
 | [LFM3-Audio-2B](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) / [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF) | speech in and out (18 languages), tool calls from voice; Omni adds images and video | The speech-native option in [Voice agents](#-voice-agents-agents-that-talk-to-people) below. |
 | [d1-2B](https://huggingface.co/LiquidAI/d1-2B-GGUF) / [d1-Omni-2B](https://huggingface.co/LiquidAI/d1-Omni-2B-GGUF) | **decision models** like Clef: calibrated answers in one pass, plus spans, boxes and quantity intervals | A 1.1 GB alternative to Clef-Flash; test them side by side. The card doesn't say how llama.cpp serves it (`/v1/systemone` like Clef?): check before downloading. |
 
+### 📍 LocateAnything-3B (NVIDIA, non-commercial research license)
+
+[`nvidia/LocateAnything-3B`](https://huggingface.co/nvidia/LocateAnything-3B) (May 2026): a
+**grounding specialist**, not a chat model. MoonViT-SO-400M vision encoder + Qwen2.5-3B (3.8B
+parameters in all), trained on 12M images and 785M boxes. You give it an image and a phrase,
+and it returns boxes or points in 0–1000 coordinates: object detection, "the person in the red
+shirt", GUI elements ("Point to: the search button"), text and document layout. Its trick is
+**Parallel Box Decoding**: a whole box in one step instead of token by token, up to 2.5× faster.
+NVIDIA says it went into Nemotron 3 Nano Omni's grounding and computer-use features.
+
+Why here: it's the **"where"** to LFM3-VL's **"what to do"**. LFM3-VL-2B already has the best
+boxes in the [vision probe](vision-probe.md) (IoU 0.93–0.94) and 60/60 on
+[visual control](visual-control.md); a model trained only to locate things might beat it on
+crowded scenes and screenshots, which is what a computer-use agent needs.
+
+To check before downloading:
+- **Runtime.** The official code needs `trust_remote_code` (custom model, attention kernels),
+  which our rules forbid on the host, and lists only Ampere and newer GPUs. GGUF ports exist:
+  [`yuuko-eth/LocateAnything-3B-GGUF`](https://huggingface.co/yuuko-eth/LocateAnything-3B-GGUF)
+  (Q4_K_M to Q8_0 + a 0.87 GB mmproj) says it runs in llama.cpp's `mtmd`; confirm our build
+  supports the MoonViT projector. In llama.cpp it decodes token by token, so there's no parallel
+  speed-up (the card's "slow" mode, which it calls the most robust). A separate C++ runtime,
+  [locate-anything.cpp](https://github.com/mudler/locate-anything.cpp) (LocalAI, MIT), has its own
+  GGUFs; that would be third-party code to review first.
+- **Audit:** community GGUFs, so pin the revision and run `utils/audit-gguf.py --ref` against the
+  original repo's chat template (Qwen2.5's). The original repo also ships `training_args.bin`,
+  a pickle: never load it.
+- **License:** academic and non-profit research only (base model under the Qwen Research
+  License). Fine for testing here; note it on the page.
+
+What to measure: the vision probe's box images (against LFM3-VL's IoU) and the click and pick
+scenes of the visual control probe, scored as points. Add a few real screenshots for GUI
+grounding (find a button by name). Not a fine-tuning candidate here: NVIDIA trains it on the
+MagiAttention backend (Hopper/Blackwell), and in 16-bit the weights alone fill our 8 GB.
+
 ## 🗣️ Voice agents: agents that talk to people
 
 Goal: a local agent you can talk to, which answers out loud and can still use tools. Two ways
