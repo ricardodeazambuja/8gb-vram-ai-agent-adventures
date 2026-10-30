@@ -108,8 +108,8 @@ failures, the runs that finished and declared victory.
 
 Clef-Flash beats the baseline; d1 doesn't. Both catch a third of the quiet failures, but
 Clef-Flash's flags are trustworthy: of the 18 finished runs it marks as failed, 83% really
-failed (d1: 48%; base rate 20%). Most of what it catches is the books scraper (9 of 17), where
-the agents printed wrong values and moved on. Longer transcripts (20,000 characters) didn't
+failed (d1: 48%; base rate 20%). Most of its catches (9 of 15) are the books scraper, where the
+agents printed wrong values and moved on. Longer transcripts (20,000 characters) didn't
 help d1 (AUC 0.77). **Gotcha:** `/v1/systemone` needs the whole input in one physical batch, so
 `-ub` must be at least the longest input in tokens ("input (5275 tokens) is too large to
 process"); Clef-Flash with `-ub 8192` doesn't fit in 8 GB, so its run used `-ub 4096 -c 8192`.
