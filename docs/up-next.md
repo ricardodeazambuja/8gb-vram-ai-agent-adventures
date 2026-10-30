@@ -209,8 +209,18 @@ declares `clip.projector_type = locateanything`, which upstream llama.cpp (our O
 master today) doesn't know. Support is in an open upstream PR,
 [#24749](https://github.com/ggml-org/llama.cpp/pull/24749) (June 2026, +244 lines, ~130 of them
 C++ in `tools/mtmd`), and the GGUF port was made for its author's fork
-(`yuuko-eth/llama.cpp@mtmd-grounders`). Next step, with a human decision: review that PR's diff
-and build it in its own `vendor/` directory, or wait for the merge.
+(`yuuko-eth/llama.cpp@mtmd-grounders`).
+
+**Status (2026-10-30):** PR reviewed and applied in `vendor/locate-llama.cpp`, a worktree of
+our Oct 28 build (`8ca4060`) with the PR's two commits on top. Every change runs only for the
+`locateanything` projector, plus one resize option that is off by default. Upstream had moved:
+the PR's `RESIZE_ALGO_BICUBIC_PILLOW` is now plain `RESIZE_ALGO_BICUBIC` (Pillow-compatible), and
+the round-up fix was ported onto the new `calc_size_opt` struct. The GGUF matches what the patch
+loads without compiling anything: `mm.input_norm`, `mm.1`, `mm.2`, a `[1152, 64, 64]` position
+table, `image_min/max_pixels` set, text model plain `qwen2`. It has separate `attn_q/k/v`
+where the PR's converter writes a fused `attn_qkv`; the loader takes either. Still unknown:
+whether that port reordered Q/K for split RoPE the way the PR's converter does. If it didn't,
+it will load and then point at the wrong places, so the image test decides. Next: build.
 
 To check before downloading (done except the runtime):
 - **Runtime.** The official code needs `trust_remote_code` (custom model, attention kernels),
