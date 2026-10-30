@@ -15,15 +15,22 @@ MODEL_DIR="$(realpath "${MODEL_DIR:-$REPO/models/lfm3-vl-2b-hf}")"
 OUT="$(realpath -m "${OUT:-$REPO/models/sandbox-out}")"
 case "$OUT/" in "$REPO/bench/"*) echo "ERROR: OUT must be outside bench/ ($OUT)" >&2; exit 2 ;; esac
 mkdir -p "$OUT"
+rc=0
 docker run --rm --gpus all --network none --read-only --tmpfs /tmp:exec \
   --user "$(id -u):$(id -g)" --cap-drop ALL --security-opt no-new-privileges \
   -v "$ENV_DIR:$ENV_DIR:ro" -v "$MODEL_DIR:/model:ro" -v "$REPO/bench:/bench:ro" \
   -v /usr/share/fonts:/usr/share/fonts:ro -v "$OUT:/out" \
   -e ADV_SANDBOX=1 -e ADV_RES=/out -e HF_HOME=/tmp/hf -e HF_HUB_OFFLINE=1 -e HOME=/tmp -e PYTHONDONTWRITEBYTECODE=1 \
   -e PYTORCH_ALLOC_CONF=expandable_segments:True \
-  ubuntu:22.04 "$ENV_DIR/bin/python" /bench/finetune/train_glance.py "$@"
-if [ -n "$(find "$OUT" ! -type f ! -type d -print -quit)" ]; then
+  ubuntu:22.04 "$ENV_DIR/bin/python" /bench/finetune/train_glance.py "$@" || rc=$?
+# Scan even if the run failed, and treat a folder we can't fully read as a failure.
+if ! bad="$(find "$OUT" ! -type f ! -type d -print -quit)"; then
+  echo "ERROR: could not scan all of $OUT; don't copy anything out" >&2
+  exit 3
+fi
+if [ -n "$bad" ]; then
   echo "ERROR: symlink or special file in $OUT; don't copy anything out:" >&2
   find "$OUT" ! -type f ! -type d -ls >&2
   exit 3
 fi
+exit "$rc"
