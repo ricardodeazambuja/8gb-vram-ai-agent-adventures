@@ -57,8 +57,26 @@ It finds the meaning where keywords fail ("the agent benchmark" → pibench), an
 what it misses (the literal `<unused32>` token: rank 9 by meaning, 2 fused). Fused, every
 question has a right doc in the top 3. Cutting to 256 dims (Matryoshka) costs nothing; 128 does.
 The CPU alone is only 1.5× slower than the GPU here (2,000-character chunks), so it can run next
-to a big model without taking any VRAM. Still to do: a bigger, harder question set, and code
-search over `scripts/` and `bench/`.
+to a big model without taking any VRAM.
+
+**Code search (same probe, `--corpus code`):** 30 questions about the scripts ("which iptables
+rules keep the sandbox away from the LAN?", "where is the expert split the user picked
+remembered?"), over `scripts/`, `utils/` and `bench/` in 60-line chunks (163), with Gemma's
+`code retrieval` query prefix.
+
+| Search | hit@1 | hit@3 | hit@5 |
+|---|---:|---:|---:|
+| BM25 keywords | 87% | **100%** | **100%** |
+| EmbeddingGemma 2, 768 dims | 77% | 90% | 93% |
+| EmbeddingGemma 2, 256 dims | 83% | 87% | 93% |
+| 256 dims + BM25, fused | **93%** | 97% | **100%** |
+
+Here keywords win alone: code is full of exact names. Its worst miss: "which script runs the
+model's code inside a container with no network?" ranked `qwen-codecheck.py` 57th, because that
+file says `--network none`, not "no network". Fused, it's the best of both again. Code chunks
+embed at 13/s (longer in tokens than prose). A trap we fell into first: the probe's own script
+holds the questions, so it matched them word for word; it is left out of the corpus. Still to
+do: a bigger, harder question set.
 
 ### ⚖️ Clef / Clef-Flash (Cloudflare, Apache 2.0)
 

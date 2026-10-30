@@ -28,6 +28,7 @@ REPO = os.path.dirname(os.path.dirname(HERE))
 RES = os.path.join(HERE, "results")
 URL = "http://127.0.0.1:8080/v1/embeddings"
 CHUNK = 2000
+QUERY_TASK = "search result"  # EmbeddingGemma's query prefix; "code retrieval" for --corpus code
 
 # (question, files that answer it); paths relative to docs/
 QUESTIONS = [
@@ -68,6 +69,59 @@ QUESTIONS = [
     ("How fast is the 74B Nemotron and how many bits per weight does it use?",
      ["models/nemotron-bolt-74b.md", "scoreboard.md"]),
 ]
+
+# code search: (question, files that answer it); paths relative to the repo
+CODE_QUESTIONS = [
+    ("Which script checks the sha256 of a downloaded model and deletes it on a mismatch?", ["scripts/download-models.sh"]),
+    ("How do I stop the server that listens on port 8080?", ["scripts/stop-server.sh"]),
+    ("Where is pi told about the local llama.cpp provider?", ["scripts/configure-pi.sh"]),
+    ("What draws the bar chart of generation speed per backend?", ["scripts/make-speed-chart.py"]),
+    ("Which script runs the model's code inside a container with no network?", ["scripts/qwen-codecheck.py"]),
+    ("Where is the draft acceptance of multi-token prediction measured?", ["scripts/benchmark-mtp.sh"]),
+    ("Where is the expert split the user picked remembered between runs?", ["scripts/_tuning.sh"]),
+    ("What decides whether the server runs on CUDA, Vulkan or the CPU?", ["scripts/_banner.sh", "scripts/run-server.sh"]),
+    ("How can I list the tensors inside a GGUF file?", ["utils/inspect-gguf.py"]),
+    ("Which code looks for invisible Unicode characters in a model's chat template?", ["utils/audit-gguf.py"]),
+    ("Re-run the hidden tests on the agent runs we already saved", ["bench/rescore.py"]),
+    ("Where is results.csv for the agent benchmark written?", ["bench/summarize.py"]),
+    ("Which iptables rules keep the sandbox away from the LAN?", ["bench/firewall.sh"]),
+    ("What refuses to start the benchmark if the sandbox can reach the local network?", ["bench/run-bench.sh"]),
+    ("How are the invoice and engineering drawing test images generated?", ["bench/vision/gen_images.py"]),
+    ("Where is the traffic light scene drawn?", ["bench/visual-control/run_control.py"]),
+    ("Where is the shortest path on the robot grid computed?",
+     ["bench/visual-control/run_control.py", "bench/finetune/train_glance.py"]),
+    ("Which code reads the model's tool call text without executing it?", ["bench/finetune/train_glance.py"]),
+    ("Where is a GGUF's chat template compared with the one from the source repo?", ["utils/audit-gguf.py"]),
+    ("Which script asks a decision model whether the agent solved the task?", ["bench/grading/run_judge.py"]),
+    ("Where is the 6000-token thinking budget for the vision tool calls set?", ["bench/visual-control/run_control.py"]),
+    ("Which launcher puts a Qwen's MoE experts in RAM?", ["scripts/run-qwen.sh"]),
+    ("How does the benchmark container install pi's provider config?", ["bench/entrypoint.sh"]),
+    ("One-time setup: create the environment and download the model", ["scripts/setup.sh"]),
+    ("Where do we count whether an agent ran pytest or checked its output?", ["bench/trace.py"]),
+    ("Which script measures prompt processing speed with a long prompt?", ["scripts/qwen-bench.py"]),
+    ("Which test builds a poisoned GGUF to check the auditor catches it?", ["utils/test-audit-gguf.py"]),
+    ("Where are pictures shrunk and JPEG-compressed for the robustness test?", ["bench/finetune/train_glance.py"]),
+    ("Where are OCR fields and bounding-box overlap scored?", ["bench/vision/run_vision.py"]),
+    ("Which launcher is the zero-config TurboQuant preset?", ["scripts/start-turbo.sh"]),
+]
+CODE_GLOBS = ["scripts/*.sh", "scripts/*.py", "utils/*.py", "bench/*.py", "bench/*.sh", "bench/*/*.py"]
+CODE_LINES = 60  # one chunk per 60 lines, overlapping by 10
+
+
+def code_chunks():
+    out = []
+    for pat in CODE_GLOBS:
+        for path in sorted(glob.glob(os.path.join(REPO, pat))):
+            rel = os.path.relpath(path, REPO)
+            if rel == "bench/retrieval/run_retrieval.py":  # holds the questions themselves
+                continue
+            with open(path, encoding="utf-8", errors="replace") as f:
+                lines = f.read().splitlines()
+            for start in range(0, max(1, len(lines)), CODE_LINES - 10):
+                text = "\n".join(lines[start:start + CODE_LINES])
+                if len(text.strip()) > 40:
+                    out.append({"file": rel, "title": rel, "text": text[:CHUNK]})
+    return out
 
 
 def chunks():
@@ -120,9 +174,9 @@ def run_embed(key, dims):
         dv += post([f"title: {c['title']} | text: {c['text']}" for c in cs[i:i + 16]])
     t_docs = time.time() - t
     t = time.time()
-    qv = post([f"task: search result | query: {q}" for q, _ in QUESTIONS])
+    qv = post([f"task: {QUERY_TASK} | query: {q}" for q, _ in QUESTIONS])
     t_q = time.time() - t
-    out = {"test": "retrieval", "key": key, "chunks": len(cs), "dim": len(dv[0]),
+    out = {"test": "retrieval", "key": key, "questions": len(QUESTIONS), "chunks": len(cs), "dim": len(dv[0]),
            "secs_docs": round(t_docs, 2), "secs_queries": round(t_q, 2), "by_dim": {}}
     bm = bm25_orders(cs)
     for d in dims:  # Matryoshka: the first d components, renormalized
@@ -168,7 +222,7 @@ def run_bm25():
     cs = chunks()
     s = score([[cs[i]["file"] for i in o] for o in bm25_orders(cs)])
     print(f"BM25: hit@1 {s['hit@1']:.0%}  hit@3 {s['hit@3']:.0%}  hit@5 {s['hit@5']:.0%}  MRR {s['mrr']:.2f}")
-    return {"test": "retrieval", "key": "bm25", "chunks": len(cs), "by_dim": {"bm25": s}}
+    return {"test": "retrieval", "key": "bm25", "questions": len(QUESTIONS), "chunks": len(cs), "by_dim": {"bm25": s}}
 
 
 def rrf(*orders, k=60):
@@ -182,7 +236,9 @@ def rrf(*orders, k=60):
 
 def summary():
     lines = ["# Repo search probe: results", "",
-             f"{len(QUESTIONS)} questions, corpus docs/*.md + docs/models/*.md split at '## '.", "",
+             (f"docs: {len(QUESTIONS)} questions over docs/*.md + docs/models/*.md split at '## '. "
+              f"code (keys ending -code): {len(CODE_QUESTIONS)} questions over scripts/, utils/, bench/ in "
+              f"{CODE_LINES}-line chunks."), "",
              "| Run | Dims (+bm25 = fused with BM25) | hit@1 | hit@3 | hit@5 | MRR | Chunks/s |", "|---|---:|---:|---:|---:|---:|---:|"]
     for p in sorted(glob.glob(os.path.join(RES, "*.json"))):
         with open(p) as f:
@@ -201,12 +257,18 @@ def main():
     ap.add_argument("test", choices=["embed", "bm25", "summary"])
     ap.add_argument("key", nargs="?", default="model")
     ap.add_argument("--dims", default="768,512,256,128")
+    ap.add_argument("--corpus", choices=["docs", "code"], default="docs",
+                    help="code: scripts/, utils/, bench/ in 60-line chunks, with the code questions")
     a = ap.parse_args()
+    global QUESTIONS, chunks, QUERY_TASK
+    if a.corpus == "code":
+        QUESTIONS, chunks, QUERY_TASK = CODE_QUESTIONS, code_chunks, "code retrieval"
+        a.key += "-code"
     if a.test == "summary":
         return summary()
     os.makedirs(RES, exist_ok=True)
     out = run_bm25() if a.test == "bm25" else run_embed(a.key, [int(x) for x in a.dims.split(",")])
-    key = "bm25" if a.test == "bm25" else a.key
+    key = ("bm25" + ("-code" if a.corpus == "code" else "")) if a.test == "bm25" else a.key
     with open(os.path.join(RES, f"{key}.json"), "w") as f:
         json.dump(out, f, indent=1)
 

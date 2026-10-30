@@ -1,12 +1,17 @@
 # Repo search probe: results
 
-30 questions, corpus docs/*.md + docs/models/*.md split at '## '.
+docs: 30 questions over docs/*.md + docs/models/*.md split at '## '. code (keys ending -code): 30 questions over scripts/, utils/, bench/ in 60-line chunks.
 
 | Run | Dims (+bm25 = fused with BM25) | hit@1 | hit@3 | hit@5 | MRR | Chunks/s |
 |---|---:|---:|---:|---:|---:|---:|
+| bm25 | bm25 | 87% | 100% | 100% | 0.93 | — |
 | bm25 | bm25 | 67% | 90% | 97% | 0.79 | — |
 | eg2-q8-cpu | 768 | 80% | 90% | 97% | 0.86 | 33 |
 | eg2-q8-cpu | 768+bm25 | 80% | 100% | 100% | 0.88 | 33 |
+| eg2-q8-gpu-code | 768 | 77% | 90% | 93% | 0.84 | 13 |
+| eg2-q8-gpu-code | 768+bm25 | 87% | 93% | 97% | 0.91 | 13 |
+| eg2-q8-gpu-code | 256 | 83% | 87% | 93% | 0.87 | 13 |
+| eg2-q8-gpu-code | 256+bm25 | 93% | 97% | 100% | 0.95 | 13 |
 | eg2-q8-gpu | 768 | 80% | 90% | 97% | 0.86 | 49 |
 | eg2-q8-gpu | 768+bm25 | 80% | 100% | 100% | 0.89 | 49 |
 | eg2-q8-gpu | 512 | 80% | 87% | 93% | 0.85 | 49 |
