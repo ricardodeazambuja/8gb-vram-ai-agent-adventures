@@ -91,8 +91,8 @@ them), the target being a move on a shortest path. Test: the probe's own 16 grid
 | LFM2.5-VL-450M, base | 0/8 | 0/8 | — | — | — |
 | LFM2.5-VL-450M + LoRA (9.9 min of training) | **8/8** | 1/8 | 1.00 | 154 | ~0.15 s |
 | LFM2.5-VL-450M + norm-only (7.1 min) | 7/8 | **3/8** | 1.00 open, 1.24 mazes | 95 | ~0.15 s |
-| LFM2.5-VL-450M + LoRA, **harness skips moves seen blocked** | **8/8** | **5/8** | 1.00 open, 1.35 mazes | 14 | ~0.5 s |
-| LFM2.5-VL-450M + norm-only, **harness skips moves seen blocked** | 7/8 | **5/8** | 1.00 open, 1.58 mazes | 16 | ~0.5 s |
+| LFM2.5-VL-450M + LoRA, **harness skips moves seen blocked** | **8/8** | **5/8** | 1.00 open, 1.35 mazes | 14 | ~0.2 s |
+| LFM2.5-VL-450M + norm-only, **harness skips moves seen blocked** | 7/8 | **5/8** | 1.00 open, 1.58 mazes | 16 | ~0.2 s |
 | *controls:* base + the same harness / a random walk + the same harness (mean of 200) | *0/8 / 0.7* | *0/8 / 0.4* | — | — | — |
 | *[LFM3-VL-2B](models/lfm3-vl-2b.md), thinking, no training* | *8/8* | *3/8* | *1.50* | *6* | *44 s* |
 | *[Qwen3-VL-8B](models/qwen3-vl-8b.md), no training* | *8/8* | *1/8* | *1.80* | *67* | *0.7 s* |
