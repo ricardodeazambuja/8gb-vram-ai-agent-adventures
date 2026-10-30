@@ -42,6 +42,21 @@ measured the same way.
 ([details](pibench.md)). **Vision** = our 12-image probe, overall score
 ([details](vision-probe.md)).
 
+## Seeing and acting
+
+The [visual control probe](visual-control.md): look at a picture, decide, call a tool. Only the
+two small vision models have taken it so far. **Decisions** = one picture, one tool call (tanks,
+buttons, objects, traffic lights, gauges; 60 scenes, "30" = 150 scenes). **Grid** = steer a robot
+to a goal one move at a time, open grids and mazes, 8 episodes each.
+
+| Model | Thinking | Decisions | Per decision | Grid, fresh request per step | Grid, full history | Per grid step |
+|---|---|---:|---:|---:|---:|---:|
+| [LFM3-VL-2B](models/lfm3-vl-2b.md) | on | **60/60** (30: 144/150 ¹) | 2.9 s | **8/8** open, **3/8** mazes | 6/8, 2/8 | ~43 s |
+| LFM3-VL-2B | off | 45/60 (30: 117/150 ¹) | **0.4 s** | 3/8, 0/8 (6/8, 0/8 ¹) | 5/8, 0/8 | **0.7 s** |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | (none) | 51/60 (30: 124/150 ¹) | 1.0 s | **8/8**, 1/8 | 4/8, 2/8 | 0.7 s |
+
+¹ With a forced tool call (`tool_choice: required`, plus a `no_action` tool to decline).
+
 ## What the vendors say
 
 Numbers from the model cards, **not measured by us**, collected 2026-10-23. Three grains of
@@ -150,6 +165,7 @@ whether it *reads* what it looked at. The full story, with examples, is in
 | Quick turns | [**Qwen3.8 distill**](models/qwen3.8-35b-a3b-distill.md) | Fastest per job of the big models (2.5 min median), 16/18, 128K. Double-check its scraped data. |
 | Careful image reading at 128K | [**Qwen3.6-35B-A3B**](models/qwen3.6-35b-a3b.md) | 100% on the vision probe, 16/18 on pibench. |
 | Fast image reading | [**Qwen3-VL-8B**](models/qwen3-vl-8b.md) | 6 s per image, perfect OCR, all on the GPU. Weaker at counting. |
+| A small vision model that acts on what it sees | [**LFM3-VL-2B**](models/lfm3-vl-2b.md) | 60/60 one-picture tool decisions with thinking, ~3 s each, 2.6 GB. One fresh question per step; not an agent ([visual control](visual-control.md)). |
 | Raw speed on small jobs | [**Spark-X2.6-4B**](models/spark-x2.6-4b.md) | 48–50 tok/s, 108K, 14/18; careless with details, but twice the E4B's score at nearly its speed. |
 | The biggest brain that fits | [**Nemotron Bolt 74B**](models/nemotron-bolt-74b.md) | 74B in 2 bits at 14 tok/s, 128K, images and video; 15/18 and 91% vision. Patience required: 5–10 min per agent job. |
 | A snappy local assistant (not a coder) | [**Nemotron Bolt E4B**](models/nemotron-bolt-e4b.md) | 52 tok/s, all on the GPU; 7/18 on pibench, so keep it away from unsupervised coding. |
