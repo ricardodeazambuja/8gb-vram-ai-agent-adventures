@@ -141,6 +141,71 @@ def answer(proc, model, img, prompt, tools, max_new=120):
     return proc.decode(out[0, enc["input_ids"].shape[1]:], skip_special_tokens=False)
 
 
+# ---------------------------------------------------------------- grid: steer the robot, one fresh picture per step
+def grid_prompt(history):
+    recent = ", ".join(history[-3:]) or "none yet"
+    return f"{rc.GRID_RULES}\nYour last moves, oldest first: {recent}."
+
+
+def best_move(walls, robot, goal):
+    """A move on a shortest path (the first in up, down, left, right order)."""
+    d0 = rc.bfs(walls, robot, goal)
+    for name, (dx, dy) in rc.MOVES.items():
+        n = (robot[0] + dx, robot[1] + dy)
+        if 0 <= n[0] < rc.N and 0 <= n[1] < rc.N and n not in walls and rc.bfs(walls, n, goal) == d0 - 1:
+            return name
+    return None
+
+
+def grid_examples(n_episodes, prefix):
+    """Every step of an optimal walk through n grids (half with walls): (walls, robot, goal, history, move)."""
+    out = []
+    for j in range(n_episodes):
+        walls, robot, goal, _ = rc.make_grid(random.Random(f"{prefix}-{j % 2 == 1}-{j}"), j % 2 == 1)
+        history = []
+        while robot != goal:
+            mv = best_move(walls, robot, goal)
+            out.append((walls, robot, goal, list(history), mv))
+            dx, dy = rc.MOVES[mv]
+            robot = (robot[0] + dx, robot[1] + dy)
+            history.append(f"{mv} (moved)")
+    return out
+
+
+def cmd_eval_grid(a):
+    proc, model = load(a.model, a.adapter)
+    model.eval()
+    res = {"test": "grid-hf", "key": a.key, "adapter": a.adapter, "episodes": []}
+    for walled in (False, True):
+        ok = 0
+        for i in range(8):
+            walls, robot, goal, dist = rc.make_grid(random.Random(f"grid-{walled}-{i}"), walled)
+            cap, steps, blocked, nocall, history = 2 * dist + 8, 0, 0, 0, []
+            while steps < cap and robot != goal:
+                calls = parse_calls(answer(proc, model, rc.draw_grid(walls, robot, goal), grid_prompt(history),
+                                           rc.GRID_TOOLS, max_new=40))
+                steps += 1
+                mv = (calls[0]["args"] or {}).get("direction") if calls and calls[0]["name"] == "move" else None
+                if mv not in rc.MOVES:
+                    nocall += 1
+                    history.append("no valid move")
+                    continue
+                nxt = (robot[0] + rc.MOVES[mv][0], robot[1] + rc.MOVES[mv][1])
+                moved = 0 <= nxt[0] < rc.N and 0 <= nxt[1] < rc.N and nxt not in walls
+                blocked += not moved
+                robot = nxt if moved else robot
+                history.append(f"{mv} ({'moved' if moved else 'blocked'})")
+            ok += robot == goal
+            res["episodes"].append({"walled": walled, "i": i, "success": robot == goal, "steps": steps,
+                                    "optimal": dist, "blocked": blocked, "no_call": nocall})
+            print(f"  {'walls' if walled else 'open '} {i} {'OK  ' if robot == goal else 'FAIL'} steps {steps} "
+                  f"(best {dist}) blocked {blocked} no-call {nocall}", flush=True)
+        print(f"== {'walls' if walled else 'open'}: {ok}/8", flush=True)
+    os.makedirs(RES, exist_ok=True)
+    with open(os.path.join(RES, f"grid-{a.key}.json"), "w") as f:
+        json.dump(res, f, indent=1)
+
+
 # ---------------------------------------------------------------- commands
 def shifted(img, i):
     """The same scene as a worse camera would see it: smaller, darker or brighter, JPEG-compressed.
@@ -219,7 +284,10 @@ def cmd_train(a, steps_only=None):
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
     model.train()
-    data = [(name, i) for name in rc.SCENES for i in range(a.n_train)]
+    if a.task == "grid":
+        data = [("grid", ex) for ex in grid_examples(a.n_train, "train-grid")]
+    else:
+        data = [(name, i) for name in rc.SCENES for i in range(a.n_train)]
     random.Random(a.seed).shuffle(data)
     if steps_only:
         data = data[:steps_only * a.accum]
@@ -228,8 +296,14 @@ def cmd_train(a, steps_only=None):
     torch.cuda.reset_peak_memory_stats()
     t0, run_loss = time.time(), 0.0
     for step, (name, i) in enumerate(data):
-        img, prompt, tools, _, truth = scene(name, f"train-{name}-{i}", i)
-        enc = encode(proc, img, prompt, tools, target(name, truth, tools)).to("cuda")
+        if name == "grid":
+            walls, robot, goal, history, mv = i
+            img, prompt, tools = rc.draw_grid(walls, robot, goal), grid_prompt(history), rc.GRID_TOOLS
+            ans = ([{"type": "function", "function": {"name": "move", "arguments": {"direction": mv}}}], "")
+        else:
+            img, prompt, tools, _, truth = scene(name, f"train-{name}-{i}", i)
+            ans = target(name, truth, tools)
+        enc = encode(proc, img, prompt, tools, ans).to("cuda")
         enc["pixel_values"] = enc["pixel_values"].to(torch.float16)
         with torch.autocast("cuda", dtype=torch.float16):
             loss = model(**enc).loss / a.accum
@@ -255,13 +329,15 @@ def cmd_train(a, steps_only=None):
     else:
         model.save_pretrained(a.out)
     with open(os.path.join(a.out, "train.json"), "w") as f:
-        json.dump({"method": a.method, "seed": a.seed, "n_train": a.n_train, "lr": a.lr, "accum": a.accum,
+        json.dump({"task": a.task, "method": a.method, "seed": a.seed, "n_train": a.n_train, "lr": a.lr, "accum": a.accum,
                    "trainable": n_train, "secs": round(time.time() - t0)}, f, indent=1)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["eval", "train", "fit"])
+    ap.add_argument("--task", choices=["glance", "grid"], default="glance",
+                    help="grid: train on optimal walks (--n-train = grids), eval closed-loop on the probe's 16 grids")
     ap.add_argument("--model", required=True)
     ap.add_argument("--adapter")
     ap.add_argument("--out")
@@ -275,7 +351,7 @@ def main():
     ap.add_argument("--shift", action="store_true", help="eval on degraded pictures (smaller, JPEG, brightness)")
     a = ap.parse_args()
     if a.cmd == "eval":
-        cmd_eval(a)
+        cmd_eval_grid(a) if a.task == "grid" else cmd_eval(a)
     elif a.cmd == "fit":
         cmd_train(a, steps_only=2)
     else:
