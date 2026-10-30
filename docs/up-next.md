@@ -185,6 +185,59 @@ more experts in RAM (Groot at a higher `NCMOE`), or a server swaps models per ta
    measurements, plus the cost to Groot's speed of whatever the speech parts take from it.
 3. Write it up as an "audio probe", the way the [vision probe](vision-probe.md) works.
 
+## 🎛️ Fine-tuning the small models
+
+Liquid's [cookbook](https://github.com/Liquid4All/cookbook/tree/main/finetuning) has LoRA
+notebooks (TRL, Unsloth) for exactly the models we have, and three of them line up with what we
+measured:
+
+| Notebook | Our reason |
+|---|---|
+| GRPO on LFM3-VL-2B (formula transcription, rule-based rewards) | The [visual control probe](visual-control.md) is a ready-made reward: seeded scenes without end and an exact scorer. LFM3-VL is 60/60 with thinking at ~3 s, 45/60 without at 0.4 s. Can training close that gap? |
+| Antidoom (FTPO, "eliminate doom loops") | LFM3-VL-2B's pibench 0/18 is doom loops: 14 of 18 attempts repeating one command. |
+| SFT for decision models (d1-3B on Banking77) | d1-2B is already in the queue. |
+
+### What to train: LoRA vs LayerNorm vs FiLM-style scaling
+
+These models have no BatchNorm (the language model uses RMSNorm, the vision encoder LayerNorm),
+but the idea of "tune only the normalization" carries over. Same reward, same held-out scenes,
+how few parameters does it take?
+
+| Method | What it trains | Size | Why try it |
+|---|---|---|---|
+| **LoRA** | a low-rank update (rank 8–32) next to the attention and MLP weights | ~0.1–1% of the weights | the cookbook default; the baseline |
+| **(IA)³** (in PEFT) | one learned scale per channel on keys, values and the MLP | ~0.01% | FiLM without the conditioning input: a per-channel gain |
+| **Norm-only** (LN / RMSNorm tuning) | just the norm layers' gains (and biases, where there are any) | ~0.01% | the "first BN layer" idea for transformers; see BitFit / LN-tuning |
+| **Vision side only** | norms or LoRA in the vision encoder and projector, the language model frozen | small | if the gauge misses are reading errors (3 read as 35), fix the eye; if they're rule errors (93 read as 90, then `report`), the language model needs the change |
+| **FiLM, conditioned** | a small network that turns a task embedding into per-channel scale and shift | small | one model, several tasks switched by a code; later, if the simple ones work |
+
+All of them except the conditioned FiLM merge back into the weights (or load with llama.cpp's
+`--lora`), so the result goes through our usual GGUF audit and probes.
+
+### Will it fit in 8 GB?
+
+To check first:
+- LFM3-VL-2B weights are ~4 GB in 16-bit. LoRA plus gradient checkpointing plus short answers
+  probably fits; 4-bit base weights (QLoRA) are the fallback.
+- The RTX 2070 is Turing: no bf16, no FlashAttention 2. Train in fp16; some notebook settings
+  will need changing.
+- GRPO generates several answers per example. Without thinking an answer is a ~30-token tool
+  call, so that's affordable; with thinking it isn't.
+
+### Safety
+
+Training needs safetensors weights and Python, not a GGUF: pin the revision, no
+`trust_remote_code`, read each notebook before running it, use its own mamba environment. Score
+on held-out seeds and on scenes with changed colours and layouts (so it isn't learning our
+drawing code), and rerun the [vision probe](vision-probe.md) to check nothing was forgotten.
+
+### Order
+
+1. Fit test: LFM3-VL-2B in transformers, one LoRA step on one scene, peak VRAM.
+2. A small GRPO run on the glance scenes with thinking off, scored on held-out seeds.
+3. LoRA vs (IA)³ vs norm-only vs vision-side-only, at equal steps.
+4. Antidoom on LFM3-1.7B or LFM3-VL, then pibench again.
+
 ## Ideas to borrow
 
 ### 🔬 Local autoresearch ([conglu1997/local-autoresearch](https://github.com/conglu1997/local-autoresearch), MIT)
