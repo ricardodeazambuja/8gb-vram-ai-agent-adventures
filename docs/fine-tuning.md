@@ -13,8 +13,8 @@ evaluation) and the results.
 - **Model:** [LFM2.5-VL-450M](https://huggingface.co/LiquidAI/LFM2.5-VL-450M) (Liquid AI, LFM
   Open License v1.0), loaded in fp16 with plain transformers 5.22: native support, **no
   `trust_remote_code`**, weights pinned and checked by sha256. [LFM3-VL-2B](models/lfm3-vl-2b.md)
-  would have been the first choice, but transformers has no LFM3 support yet and its repo's own
-  Python would have to run; that waits for a human decision.
+  was the first choice, but transformers has no LFM3 support yet and its repo's own Python has to
+  run, so it came later, in a sandbox ([below](#lfm3-vl-2b-in-a-sandbox)).
 - **Task:** the five glance scenes (tanks, a dialog's buttons, objects on a table, a traffic
   light, a pressure gauge). Training uses 400 scenes of each kind from seeds the test never uses
   (`train-tanks-17`), so no test picture is ever trained on.
@@ -160,3 +160,25 @@ python bench/finetune/train_glance.py eval  --model models/lfm2.5-vl-450m-hf --a
 ```
 
 (Call the env's `python` directly: `mamba run` takes `--n` for itself.)
+
+## LFM3-VL-2B, in a sandbox
+
+Same scenes, same recipe, thinking off, and this time the model repo's own Python had to run
+(`trust_remote_code`), pinned at revision `ba44bd5`, weights checked by sha256.
+[`sandbox.sh`](../bench/finetune/sandbox.sh) runs it in Docker with the GPU, no network, a read-only
+root and code, not as root, one writable folder. A search of the 3,328 lines of Python found no
+network, shell or `eval` calls; they were not read line by line, so the sandbox is what we rely on.
+Its Triton kernels need a C compiler at run time, so inside the sandbox it runs on plain torch.
+
+| What we trained | Trainable parameters | Training time | Peak VRAM | 🛢️ | 🖱️ | 🤏 | 🚦 | ⏲️ | **All** (clean) | Degraded pictures | Per decision |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| nothing (the base model, thinking off) | 0 | — | — | 8 | 28 | 29 | 22 | 10 | **97** | — | 0.8 s |
+| **LoRA**, 1 seed | 15.4M (0.8%) | 25 min | 4.86 GiB | 30 | 30 | 29 | 30 | 30 | **149** | **149** | 0.6 s |
+
+Out of 150, measured 2026-10-30. The one miss, in both columns, is the same pick scene. That beats
+the untouched model with thinking on (144/150 at 2.7 s, through llama.cpp) at under a quarter of the
+time per decision, and the gap thinking was buying is gone: the rules of these scenes went into the
+weights. It's one seed, and training and test use the same drawing code, so this shows it learned
+*our scenes*, not that it got better at seeing in general. Not measured yet: the
+[vision probe](vision-probe.md) (did it forget anything?), the grid robot, changed colours and
+layouts, or running the adapter in llama.cpp, so for now it only runs in transformers.

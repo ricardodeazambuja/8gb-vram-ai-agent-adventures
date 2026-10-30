@@ -16,7 +16,7 @@ before a new model runs on this machine.
 | **Template code** | Jinja (`__class__`, `__globals__`, …) | sandbox escapes in Python's jinja2 (transformers, vLLM); llama.cpp has its own engine | `utils/audit-gguf.py` §3 |
 | **Rigged tokenizer** | special tokens, BOS/EOS ids | a "token" whose text is an instruction; broken turn boundaries | `utils/audit-gguf.py` §2 + §4 |
 | **Backdoored weights** | the weights themselves | misbehaves only on some trigger | **nothing static.** First runs only in the [pibench sandbox](pibench.md#the-sandbox-because-we-let-robots-run-shell-commands) |
-| **Code in the repo** | `*.py`, `trust_remote_code`, pickles | runs on download/load in Python tools | we only download `.gguf` files, by name; llama.cpp never runs repo code |
+| **Code in the repo** | `*.py`, `trust_remote_code`, pickles | runs on download/load in Python tools | we only download `.gguf` files, by name; llama.cpp never runs repo code. One exception, for fine-tuning: LFM3-VL-2B's Python, pinned, only inside [`sandbox.sh`](../bench/finetune/sandbox.sh) (no network, read-only) |
 | **Model-written code** | the answers themselves | a test script that `exec()`s the model's code runs it with your permissions | `scripts/qwen-codecheck.py --sandbox`: the code runs in a container with no network, no capabilities and a read-only filesystem |
 | **A leaky sandbox** | the pibench firewall rules, which don't survive a reboot | an agent run that can reach your LAN and router | `bench/run-bench.sh` refuses to start until a probe from inside the sandbox fails to reach the LAN |
 | **Your own repo** | invisible characters in files you (or a tool) wrote | the same hidden text, now in your scripts and docs | scan the diff before committing (below) |

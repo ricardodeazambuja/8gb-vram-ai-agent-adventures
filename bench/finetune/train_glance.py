@@ -6,7 +6,8 @@
     python3 bench/finetune/train_glance.py fit    --model DIR       # one training step, peak VRAM
 
 Runs in the `vlft` mamba env (torch, transformers 5.22, peft). Only models that transformers supports
-natively: no trust_remote_code, ever.
+natively, except inside bench/finetune/sandbox.sh (no network, read-only), which sets ADV_SANDBOX=1:
+only there does trust_remote_code run the model repo's Python, for LFM3-VL-2B.
 
 Data: the five glance scenes of bench/visual-control/run_control.py. Training uses seeds
 "train-{scene}-{i}"; evaluation uses the probe's own seeds "{scene}-{i}", so no test picture is
@@ -34,8 +35,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "visual-control"))
 import run_control as rc
 
-RES = os.path.join(HERE, "results")
+RES = os.environ.get("ADV_RES", os.path.join(HERE, "results"))
+REMOTE = os.environ.get("ADV_SANDBOX") == "1"
 CALL_RE = re.compile(r"<\|tool_call_start\|>(.*?)<\|tool_call_end\|>", re.DOTALL)
+XML_CALL_RE = re.compile(r"<tool_call>\s*<function=(\w+)>(.*?)</function>\s*</tool_call>", re.DOTALL)  # LFM3
+XML_ARG_RE = re.compile(r"<parameter=(\w+)>\n(.*?)\n</parameter>", re.DOTALL)
 
 
 # ---------------------------------------------------------------- the right answer for a scene
@@ -73,6 +77,14 @@ def scene(name, seed, i):
 def parse_calls(text):
     """'<|tool_call_start|>[f(a=1, b="x")]<|tool_call_end|>' -> [{"name", "args"}], literals only."""
     calls = []
+    for fn, body in XML_CALL_RE.findall(text):
+        args = {}
+        for k, v in XML_ARG_RE.findall(body):
+            try:
+                args[k] = ast.literal_eval(v)
+            except (ValueError, SyntaxError):
+                args[k] = v
+        calls.append({"name": fn, "args": args})
     for block in CALL_RE.findall(text):
         try:
             tree = ast.parse(block.strip(), mode="eval")
@@ -94,8 +106,11 @@ def parse_calls(text):
 
 # ---------------------------------------------------------------- model plumbing
 def load(model_dir, adapter=None):
-    proc = AutoProcessor.from_pretrained(model_dir)
-    model = AutoModelForImageTextToText.from_pretrained(model_dir, dtype=torch.float16).to("cuda")
+    if REMOTE:  # LFM3's Triton kernels need a C compiler at run time, and the sandbox has none: plain torch instead
+        import transformers.utils
+        transformers.utils.is_triton_available = lambda: False
+    proc = AutoProcessor.from_pretrained(model_dir, trust_remote_code=REMOTE)
+    model = AutoModelForImageTextToText.from_pretrained(model_dir, dtype=torch.float16, trust_remote_code=REMOTE).to("cuda")
     if adapter and os.path.exists(os.path.join(adapter, "norms.pt")):  # norm/vnorm: new gains, same shapes
         state = torch.load(os.path.join(adapter, "norms.pt"), weights_only=True)
         missing = set(state) - {n for n, _ in model.named_parameters()}
@@ -120,10 +135,11 @@ def chat(img, prompt, tools, answer=None):
 
 def encode(proc, img, prompt, tools, answer):
     """input_ids, pixel inputs and labels with the prompt masked out."""
-    full = proc.apply_chat_template(chat(img, prompt, tools, answer), tools=tools, tokenize=False)
+    full = proc.apply_chat_template(chat(img, prompt, tools, answer), tools=tools, tokenize=False, enable_thinking=False)
     if not full.rstrip().endswith("<|im_end|>"):
         full += "<|im_end|>\n"  # a tool-call-only turn: the template adds no end marker after an empty content
-    head = proc.apply_chat_template(chat(img, prompt, tools), tools=tools, tokenize=False, add_generation_prompt=True)
+    head = proc.apply_chat_template(chat(img, prompt, tools), tools=tools, tokenize=False, add_generation_prompt=True,
+                                     enable_thinking=False)
     enc = proc(text=[full], images=[[img]], return_tensors="pt")
     n_head = proc(text=[head], images=[[img]], return_tensors="pt")["input_ids"].shape[1]
     labels = enc["input_ids"].clone()
@@ -134,7 +150,8 @@ def encode(proc, img, prompt, tools, answer):
 
 @torch.no_grad()
 def answer(proc, model, img, prompt, tools, max_new=120):
-    text = proc.apply_chat_template(chat(img, prompt, tools), tools=tools, tokenize=False, add_generation_prompt=True)
+    text = proc.apply_chat_template(chat(img, prompt, tools), tools=tools, tokenize=False, add_generation_prompt=True,
+                                     enable_thinking=False)
     enc = proc(text=[text], images=[[img]], return_tensors="pt").to("cuda")
     enc["pixel_values"] = enc["pixel_values"].to(torch.float16)
     out = model.generate(**enc, max_new_tokens=max_new, do_sample=False)
