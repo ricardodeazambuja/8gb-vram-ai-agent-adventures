@@ -125,3 +125,35 @@ python3 bench/visual-control/run_control.py summary
 
 `--tool-choice required` forces a call, `--n` sets the number of scenes or episodes, and
 `examples` saves one picture of each scene.
+
+## LocateAnything-3B: boxes instead of tool calls
+
+[LocateAnything-3B](https://huggingface.co/nvidia/LocateAnything-3B) only answers with boxes, so
+[`locate_probe.py`](../bench/visual-control/locate_probe.py) takes the box's centre as the click and
+feeds it to the same scorers, on the same seeds. Measured 2026-10-30, 5 GB of VRAM. The scenes draw
+a new picture for each query, so their 1 s includes encoding it; on a page already encoded a query
+takes 0.3 s.
+
+| Test | Result | Per query |
+|---|---:|---:|
+| 🤏 pick, 30 scenes, including "the leftmost object" | **30/30** | 1.0 s |
+| 🖱️ click, button is there | **24/24** | 1.0 s |
+| 🖱️ click, button isn't there | **0/6** | 1.0 s |
+| Six real web pages at 1280x800, 8 links or buttons each, truth from the DOM | **42/48** | 0.3 s |
+| Same pages, a name that isn't there | **0/12** | 0.3 s |
+
+For scale, on the same 30 seeds LFM3-VL-2B with thinking scored 30/30 click and 29/30 pick at 2.7 s,
+without thinking 30/30 and 26/30 at 0.4 s, and Qwen3-VL-8B 30/30 and 29/30 at 0.9 s.
+
+**It never says no.** The prompt "Locate a single instance…" always returns a box, even for a button
+that isn't on screen, so an agent would click something wrong. All 6 click misses are this case.
+The detect-all prompt ("Locate all the instances…") can decline
+([`locate_absent.py`](../bench/visual-control/locate_absent.py)): `<box>None</box>` for 6/6 absent
+buttons and 15/18 absent names on the pages (3 false boxes, on GitHub and Hugging Face). It still
+answered with a box for 24/24 present buttons and 22/24 present names; those boxes' positions
+weren't scored. So a click tool would ask the detect-all prompt first and only then trust a box.
+
+The 6 misses on real pages were small, dense targets (a username and a comment count on Hacker News,
+an issue number on GitHub, navbar items on Hugging Face). Wikipedia, PyPI and the Python docs were
+8/8. The pages are live, so these numbers won't reproduce exactly, and the screenshots aren't kept
+in the repo.

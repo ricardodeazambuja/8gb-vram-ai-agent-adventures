@@ -231,7 +231,11 @@ The detect-all prompt (`circle</c>square</c>triangle</c>star`) found 15/15, 0.6â
 and answers `<box>None</box>` for a class that isn't there. Output is 0â€“1000 normalised
 `x1 y1 x2 y2`. So the GGUF port's Q/K order is right. The port now lives in our llama.cpp fork (see
 Chores), and `QMODEL=locate bash scripts/start-qwen.sh --image` starts it (with `--special`).
-Next: the visual control probe's click and pick scenes as points, and real screenshots.
+
+**Click, pick and real pages (2026-10-30):** results in the
+[visual control probe](visual-control.md#locateanything-3b-boxes-instead-of-tool-calls). Finds what
+is there (pick 30/30, click 24/24, real web pages 42/48 at ~0.3 s), but the single-instance prompt
+always returns a box, so it can't say "not there"; the detect-all prompt mostly can.
 
 To check before downloading (done except the runtime):
 - **Runtime.** The official code needs `trust_remote_code` (custom model, attention kernels),
@@ -287,7 +291,7 @@ The agent stays a model we've already measured on [pibench](pibench.md); speech 
 
 | Model | Licence | Notes |
 |---|---|---|
-| [**LFM3-Audio-2B**](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) / [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF) | LFM Open License v1.0 (commercial use under $10M revenue) | Speech in and out, 18 languages, tool calls from voice. 1.1 GB at Q4_K_M + 0.34 GB projector: fits on the GPU with lots of room to spare. **Our `vendor/llama.cpp-lfm3` build already has it**: the LFM3-Audio speech generator in `mtmd`, and `llama-server`'s new `/v1/realtime` WebSocket endpoint (OpenAI Realtime schema) for live conversations and live transcription. We built only the server; `llama-tts` and `llama-mtmd-cli` need building too. |
+| [**LFM3-Audio-2B**](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) / [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF) | LFM Open License v1.0 (commercial use under $10M revenue) | Speech in and out, 18 languages, tool calls from voice. 1.1 GB at Q4_K_M + 0.34 GB projector: fits on the GPU with lots of room to spare. **Our fork's `adventures` branch already has it**: the LFM3-Audio speech generator in `mtmd`, and `llama-server`'s new `/v1/realtime` WebSocket endpoint (OpenAI Realtime schema) for live conversations and live transcription. We built only the server; `llama-tts` and `llama-mtmd-cli` need building too. |
 | [Voxtral Mini 3B](https://huggingface.co/ggml-org/Voxtral-Mini-3B-2507-GGUF) | Apache 2.0 (Mistral) | Speech in, text out; ggml-org GGUF. Its realtime variant is named in llama.cpp's `/v1/realtime` docs. |
 | [Ultravox v0.5 (Llama 3.2 1B)](https://huggingface.co/ggml-org/ultravox-v0_5-llama-3_2-1b-GGUF) | MIT | Speech in, text out; repo quiet since Dec 2025. |
 | [Moshi](https://github.com/kyutai-labs/moshi) / [Kyutai STT](https://huggingface.co/kyutai/stt-1b-en_fr) + [TTS](https://huggingface.co/kyutai/tts-1.6b-en_fr) | Apache 2.0 / CC-BY-4.0 | Full duplex (listens while it talks); its own Rust/PyTorch stack, not llama.cpp. English and French. |
