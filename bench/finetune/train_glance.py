@@ -315,10 +315,11 @@ def cmd_train(a, steps_only=None):
     model.gradient_checkpointing_enable()
     model.enable_input_require_grads()
     model.train()
-    if a.task == "grid":
-        data = [("grid", ex) for ex in grid_examples(a.n_train, "train-grid", a.recover)]
-    else:
-        data = [(name, i) for name in rc.SCENES for i in range(a.n_train)]
+    data = []
+    if a.task in ("grid", "both"):
+        data += [("grid", ex) for ex in grid_examples(a.n_train, "train-grid", a.recover)]
+    if a.task in ("glance", "both"):
+        data += [(name, i) for name in rc.SCENES for i in range(a.n_train)]
     random.Random(a.seed).shuffle(data)
     if steps_only:
         data = data[:steps_only * a.accum]
@@ -367,8 +368,9 @@ def cmd_train(a, steps_only=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["eval", "train", "fit"])
-    ap.add_argument("--task", choices=["glance", "grid"], default="glance",
-                    help="grid: train on optimal walks (--n-train = grids), eval closed-loop on the probe's 16 grids")
+    ap.add_argument("--task", choices=["glance", "grid", "both"], default="glance",
+                    help="grid: train on optimal walks (--n-train = grids), eval closed-loop on the probe's 16 grids; "
+                         "both: train on glance and grid together (eval with glance or grid)")
     ap.add_argument("--model", required=True)
     ap.add_argument("--adapter")
     ap.add_argument("--out")
