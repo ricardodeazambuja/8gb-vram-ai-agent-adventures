@@ -96,6 +96,31 @@ journalctl -k | grep -i oom
 **Fix:** a smaller context (`CTX=65536`), a quantized KV cache (`KVQUANT=q8_0`), a smaller quant,
 fewer browser tabs, or more swap. Re-tuning `NCMOE` won't help: the GPU was fine.
 
+### The whole terminal vanishes: server, agent and shell, all at once
+
+**What's going on:** that's **systemd-oomd**, not the kernel's OOM killer. Ubuntu's oomd watches
+memory *pressure* (time spent reclaiming memory), not free RAM, and when it acts it kills the
+whole terminal window's process group: the model server, the agent, your shell, everything
+started from that terminal. Here it happened while loading Ornith's 21.7 GB file at the same time
+as a 13.6 GB download was filling the page cache: pressure stayed above 50% for 20 seconds and
+23 processes went at once.
+
+**Check:**
+
+```bash
+journalctl -u systemd-oomd | grep -i killed   # "Killed …vte-spawn-….scope due to memory pressure"
+```
+
+**Fix:**
+
+- Don't load a big model (over ~15 GB) while a download or another heavy job is running.
+- Start the server in its own scope, so that if oomd fires it takes only the server:
+  `systemd-run --user --scope --unit=llama-<model> bash scripts/run-qwen.sh`.
+- On a big model's first load, watch `cat /proc/pressure/memory` (`some avg10`); stop the
+  server if it climbs past ~30.
+- A download killed halfway leaves a `.incomplete` file under `models/<dir>/.cache/`; delete it
+  and download again rather than trusting a resume.
+
 ### It loads, then crashes on the first request with `CUDA error: out of memory`
 
 **What's going on:** some memory is only allocated when real work starts: compute buffers and the

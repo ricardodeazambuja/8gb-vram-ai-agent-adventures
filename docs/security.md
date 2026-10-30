@@ -17,6 +17,9 @@ before a new model runs on this machine.
 | **Rigged tokenizer** | special tokens, BOS/EOS ids | a "token" whose text is an instruction; broken turn boundaries | `utils/audit-gguf.py` §2 + §4 |
 | **Backdoored weights** | the weights themselves | misbehaves only on some trigger | **nothing static.** First runs only in the [pibench sandbox](pibench.md#the-sandbox-because-we-let-robots-run-shell-commands) |
 | **Code in the repo** | `*.py`, `trust_remote_code`, pickles | runs on download/load in Python tools | we only download `.gguf` files, by name; llama.cpp never runs repo code |
+| **Model-written code** | the answers themselves | a test script that `exec()`s the model's code runs it with your permissions | `scripts/qwen-codecheck.py --sandbox`: the code runs in a container with no network, no capabilities and a read-only filesystem |
+| **A leaky sandbox** | the pibench firewall rules, which don't survive a reboot | an agent run that can reach your LAN and router | `bench/run-bench.sh` refuses to start until a probe from inside the sandbox fails to reach the LAN |
+| **Your own repo** | invisible characters in files you (or a tool) wrote | the same hidden text, now in your scripts and docs | scan the diff before committing (below) |
 
 ## The routine for a new model
 
@@ -42,17 +45,51 @@ before a new model runs on this machine.
    through the same parser.
 5. **Use a recent llama.cpp build.** The GGUF parser has had memory-safety fixes. New models go
    on `vendor/flint-llama.cpp` (upstream, 2026-10-21) unless they need a fork.
-6. **Keep its first runs tool-less or sandboxed.** Speed tests (`llama-bench`, a plain chat
-   request) give the model no tools. The first time it gets a shell is pibench, in a
-   container with no LAN, no host files and no capabilities.
+6. **Keep its first runs tool-less or sandboxed.** Speed tests (`scripts/qwen-bench.py`,
+   `llama-bench`, a plain chat request) give the model no tools; `qwen-bench.py` only checks
+   that a tool call is well-formed, it never runs it. Code checks run with
+   `scripts/qwen-codecheck.py --sandbox`, never on the host.
+7. **Its first shell is pibench**, in a container with no LAN, no host files and no
+   capabilities. The firewall that seals it (`bench/firewall.sh`) is not saved and disappears on
+   reboot. `PREFLIGHT_ONLY=1 bash bench/run-bench.sh` tells you: `SEALED INTERNET` is good,
+   `LEAK …` means re-add the rules (`sudo sh bench/firewall.sh add`) first.
 
 `python utils/test-audit-gguf.py` checks the auditor itself. It builds a GGUF with a poisoned
 template (an injected `curl … | sh`, *"do not tell the user"*, a `~/.ssh` instruction hidden
 in Unicode tag characters, a bidi override, Jinja internals) plus a truncated copy, and
 expects every trick to be reported and both files to fail.
 
+### Check your own diffs too
+
+Hidden characters don't only come from downloads. While writing the auditor's self-test, an
+editing tool turned the escape `"\u202e"` in Python source into a literal right-to-left override
+character. Harmless there, but it's exactly what the auditor hunts for. Before committing, scan
+the changed files for invisible format and control characters:
+
+```bash
+git diff --name-only | xargs python3 -c '
+import sys, unicodedata
+for f in sys.argv[1:]:
+    t = open(f, encoding="utf-8", errors="replace").read()
+    bad = sorted({hex(ord(c)) for c in t if unicodedata.category(c) in ("Cf", "Co")
+                  or (unicodedata.category(c) == "Cc" and c not in "\n\t")})
+    if bad: print(f, bad)'
+```
+
+Emoji built with a zero-width joiner (🧑‍💻 contains U+200D) show up here too; those are fine.
+To put such characters in code on purpose, build them with `chr(0x202E)` so they stay visible.
+
 ## Audits so far
 
 | Model | File | sha256 | Header | Template | Verdict |
 |---|---|---|---|---|---|
 | [Groot-19B-A3B](models/groot-19b-a3b.md) | `Groot-19B-A3B-261023-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | Qwen3.6's, minus the "drop old reasoning" branch; matches the source repo | **clean** |
+| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | `Ornith-1.5-35B-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | Unsloth's patched Qwen3.6 template (as in our Qwen3.6 GGUF), minus the same "drop old reasoning" branch; differs from the source repo's only by those Unsloth fixes | **clean** |
+| [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) | `LFM2.5-24B-A2B-QAD-Q4_0.gguf` | ✓ pinned | ✓ | Liquid's own; byte-identical to the source repo's | **clean** |
+| [LFM3-1.7B](models/lfm3-1.7b.md) | `LFM3-1.7B-Q8_0.gguf` | ✓ pinned | ✓ | identical to the source repo's | **clean** |
+| [LFM3-VL-2B](models/lfm3-vl-2b.md) | `LFM3-VL-2B-Q8_0.gguf` + projector | ✓ pinned | ✓ | identical to the source repo's | **clean** |
+| [d1-2B](up-next.md) | `d1-2B-Q8_0.gguf` | ✓ pinned | ✓ | chat template identical to the source repo's; a second, `systemone` template holds the decision prompts ("Reply with the option code only.") | **clean** (its array-valued `tokenizer.chat_templates` crashed the auditor, which then exited as a WARN: fixed, a crash is now a FAIL) |
+| [EmbeddingGemma 2](up-next.md) | `embeddinggemma-2-Q8_0.gguf` | ✓ pinned | ✓ | identical to the source repo's | **clean** |
+| [Clef-Flash](up-next.md) | `Clef-Flash-Q4_K_M.gguf` | ✓ pinned | ✓ | Qwen3.5-style tool template (its one WARN, "do not tell the user about function calls", is the stock Qwen wording); a `systemone` template holds the joint-decision prompt | **clean** |
+| [ThinkingCap Gemma 4 26B](models/thinkingcap-gemma4-26b-a4b.md) | `ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf` + projector | ✓ pinned | ✓ | Gemma 4's, with a later fix set (null arguments, continuation tracking, media in tool responses, `preserve_thinking`); no injected text, the only new emitted text is a `raise_exception` message. `eot_token_id` (106) is unset: watch for runaway turns | **clean** |
+| [LFM3-Audio-2B](up-next.md#-voice-agents-agents-that-talk-to-people) | `LFM3-Audio-2B-Q8_0.gguf` + audio projector | ✓ pinned | ✓ | identical to the source repo's; two extra templates (`asr`, `tts`) emit only their task prompts ("Perform live ASR.", "Perform TTS in …") | **clean** |
