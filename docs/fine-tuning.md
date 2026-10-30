@@ -120,18 +120,21 @@ and the rules, and ask the model only what it's good at.
 
 ## One adapter for both jobs
 
-Trained on the glance scenes and the grid walks together (4,756 examples, one pass), one seed:
+Trained on the glance scenes and the grid walks together (4,756 examples, one pass):
 
 | Trained on both | Glance, clean | Glance, degraded | Grid open / mazes | Grid open / mazes, harness skips blocked moves | Training |
 |---|---:|---:|---:|---:|---:|
-| LoRA | 127 | 124 | 8/8, 0/8 | 8/8, **5/8** | 17 min |
-| **Norm-only** (34,560 parameters) | **139** | 118 | 8/8, 0/8 | 8/8, **6/8** | 13 min |
+| LoRA, 1 seed | 127 | 124 | 8/8, 0/8 | 8/8, 5/8 | 17 min |
+| **Norm-only** (34,560 parameters), 3 seeds | 139 / 115 / 133, mean 129 | 118 / 102 / 135, mean 118 | 8/8 ×3; 0, 1, 2 /8 | **8/8 and 6/8, all three seeds** | 13 min |
 
-Learning to steer didn't cost the glance skills: the norm-only model's 139 is its best clean
-score yet (single run: the three glance-only seeds were 130–135). The same 34,560 numbers hold
-both behaviours, a "which tool, which arguments" answer for a single picture and a move per step
-in a closed loop. As before, without the harness rule the mazes are lost (0/8): it bumps into a
-wall and keeps pressing.
+**Steering is the solid part:** all three norm-only seeds walk every open grid and, with the
+harness rule, solve 6 of 8 mazes, the best maze score in this repo (LFM3-VL-2B with thinking:
+3/8; the tuned grid-only models: 5/8). **The glance side gets less steady when it shares the
+model:** the three seeds score 139, 115 and 133. The 115 comes from one habit: that model calls
+`report` on 20 of 30 gauges, including the ones that needed a valve, the very mistake
+LFM3-VL-2B makes without thinking. So the same 34,560 numbers can hold both behaviours, but
+which rule survives training is a matter of luck at this size of run. Train each job's adapter
+separately, or check every run, before trusting one.
 
 ## Serving it: not through llama.cpp yet
 

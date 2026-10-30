@@ -304,7 +304,7 @@ measured:
 few minutes of training on the glance scenes: 14/150 → about 134/150 with LoRA, the same
 training only the language model's norm gains (34,560 parameters, mean 133 over 3 seeds), and IA3
 less steady (mean 123, 109–138). On the grid robot, the tuned models plus a harness that never
-repeats a blocked move solve 5/8 mazes (LFM3-VL-2B with thinking: 3/8, at 44 s a step). The vision side's norms alone teach the call
+repeats a blocked move solve 5/8 mazes, 6/8 when one adapter learns both jobs (LFM3-VL-2B with thinking: 3/8, at 44 s a step). The vision side's norms alone teach the call
 format but not where to point (73/150). LFM3-VL-2B
 is blocked here: transformers has no LFM3 support yet, so its repo's own Python would have to
 run (`trust_remote_code`), which needs a human decision.
