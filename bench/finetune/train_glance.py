@@ -157,11 +157,14 @@ def best_move(walls, robot, goal):
     return None
 
 
-def grid_examples(n_episodes, prefix):
-    """Every step of an optimal walk through n grids (half with walls): (walls, robot, goal, history, move)."""
+def grid_examples(n_episodes, prefix, recover=0):
+    """Every step of an optimal walk through n grids (half with walls): (walls, robot, goal, history, move).
+    recover=k adds k states per grid at random free cells, where possible just after bumping into a wall
+    or the edge ("left (blocked)"), so the model also sees how to get going again off the shortest path."""
     out = []
     for j in range(n_episodes):
-        walls, robot, goal, _ = rc.make_grid(random.Random(f"{prefix}-{j % 2 == 1}-{j}"), j % 2 == 1)
+        rng = random.Random(f"{prefix}-{j % 2 == 1}-{j}")
+        walls, robot, goal, _ = rc.make_grid(rng, j % 2 == 1)
         history = []
         while robot != goal:
             mv = best_move(walls, robot, goal)
@@ -169,6 +172,16 @@ def grid_examples(n_episodes, prefix):
             dx, dy = rc.MOVES[mv]
             robot = (robot[0] + dx, robot[1] + dy)
             history.append(f"{mv} (moved)")
+        free = [(x, y) for x in range(rc.N) for y in range(rc.N)
+                if (x, y) not in walls and (x, y) != goal and rc.bfs(walls, (x, y), goal)]
+        for _ in range(recover):
+            cell = rng.choice(free)
+            bumps = [m for m, (dx, dy) in rc.MOVES.items()
+                     if not (0 <= cell[0] + dx < rc.N and 0 <= cell[1] + dy < rc.N) or (cell[0] + dx, cell[1] + dy) in walls]
+            hist = [f"{rng.choice(list(rc.MOVES))} (moved)"]
+            if bumps and rng.random() < 0.7:
+                hist.append(f"{rng.choice(bumps)} (blocked)")
+            out.append((walls, cell, goal, hist, best_move(walls, cell, goal)))
     return out
 
 
@@ -285,7 +298,7 @@ def cmd_train(a, steps_only=None):
     model.enable_input_require_grads()
     model.train()
     if a.task == "grid":
-        data = [("grid", ex) for ex in grid_examples(a.n_train, "train-grid")]
+        data = [("grid", ex) for ex in grid_examples(a.n_train, "train-grid", a.recover)]
     else:
         data = [(name, i) for name in rc.SCENES for i in range(a.n_train)]
     random.Random(a.seed).shuffle(data)
@@ -329,7 +342,7 @@ def cmd_train(a, steps_only=None):
     else:
         model.save_pretrained(a.out)
     with open(os.path.join(a.out, "train.json"), "w") as f:
-        json.dump({"task": a.task, "method": a.method, "seed": a.seed, "n_train": a.n_train, "lr": a.lr, "accum": a.accum,
+        json.dump({"task": a.task, "recover": a.recover, "method": a.method, "seed": a.seed, "n_train": a.n_train, "lr": a.lr, "accum": a.accum,
                    "trainable": n_train, "secs": round(time.time() - t0)}, f, indent=1)
 
 
@@ -346,6 +359,7 @@ def main():
     ap.add_argument("--n-train", type=int, default=400)
     ap.add_argument("--method", choices=["lora", "ia3", "norm", "vnorm"], default="lora")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--recover", type=int, default=0, help="grid: extra off-path states per grid (after a bump)")
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--accum", type=int, default=8)
     ap.add_argument("--shift", action="store_true", help="eval on degraded pictures (smaller, JPEG, brightness)")
