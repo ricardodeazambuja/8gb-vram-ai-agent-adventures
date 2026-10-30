@@ -220,7 +220,17 @@ loads without compiling anything: `mm.input_norm`, `mm.1`, `mm.2`, a `[1152, 64,
 table, `image_min/max_pixels` set, text model plain `qwen2`. It has separate `attn_q/k/v`
 where the PR's converter writes a fused `attn_qkv`; the loader takes either. Still unknown:
 whether that port reordered Q/K for split RoPE the way the PR's converter does. If it didn't,
-it will load and then point at the wrong places, so the image test decides. Next: build.
+it will load and then point at the wrong places, so the image test decides.
+
+**First test (2026-10-30): it works.** Built (`llama-server`, `llama-mtmd-cli`; CUDA, sm75) and
+run with `--special` (without it llama-server drops the `<ref>`/`<box>`/`<NNN>` tokens), greedy,
+5.1 GB of VRAM at `-c 8192`. On the vision probe's three shape images (1024x768, 15 shapes,
+pixel ground truth), one "Locate a single instance … {color} {shape}." query per shape: 15/15 at
+IoU >= 0.5, mean IoU 0.94, 0.2 s each (2.4 s for the first query on a new image, the encode).
+The detect-all prompt (`circle</c>square</c>triangle</c>star`) found 15/15, 0.6–0.8 s per image,
+and answers `<box>None</box>` for a class that isn't there. Output is 0–1000 normalised
+`x1 y1 x2 y2`. So the GGUF port's Q/K order is right. Next: a `locate` entry in
+`run-qwen.sh`, the visual control probe's click and pick scenes as points, and real screenshots.
 
 To check before downloading (done except the runtime):
 - **Runtime.** The official code needs `trust_remote_code` (custom model, attention kernels),
