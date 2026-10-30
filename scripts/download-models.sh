@@ -38,6 +38,7 @@
 #   d1       d1-2B Q8_0 (LiquidAI, ~1.9 GB) — decision model
 #   eg2      EmbeddingGemma 2 Q8_0 (ggml-org, ~0.3 GB) — embeddings
 #   clefflash Clef-Flash Q4_K_M (ggml-org, ~6.7 GB) — Cloudflare decision model (/v1/systemone)
+#   lfm25vl  LFM2.5-VL-450M F16 (LiquidAI, ~0.7 GB + 0.2 GB vision) — tiny vision model, fine-tuning subject
 #   locate   LocateAnything-3B Q8_0 (yuuko-eth port of nvidia's, ~3.6 GB + 0.9 GB vision) — grounding
 #            specialist; non-commercial research license (docs/up-next.md)
 #
@@ -55,7 +56,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate)
+#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -91,6 +92,7 @@ MODELS=(
   "lfm3|LiquidAI/LFM3-1.7B-GGUF|b3f2ae5d73cd3c91bf40e8ba752c648aa05dffdf|lfm3-1.7b|LFM3-1.7B-Q8_0.gguf:8f6b24182258205e9e01e21f1f24a1f208c1e8115578825d202ce39976af20b6"
   "lfm3vl|LiquidAI/LFM3-VL-2B-GGUF|7c3b4a43c9023e80bf234fec5e826a3365c8dda8|lfm3-vl-2b|LFM3-VL-2B-Q8_0.gguf:e138e54189a751d90ea8c0b236360490613ecd465d28d68fa6094d3db7fa6727 mmproj-LFM3-VL-2B-F16.gguf:1d8e6e58eefc093e09d6332f081516e1ddbd5b35cfca7f35463fb270db230b1e"
   "lfm3audio|LiquidAI/LFM3-Audio-2B-GGUF|fcfae9027c00a6f3f872c48a841cfeb77e2b5a1c|lfm3-audio-2b|LFM3-Audio-2B-Q8_0.gguf:d4e36902ba8f0ee7b333596030a59d650f88ac76660b4d9ba5ff77c3c2258fc0 mmproj-LFM3-Audio-2B-F16.gguf:bd0fce0670c96e405a753f996701dee6568bc6a1318a80091d74fb58f7510d79"
+  "lfm25vl|LiquidAI/LFM2.5-VL-450M-GGUF|1abed04b6fe71314d8c446a1371c03d7c332266d|lfm2.5-vl-450m|LFM2.5-VL-450M-F16.gguf:f7d130500beadcbe66b78fb7b1222142ccdf4edcb2596026a7ee30b4bafe6989 mmproj-LFM2.5-VL-450m-F16.gguf:51b458cfdbc736982145a35f798ce37611af0aab639e58b33473ba0c7815fd99"
   "locate|yuuko-eth/LocateAnything-3B-GGUF|c3260717380c24cd2fc11f66c43e2feeec3e32fe|locateanything-3b|LocateAnything-3B-Q8_0.gguf:3d039dea2f121006d5dffe2a0371b4979c67dc17ac9d50a557834a064c9e107f mmproj-LocateAnything-3B-BF16.gguf:0216a6647317bc7d5bd152b66bd8b9248472ad090893f75d2f4a689d1789ee80"
   "d1|LiquidAI/d1-2B-GGUF|63be75e6586882defeb706ed4bda812d90256a6d|d1-2b|d1-2B-Q8_0.gguf:073313d92b53b0ac8193db6e906cb3c78a98183d244b15b7b8f5426115c6738c"
   "dflash|z-lab/Qwen3.8-27B-DFlash2-GGUF|2d9571f8ce46e151f61c6499c99dee6079e1d610|qwen38-27b-gsq|Qwen3.8-27B-DFlash2-Q4_K_M.gguf:1a25c56858e1ebe93f2718ac1d49d1151f9323325c1bbfd6209370f4db131ebd"
@@ -155,7 +157,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
 done
 
 exit "$FAIL"
