@@ -283,8 +283,10 @@ measured:
 | SFT for decision models (d1-3B on Banking77) | d1-2B is already in the queue. |
 
 **Status (2026-10-29): first results on [their own page](fine-tuning.md).** LFM2.5-VL-450M, a
-few minutes of training on the glance scenes: 14/150 → 136/150 with LoRA, and 135/150 training
-only the norm gains (34,560 parameters), which also held up best on degraded pictures. LFM3-VL-2B
+few minutes of training on the glance scenes: 14/150 → about 134/150 with LoRA, the same
+training only the language model's norm gains (34,560 parameters, mean 133 over 3 seeds), and
+138 with IA3 at a higher learning rate (one seed). The vision side's norms alone teach the call
+format but not where to point (73/150). LFM3-VL-2B
 is blocked here: transformers has no LFM3 support yet, so its repo's own Python would have to
 run (`trust_remote_code`), which needs a human decision.
 

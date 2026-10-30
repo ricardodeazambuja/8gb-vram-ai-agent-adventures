@@ -89,7 +89,7 @@ copy-paste commands.
 | [pibench](docs/pibench.md) | The agent benchmark: the chores, the sandbox, the results, what we saw in the transcripts |
 | [The vision probe](docs/vision-probe.md) | OCR, boxes, charts, counting, CAD drawings |
 | [The visual control probe](docs/visual-control.md) | Look, decide, call a tool: dials, buttons, traffic lights, a grid robot |
-| [Fine-tuning](docs/fine-tuning.md) | Teaching a 450M vision model to call tools in 6 minutes: LoRA vs training only the norms |
+| [Fine-tuning](docs/fine-tuning.md) | Teaching a 450M vision model to call tools in 6 minutes: LoRA vs IA3 vs training only the norms |
 | [How it fits](docs/how-it-fits.md) | The tricks that make big models fit in 8 GB, explained |
 | [The graveyard](docs/graveyard.md) | Things we tried that didn't make the cut, and why |
 | [Troubleshooting](docs/troubleshooting.md) | Every way this went wrong for us, and the fix |

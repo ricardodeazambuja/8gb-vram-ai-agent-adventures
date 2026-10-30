@@ -29,18 +29,22 @@ evaluation) and the results.
 
 ## The results
 
-| What we trained | Trainable parameters | Training time | Peak VRAM | 🛢️ | 🖱️ | 🤏 | 🚦 | ⏲️ | **All** | Degraded pictures |
+| What we trained | Trainable parameters | Training time | Peak VRAM | 🛢️ | 🖱️ | 🤏 | 🚦 | ⏲️ | **All** (clean) | Degraded pictures |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| nothing (the base model) | 0 | — | — | 8 | 6 | 0 | 0 | 0 | **14/150** | 19/150 |
-| **LoRA** (rank 16, attention + MLP + conv projections) | 6.0M (1.3%) | 7.5 min | 1.36 GB | 30 | 24 | 22 | 30 | 30 | **136/150** | 118/150 |
-| **Norm-only** (the RMSNorm gains) | **34,560 (0.008%)** | 5.6 min | 1.27 GB | 28 | 25 | 22 | 30 | 30 | **135/150** | **121/150** |
-| **IA3** (a learned scale per channel) | 79,872 (0.018%) | 5.8 min | 1.27 GB | 24 | 24 | 22 | 30 | 17 | **117/150** | 102/150 |
+| nothing (the base model) | 0 | — | — | 8 | 6 | 0 | 0 | 0 | **14** | 19 |
+| **LoRA** (rank 16, attention + MLP + conv projections), 3 seeds | 6.0M (1.3%) | 7.5 min | 1.36 GB | 30 / 30 / 26 | 24 / 28 / 21 | 22 / 19 / 22 | 30 ×3 | 30 ×3 | **136 / 137 / 129**, mean 134 | 118 / 130 / 118, mean **122** |
+| **Norm-only**, language model (its RMSNorm gains), 3 seeds | **34,560 (0.008%)** | 5.6 min | 1.27 GB | 28 / 30 / 29 | 25 / 21 / 23 | 22 / 23 / 22 | 30 ×3 | 30 / 26 / 29 | **135 / 130 / 133**, mean 133 | 121 / 116 / 115, mean 117 |
+| **IA3** (a learned scale per channel), lr 1e-2 | 79,872 (0.018%) | 5.8 min | 1.27 GB | 27 | 29 | 25 | 30 | 27 | **138** | **133** |
+| IA3, lr 3e-3 | 79,872 | 5.8 min | 1.27 GB | 24 | 24 | 22 | 30 | 17 | 117 | 102 |
+| **Norm-only, vision side** (the image encoder's LayerNorms) | 38,400 (0.009%) | 5.5 min | 1.27 GB | 15 | 0 | 0 | 30 | 28 | 73 | 45 |
 | *for comparison:* [LFM3-VL-2B](models/lfm3-vl-2b.md), no training, thinking on / off | — | — | — | 25 / 24 | 30 / 30 | 29 / 26 | 30 / 27 | 30 / 10 | *144 / 117* | — |
 
-Measured 2026-10-29, one training run each, greedy decoding in transformers, under 0.25 s a
-decision. "Degraded pictures" are the same test scenes shrunk to 70%, darker or brighter, lower
-contrast and JPEG-compressed at quality 35, a worse camera. (LFM3-VL's row was measured through
-llama.cpp with a forced call, so the harnesses differ.)
+Out of 150 (30 scenes of each kind). Measured 2026-10-29, greedy decoding in transformers, under
+0.25 s a decision. "Degraded pictures" are the same test scenes shrunk to 70%, darker or
+brighter, lower contrast and JPEG-compressed at quality 35, a worse camera. LoRA and the
+language-model norms were trained three times (seeds 0, 1, 2: a different order of the training
+scenes and a different start for LoRA); the others once. LFM3-VL's row was measured through
+llama.cpp with a forced call, so the harnesses differ.
 
 ## What we learned
 
@@ -49,19 +53,26 @@ llama.cpp with a forced call, so the harnesses differ.)
   prose ("I'm sorry, I don't have the capability to control a robot arm"), wrote the tool's
   name as plain text (`stop`, `close_valve`), and misread the tanks ("A: 50% (below 30%)"). Its
   14 points are all scenes where *no* call was the right answer.
-- **A few minutes of training fixes that, and more.** 136/150 after LoRA: above LFM3-VL-2B
-  without thinking (117), close to it with thinking (144), at a quarter of its size and without
-  a 3-second think. Every answer is now a well-formed call, multiple tank refills included. All
-  14 remaining misses are clicks and picks a little off target.
-- **Training only the norm gains is as good as LoRA, and holds up better.** 34,560 numbers, 173×
-  fewer than LoRA, give 135/150, and on degraded pictures they keep more (121 against 118). LoRA
-  learned the clean tank pictures too well: on the degraded ones it refills tanks that aren't
-  low, often all three, and its tank score falls from 30 to 11 (the norm-only model's from 28 to
-  21). So for teaching a model *how to answer* in a
-  narrow domain, the "tune only the normalization" idea works on a transformer as well as it
-  does on a CNN's BatchNorm.
-- **IA3 lagged** (117), mostly on the gauge (17/30): it called `close_valve` on 13 dials where
-  opening the valve or a report was right. One run at one learning rate, so it may just be under-tuned.
+- **A few minutes of training fixes that, and more.** Around 134/150 after LoRA: well above
+  LFM3-VL-2B without thinking (117), close to it with thinking (144), at a quarter of its size
+  and without a 3-second think. Every answer is now a well-formed call, multiple tank refills
+  included. What's left is mostly clicks and picks a little off target.
+- **Training only the language model's norm gains is as good as LoRA on clean pictures** (mean
+  133 against 134, and the seeds overlap: 130–135 against 129–137) with 173× fewer trainable
+  numbers. On degraded pictures LoRA keeps a little more (mean 122 against 117). Our first,
+  single-seed run said the opposite (121 against 118): one run was not enough to tell them apart.
+  So the "tune only the normalization" idea works on a transformer for teaching it *how to
+  answer* in a narrow domain; it just isn't more robust than LoRA.
+- **IA3 needs a higher learning rate than we first gave it.** At 3e-3 it lagged (117, calling
+  `close_valve` on 13 dials where something else was right); at 1e-2 it is the best single run,
+  138 clean and 133 degraded. One seed only: next to check.
+- **The vision side alone teaches the format, not the pointing.** Training only the image
+  encoder's LayerNorms made the model *call* tools (traffic light 30/30, gauge 28/30), so a
+  nudge in what the language model sees is enough to switch it into tool-calling mode. But its
+  clicks and picks are placeholders, the same (500, 500) or (400, 400) whatever the picture
+  (0/30 each), and it refills all three tanks. Where to point is decided in the language model.
+- **LoRA's misses on degraded pictures look like over-learning the clean ones:** in its first
+  run it refilled tanks that aren't low, often all three, and the tank score fell from 30 to 11.
 - **The caveat:** training and test pictures come from the same drawing code, with different
   seeds. This shows the model can learn *our* scenes, not that it learned gauges in general. The
   degraded-picture test is a first step; real photos would be the real test.
