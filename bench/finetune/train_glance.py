@@ -96,7 +96,7 @@ def parse_calls(text):
 def load(model_dir, adapter=None):
     proc = AutoProcessor.from_pretrained(model_dir)
     model = AutoModelForImageTextToText.from_pretrained(model_dir, dtype=torch.float16).to("cuda")
-    if adapter and os.path.exists(os.path.join(adapter, "norms.pt")):  # norm-only: new gains, same shapes
+    if adapter and os.path.exists(os.path.join(adapter, "norms.pt")):  # norm/vnorm: new gains, same shapes
         state = torch.load(os.path.join(adapter, "norms.pt"), weights_only=True)
         missing = set(state) - {n for n, _ in model.named_parameters()}
         assert not missing, f"unknown parameters in norms.pt: {sorted(missing)[:3]}"
@@ -195,9 +195,10 @@ def trainable(model, method):
         cfg = IA3Config(target_modules=r".*language_model.*\.(k_proj|v_proj|w2)",
                         feedforward_modules=r".*language_model.*\.w2")
         return get_peft_model(model, cfg)
-    if method == "norm":  # only the language model's RMSNorm gains
+    if method in ("norm", "vnorm"):  # norm: the language model's RMSNorm gains; vnorm: the vision side's norms
+        side = "language_model" if method == "norm" else ("vision_tower", "multi_modal_projector")
         for n, p in model.named_parameters():
-            p.requires_grad = "language_model" in n and "norm" in n
+            p.requires_grad = (n.split(".")[1] in side if method == "vnorm" else side in n) and "norm" in n
         for p in model.parameters():
             if p.requires_grad:
                 p.data = p.data.float()
@@ -206,6 +207,7 @@ def trainable(model, method):
 
 
 def cmd_train(a, steps_only=None):
+    torch.manual_seed(a.seed)
     proc, model = load(a.model)
     model = trainable(model, a.method)
     n_train = sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -218,7 +220,7 @@ def cmd_train(a, steps_only=None):
     model.enable_input_require_grads()
     model.train()
     data = [(name, i) for name in rc.SCENES for i in range(a.n_train)]
-    random.Random(0).shuffle(data)
+    random.Random(a.seed).shuffle(data)
     if steps_only:
         data = data[:steps_only * a.accum]
     opt = torch.optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=a.lr, weight_decay=0.0)
@@ -247,13 +249,13 @@ def cmd_train(a, steps_only=None):
     if steps_only:
         return
     os.makedirs(a.out, exist_ok=True)
-    if a.method == "norm":
+    if a.method in ("norm", "vnorm"):
         state = {n: p.detach().half().cpu() for n, p in model.named_parameters() if p.requires_grad}
         torch.save(state, os.path.join(a.out, "norms.pt"))
     else:
         model.save_pretrained(a.out)
     with open(os.path.join(a.out, "train.json"), "w") as f:
-        json.dump({"method": a.method, "n_train": a.n_train, "lr": a.lr, "accum": a.accum,
+        json.dump({"method": a.method, "seed": a.seed, "n_train": a.n_train, "lr": a.lr, "accum": a.accum,
                    "trainable": n_train, "secs": round(time.time() - t0)}, f, indent=1)
 
 
@@ -266,7 +268,8 @@ def main():
     ap.add_argument("--key", default="model")
     ap.add_argument("--n", type=int, default=30)
     ap.add_argument("--n-train", type=int, default=400)
-    ap.add_argument("--method", choices=["lora", "ia3", "norm"], default="lora")
+    ap.add_argument("--method", choices=["lora", "ia3", "norm", "vnorm"], default="lora")
+    ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--accum", type=int, default=8)
     ap.add_argument("--shift", action="store_true", help="eval on degraded pictures (smaller, JPEG, brightness)")
