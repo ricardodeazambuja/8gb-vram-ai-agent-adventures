@@ -26,7 +26,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl  (default: qwen36)
+#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | locate  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -81,6 +81,9 @@ for _arg in "$@"; do case "$_arg" in
 esac; done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Our llama.cpp: the user's fork, branch `adventures` (upstream 2026-10-28 + LocateAnything PR
+# #24749 + Dory PR #30306), cloned next to this repo. Override with ADV_LLAMA=/path/to/clone.
+ADV_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
 
 QMODEL="${QMODEL:-qwen36}"
 case "$QMODEL" in
@@ -158,7 +161,7 @@ case "$QMODEL" in
     _ngl=999; _ctx=65536; _minp=0
     _topk=0
     _kv=q8_0
-    _bin="$REPO_ROOT/vendor/dory-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     _ncmoe=
     _temp=1.0 ;;
   spark)
@@ -179,7 +182,7 @@ case "$QMODEL" in
     _ngl=99; _ctx=110592; _minp=0
     _topk=0
     _kv=q8_0
-    _bin="$REPO_ROOT/vendor/dory-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     _ncmoe=
     _temp=1.0 ;;
   flint)
@@ -198,7 +201,7 @@ case "$QMODEL" in
     _mmproj=
     ALIAS=flint
     _ngl=99; _ctx=; _minp=0
-    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     _ncmoe=42
     _batch=2048
     _temp=1.0 ;;
@@ -236,7 +239,7 @@ case "$QMODEL" in
     ALIAS=nemotron-bolt-e4b
     _ngl=999; _ctx=65536; _minp=0
     _topk=0
-    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     _ncmoe=
     _temp=1.0 ;;
   groot)
@@ -286,7 +289,7 @@ case "$QMODEL" in
     _mmproj=
     ALIAS=lfm2.5-24b-a2b
     _ngl=99; _ctx=; _minp=0
-    _bin="$REPO_ROOT/vendor/flint-llama.cpp/build/bin/llama-server"
+    _bin="$ADV_BIN"
     # Measured (docs/models/lfm2.5-24b-a2b.md): NCMOE 27 / batch 2048 = 7.6 GB, 31-32 tok/s, prefill
     # ~940; 26 needs batch 512 (32.4 tok/s, prefill 325); 25 OOMs even at batch 512.
     _ncmoe=27
@@ -308,7 +311,7 @@ case "$QMODEL" in
     _ngl=99; _ctx=131072; _minp=0
     _topp=1.0; _topk=50; _rpen=1.1
     _kv=q8_0
-    _bin="$REPO_ROOT/vendor/llama.cpp-lfm3/build/bin/llama-server"
+    _bin="$ADV_BIN"
     _ncmoe=
     _temp=0.1 ;;
   lfm3vl)
@@ -322,11 +325,27 @@ case "$QMODEL" in
     _ngl=99; _ctx=32768; _minp=0
     _topp=1.0; _topk=50; _rpen=1.1
     _kv=q8_0; _mmgpu=1
-    _bin="$REPO_ROOT/vendor/llama.cpp-lfm3/build/bin/llama-server"
+    _bin="$ADV_BIN"
     _ncmoe=
     _temp=0.1 ;;
+  locate)
+    # NVIDIA LocateAnything-3B: grounding only (Qwen2.5-3B + MoonViT). Start with --image. Its
+    # boxes come out as control tokens (<ref>label</ref><box><x1><y1><x2><y2></box>, 0-1000), which
+    # llama-server drops unless started with --special. Greedy, as in the GGUF port's tests.
+    # Needs the locateanything projector (PR #24749), in our adventures branch. See docs/up-next.md.
+    KIND=dense
+    _dir="$REPO_ROOT/models/locateanything-3b"
+    _model="$_dir/LocateAnything-3B-Q8_0.gguf"
+    _mmproj="$_dir/mmproj-LocateAnything-3B-BF16.gguf"
+    ALIAS=locateanything-3b
+    _ngl=99; _ctx=8192; _minp=0
+    _topp=1.0; _topk=1; _rpen=1.0
+    _kv=f16; _mmgpu=1; _extra="--special"
+    _bin="$ADV_BIN"
+    _ncmoe=
+    _temp=0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | locate)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"
@@ -351,7 +370,7 @@ REPEAT_PENALTY="${REPEAT_PENALTY:-${_rpen:-1.0}}"
 NP="${NP:-1}"
 BATCH="${BATCH:-${_batch:-512}}"
 UBATCH="${UBATCH:-${_batch:-512}}"
-EXTRA_ARGS="${EXTRA_ARGS:-}"
+EXTRA_ARGS="${EXTRA_ARGS:-${_extra:-}}"
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
 CUDA_BIN="${CUDA_BIN:-${_bin:-$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server}}"
