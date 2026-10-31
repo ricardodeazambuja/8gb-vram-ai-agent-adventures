@@ -138,6 +138,9 @@ few tokens. It's lossless, and at **greedy** it's a real win: 79–88% of drafts
 and the gain disappears into this laptop's ±13% noise. A draft-confidence floor (`p_min > 0`)
 turned the output into `fmt-fmt…` loops, so don't. Want faster coding? Lower the temperature and
 try `MTP=1`. (The EAGLE3 draft was slower and crashier; it's in the [graveyard](../graveyard.md).)
+On our fork, `--spec-draft-sampling probabilistic` gave 27 tok/s at temperature 1.0 against 21-22
+without a draft, in one run, with no change in scores
+([details](../up-next.md)).
 
 **[pibench](../pibench.md)** (64K, `NCMOE=20`, q8_0 KV): **18/18 solved**, 100% of hidden tests,
 median **4.8 min** and ~7.1K output tokens per run. Tied for first with Flint, which is a fine

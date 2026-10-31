@@ -493,6 +493,32 @@ comparable quality. It might work with llama.cpp's speculative decoding or our M
 experiment on our fork. The output is no longer identical to normal decoding, so measure quality
 and check that tool calls still parse.
 
+**Tried it (2026-10-31): faster, but not worth keeping.** On Gemma 4 26B with its MTP head, n-max 2,
+temperature 1.0, on the local branch `relaxed-accept` (not pushed; [harness](../bench/relaxed/run_relaxed.py)).
+The rule keeps a drafted token when the target gives it at least τ times the probability of its top
+choice, and turns off once a grammar is active.
+
+| Mode | tok/s | Drafts kept | Ran out of 1500 tokens (of 70) | Tool calls |
+|---|---:|---:|---:|---:|
+| no draft | 20.8 / 22.1 | — | 4 | 30/30 |
+| MTP, exact match | 23.6 / 26.2 | 71% | 7 | 30/30 |
+| MTP, `--spec-draft-sampling probabilistic` | 27.0 | 76% | 8 | 30/30 |
+| relaxed τ 0.5 | 28.3 | 82% | 13 | 30/30 |
+| relaxed τ 0.2 | 28.8 | 87% | 13 | 30/30 |
+| relaxed τ 0.05 | 29.3 | 89% | 8 | 30/30 |
+
+Two runs where a mode was repeated. The arithmetic scores looked like a disaster at first (19/30
+against 29/30), but every miss in every mode was the thinking running out of tokens, not a wrong
+answer. With a 4000-token budget and new tasks no finished arithmetic answer was wrong in any mode:
+no draft and probabilistic 30/30 over two rounds, τ 0.2 14/15 over one (the other hit the limit; its
+second round timed out). So relaxed acceptance doesn't break answers or tool calls here, but it
+makes the model ramble, which eats much of the extra speed, and the 7% over probabilistic is within
+this laptop's noise. Probabilistic drafting already ships in llama.cpp, needs no patch and
+keeps the model's own distribution, so that's the one to use: +26% over no draft in one run, same
+scores as no draft on the new tasks, though 2 of 50 hit the limit against none. It isn't the
+default in `run-server-mtp.sh` yet because that's a single speed measurement. The temperature 0.6
+runs were dropped for time, and these are small, easy tasks.
+
 ## 🔥 Backburner: a draft head for a small model
 
 [Soft-MTP](https://github.com/JaydenTeoh/Soft-MTP) ([paper](https://arxiv.org/abs/2610.38331),
