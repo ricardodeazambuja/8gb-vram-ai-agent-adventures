@@ -88,5 +88,7 @@ identical to the source repo's, no hidden characters, no Jinja internals; the pr
 
 - Needs a llama.cpp build from after 2026-10-27.
 - Boxes come back in 0–1000 coordinates whatever you ask for; scale them yourself.
+- Thinking off, it's weak at one-picture decisions (109/150), but fine-tuning fixes that: 150/150 in
+  `llama-server`, and through mazes as well. See [Fine-tuning](../fine-tuning.md#one-adapter-for-both-jobs).
 - Not an agent: in long conversations with tools it falls into loops. Use [LFM3-1.7B](lfm3-1.7b.md)
   for that, or give it one picture and one decision at a time ([visual control](../visual-control.md)).

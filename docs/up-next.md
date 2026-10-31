@@ -414,20 +414,10 @@ drawing code), and rerun the [vision probe](vision-probe.md) to check nothing wa
 
 Researched and first measured 2026-10-31. Stable Diffusion's own repos are still in `GitStuff/` from
 years ago, but it's no longer the best fit for this laptop. Sizes in the candidates table come from
-Hugging Face, and its speed and VRAM figures are vendor or blog claims; the first table is measured.
+Hugging Face, and its speed and VRAM figures are vendor or blog claims.
 
-| 1024×1024, 4 prompts × 2 seeds | Time per image | Peak VRAM | Steps | Hands | Sign text | Watercolour asked for |
-|---|---:|---:|---:|---|---|---|
-| **FLUX.2 Klein 4B** Q4_0 | **23 s** | **3.5 GB** | 4 | good | right on both, one doubled | yes |
-| **Iris-3B Turbo** (6 GB file) | 33 s | 7.3 GB | 4 | good | right on both, cleanest | no, looks like digital cartoon |
-| SDXL base | 47 s | 5.8 GB | 25 | passable, messy laces | garbled on one, spacing off on the other | yes |
-
-All 24 pictures came out with [`run_gen.py`](../bench/imagegen/run_gen.py), through stable-diffusion.cpp
-at commit `0a067120`, text encoder on the CPU, VAE tiling on. Times are medians, and the first run
-of each model was 8 to 15 s slower while files loaded. The quality columns are our own look at
-six pictures per model, not a score. **Klein is the everyday pick here:** fastest, half the VRAM,
-room left over for a LoRA or another model. Iris-3B Turbo is the one for text, but at 7.3 of 7.8 GB
-it leaves nothing spare until we try the Q4 GGUF.
+Measured so far: **[Making pictures on 8 GB](image-generation.md)**. FLUX.2 Klein 4B is the everyday pick
+(23 s, 3.5 GB). The rest of this section is the plan.
 
 **Runner:** [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), the llama.cpp of
 image models: ggml, CUDA, GGUF, and every model below is on its list. That keeps our "everything in

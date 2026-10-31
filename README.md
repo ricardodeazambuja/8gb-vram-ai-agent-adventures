@@ -77,6 +77,12 @@ copy-paste commands.
   The ones that failed printed a wrong answer and walked right past it. [pibench](docs/pibench.md).
 - **Every model can find shapes in a picture; almost none use the coordinates you ask for.**
   [The vision probe](docs/vision-probe.md).
+- **A 2B vision model got better by training 201,472 numbers.** Fine-tuning only its norms took it
+  from 109 to 150 of 150 decisions in `llama-server`, and through 5 of 8 mazes where a LoRA 75 times
+  bigger managed 1.
+  [Fine-tuning](docs/fine-tuning.md).
+- **Stable Diffusion is no longer the easy choice on 8 GB.** FLUX.2 Klein draws 1024×1024 in 23 s
+  in 3.5 GB and can spell. [Making pictures](docs/image-generation.md).
 - **A GGUF can load perfectly and still be garbage.** Verify the sha256 before you blame the
   model, the kernel, or the universe. [Troubleshooting](docs/troubleshooting.md).
 
@@ -89,7 +95,8 @@ copy-paste commands.
 | [pibench](docs/pibench.md) | The agent benchmark: the chores, the sandbox, the results, what we saw in the transcripts |
 | [The vision probe](docs/vision-probe.md) | OCR, boxes, charts, counting, CAD drawings |
 | [The visual control probe](docs/visual-control.md) | Look, decide, call a tool: dials, buttons, traffic lights, a grid robot |
-| [Fine-tuning](docs/fine-tuning.md) | Teaching a 450M vision model to call tools in 6 minutes: LoRA vs IA3 vs training only the norms |
+| [Fine-tuning](docs/fine-tuning.md) | Teaching vision models to call tools and steer: LoRA vs IA3 vs training only the norms, and serving the result from llama.cpp |
+| [Making pictures](docs/image-generation.md) | Image generators on 8 GB: FLUX.2 Klein, Iris-3B and SDXL side by side |
 | [How it fits](docs/how-it-fits.md) | The tricks that make big models fit in 8 GB, explained |
 | [The graveyard](docs/graveyard.md) | Things we tried that didn't make the cut, and why |
 | [Troubleshooting](docs/troubleshooting.md) | Every way this went wrong for us, and the fix |
@@ -106,7 +113,7 @@ scripts/     launchers, downloads (pinned + sha256-checked), builds, quick bench
 config/      the pi provider definition (all models, context sizes, thinking levels)
 envs/        the pinned CUDA build toolchain
 patches/     the llama.cpp patch for Dory
-bench/       pibench (sandboxed agent benchmark) and the vision probe
+bench/       pibench (sandboxed agent benchmark), the vision and visual control probes, fine-tuning, image generation
 docs/        everything you read above
 utils/       a GGUF inspector and a GGUF security auditor
 models/      where downloads go (not in git)
