@@ -190,7 +190,19 @@ weights. It's one seed, and training and test use the same drawing code, so this
 | Three seeds, [scenes never trained on](../bench/finetune/scenes_new.py) (new layouts, palettes, button names) | 105 | **150 / 150 / 149** |
 | [Vision probe](vision-probe.md), one seed | 68% | **78%** (91% for the untouched model with thinking on) |
 
-So it isn't memorising our drawing code, and it forgot nothing. One adapter trained on glance and
+| Norm-only (language model, 201K values, 0.4 MB, 20 min, 4.69 GiB, lr 2e-4), one seed | 97 clean, 105 new | **150** clean, **149** new, **150** degraded |
+| IA3 (196K values, 0.8 MB, 21 min, 4.63 GiB, lr 1e-2), one seed | 97 clean, 105 new | **150** clean, **147** new, **149** degraded |
+| *LFM2.5-VL-450M, adapters trained on glance + grid, on new scenes* | *14* | *LoRA 110, norm-only 98 (127 and 139 on the drawings they trained on)* |
+
+So it isn't memorising our drawing code, and it forgot nothing. The tiny methods do the job on the
+2B model as well: about 75 times fewer values than LoRA and within three scenes of it. The misses
+on new scenes are all tanks: IA3's three refill both A and B. On this model LoRA keeps one
+advantage, it's the only one that runs in llama.cpp; the converter has no format for norm gains
+or IA3 scales, so those two stay in transformers. The 450M model tells a different story: its
+adapters do far better than its 14/150 base, but they lose 17 and 41 points on drawings they never
+saw, the norm-only one the most, so its near-perfect clean scores overstated how much it had
+learned. Those LFM2.5 adapters shared their training with the grid, so they aren't a like-for-like
+match for LFM3-VL's glance-only ones. One adapter trained on glance and
 the grid together (47 min, 4.86 GiB): glance 150/150, new scenes 148/150, grid 8/8 open and 3/8
 with walls, 5/8 with the harness rule that never repeats a blocked move.
 
