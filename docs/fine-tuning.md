@@ -128,8 +128,9 @@ Trained on the glance scenes and the grid walks together (4,756 examples, one pa
 | **Norm-only** (34,560 parameters), 3 seeds | 139 / 115 / 133, mean 129 | 118 / 102 / 135, mean 118 | 8/8 ×3; 0, 1, 2 /8 | **8/8 and 6/8, all three seeds** | 13 min |
 
 **Steering is the solid part:** all three norm-only seeds walk every open grid and, with the
-harness rule, solve 6 of 8 mazes, the best maze score in this repo (LFM3-VL-2B with thinking:
-3/8; the tuned grid-only models: 5/8). **The glance side gets less steady when it shares the
+harness rule, solve 6 of 8 mazes (LFM3-VL-2B with thinking:
+3/8; the tuned grid-only models: 5/8; tuned LFM3-VL's IA3 later reached
+[7/8](#did-it-hold-up-2026-10-30)). **The glance side gets less steady when it shares the
 model:** the three seeds score 139, 115 and 133. The 115 comes from one habit: that model calls
 `report` on 20 of 30 gauges, including the ones that needed a valve, the very mistake
 LFM3-VL-2B makes without thinking. So the same 34,560 numbers can hold both behaviours, but
@@ -233,8 +234,26 @@ adapters do far better than its 14/150 base, but they lose 17 and 41 points on d
 saw, the norm-only one the most, so its near-perfect clean scores overstated how much it had
 learned. Those LFM2.5 adapters shared their training with the grid, so they aren't a like-for-like
 match for LFM3-VL's glance-only ones. One adapter trained on glance and
-the grid together (47 min, 4.86 GiB): glance 150/150, new scenes 148/150, grid 8/8 open and 3/8
-with walls, 5/8 with the harness rule that never repeats a blocked move.
+the grid together does both jobs:
+
+| LFM3-VL-2B, trained on both (one seed) | Glance | New scenes | Grid open | Mazes | Mazes, harness skips blocked moves | Mazes in `llama-server` | Training | Peak VRAM |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| none | 97 | 105 | 3/8 (served) | — | — | 0/8 | | |
+| LoRA | 150 | 148 | 8/8 | 3/8 | 5/8 | 1/8 | 47 min | 4.86 GiB |
+| **Norm-only** | 150 | 148 | 8/8 | **6/8** | 6/8 | **5/8** | 44 min | 4.69 GiB |
+| **IA3** | 150 | 149 | 8/8 | 5/8 | **7/8** | 4/8 | 41 min | 4.63 GiB |
+
+The smallest adapters beat LoRA at steering and match it at the glance, the same result as on
+LFM2.5 but without its unsteady glance. Before the harness rule norm-only hits a wall 32 times
+over the 16 grids, against LoRA's 96. IA3 with the rule, 7/8, is the best maze score in this repo.
+Steps stay close to the shortest path on what they solve (1.03 to 1.13 times it). That's one seed
+each over 8 mazes, so the order of the three is a rough reading, and the LFM2.5 seeds above varied
+by more than these gaps on the glance.
+
+Baked into a GGUF and served, the glance holds (norm-only 150 and 148, IA3 150 and 149) but mazes
+slip: norm-only and IA3 lose one, LoRA two (`--lora`, on stock). The server samples rather than taking
+the top move, so this looks like sampling, though no run here separates that from the
+format change. Open grids stay 8/8, at 0.3 s a step. The harness rule isn't in the served runs.
 
 **In llama.cpp.** `convert_lora_to_gguf.py` from our fork makes a 31 MB adapter, and it runs on the
 stock model with no sandbox: 149/150, 0.42 s a decision, 3.2 GB of VRAM. With the adapter's scale
