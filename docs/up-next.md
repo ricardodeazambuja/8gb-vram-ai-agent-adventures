@@ -8,7 +8,7 @@ before it runs, then gets a [model page](models/) and moves into the README line
 
 | What | Status |
 |---|---|
-| Clef-Flash, d1-2B, EmbeddingGemma 2 | first smoke tests passed (below); the real measurements are still to do |
+| Clef-Flash, d1-2B, EmbeddingGemma 2 | measured (below); only a bigger, harder question set is left |
 
 Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18);
 [Ornith](models/ornith-1.5-35b-a3b.md) (14/18, vision 97%) and

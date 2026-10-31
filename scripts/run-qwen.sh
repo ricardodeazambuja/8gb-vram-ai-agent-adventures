@@ -26,7 +26,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | locate  (default: qwen36)
+#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -328,6 +328,20 @@ case "$QMODEL" in
     _bin="$ADV_BIN"
     _ncmoe=
     _temp=0.1 ;;
+  lfm25vl)
+    # LiquidAI LFM2.5-VL-450M: tiny vision model, our fine-tuning subject (docs/fine-tuning.md). Same
+    # sampling as lfm3vl, which is what its llama-server scores used. Start with --image.
+    KIND=dense
+    _dir="$REPO_ROOT/models/lfm2.5-vl-450m"
+    _model="$_dir/LFM2.5-VL-450M-F16.gguf"
+    _mmproj="$_dir/mmproj-LFM2.5-VL-450m-F16.gguf"
+    ALIAS=lfm2.5-vl-450m
+    _ngl=99; _ctx=32768; _minp=0
+    _topp=1.0; _topk=50; _rpen=1.1
+    _kv=q8_0; _mmgpu=1
+    _bin="$ADV_BIN"
+    _ncmoe=
+    _temp=0.1 ;;
   locate)
     # NVIDIA LocateAnything-3B: grounding only (Qwen2.5-3B + MoonViT). Start with --image. Its
     # boxes come out as control tokens (<ref>label</ref><box><x1><y1><x2><y2></box>, 0-1000), which
@@ -345,7 +359,7 @@ case "$QMODEL" in
     _ncmoe=
     _temp=0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | locate)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"
