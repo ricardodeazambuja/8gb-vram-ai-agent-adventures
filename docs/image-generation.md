@@ -28,6 +28,28 @@ should use less, which we haven't tried.
 The text encoder runs on the CPU (`--backend te=cpu`), since it's needed once per prompt, and VAE
 tiling is on. Iris-3B paints pixels directly, so it has no VAE at all.
 
+## Giving it a picture as well
+
+Prompts aren't the only input. One test of each on our own 1024×1024 fisherman, 2026-10-31:
+
+| Input | Flag | FLUX.2 Klein 4B | Iris-3B Turbo | SDXL |
+|---|---|---|---|---|
+| Picture + prompt, redraw it | `-i in.png --strength 0.7` | works | works | works |
+| Picture + mask + prompt, redraw one area | `-i in.png --mask mask.png` | **works, blends best** | pasted a hard square | works, slight seam |
+| Reference + prompt, edit by instruction | `-r in.png` | **works** | ignored | ignored |
+
+**Klein's reference edit is the one to use:** "wearing a red cap instead of his hat" changed the hat
+and kept the man, the net and the sunset, though the face shifted a little. Iris-3B and SDXL run
+with `-r` and report no error, but they only followed the prompt, so an exit code of 0 proves
+nothing there.
+
+White in the mask is the area to redraw. Everything outside should stay put, and the average change
+per colour value (out of 255) well outside the mask was 0.0 on Iris-3B, 3.0 on Klein and 7.8 on SDXL;
+the two latent models go through a VAE, which we think explains that. At strength 0.7 the
+"watercolour" request came out as a painted-looking photo, not a real restyle; lower strengths
+keep more, and we only tried this one. ControlNet, IP-Adapter and PhotoMaker also have flags and
+are untested.
+
 ## Run it yourself
 
 The runner is [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), the llama.cpp
