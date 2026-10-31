@@ -453,8 +453,20 @@ what does it cost in VRAM and minutes. Score with fixed prompts and seeds, side 
 untouched model, plus a style-similarity number so it isn't only our eyes. First check how far prompts
 alone go, as the baseline. Train on our own pictures or public-domain art, not living artists' work.
 
+**Your own subject in any style or situation.** Train on your own photos (a person, pet, object or
+place) so the model learns the subject under a trigger word, then ask for it anywhere: "<subject> on
+a beach", "<subject> as a watercolour". This is a harder test than style. A style changes how
+everything looks, but a subject needs new detail that the model doesn't have, so expect LoRA to be
+needed and the tiny methods to struggle; that's worth measuring, not assuming. The real prize is
+stacking a subject LoRA with a style one at run time, which stable-diffusion.cpp's prompt tags allow.
+Measure with about 20 photos held to a few new poses and places: is it recognisable in new
+situations, does it survive a style change, and does it leak into pictures that don't ask for it?
+Keep some photos out of training to compare against. Photos and adapters stay on this machine under
+the git-ignored `models/`, never in `bench/` or a commit, and only of you or people who agreed.
+
 **Order:** security review as usual; build stable-diffusion.cpp; generate with FLUX.2 Klein 4B and
-Iris-3B Turbo and record speed, VRAM and sample images; then a style test: LoRA and norm-only on SDXL, LoRA on Klein base 4B.
+Iris-3B Turbo and record speed, VRAM and sample images; then a style test: LoRA and norm-only on SDXL, LoRA on Klein base 4B; then the subject test, and
+both stacked.
 
 ## Ideas to borrow
 
