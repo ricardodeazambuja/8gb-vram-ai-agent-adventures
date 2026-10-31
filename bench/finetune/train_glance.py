@@ -68,8 +68,12 @@ def target(name, truth, tools):
     raise ValueError(name)
 
 
-def scene(name, seed, i):
-    img, prompt, tools, score, truth = rc.SCENES[name](random.Random(seed), i)
+def scene(name, seed, i, new=False):
+    gens = rc.SCENES
+    if new:
+        import scenes_new
+        gens = scenes_new.SCENES
+    img, prompt, tools, score, truth = gens[name](random.Random(seed), i)
     return img, prompt, tools, score, truth
 
 
@@ -278,7 +282,7 @@ def cmd_eval(a):
     for name in rc.SCENES:
         ok = 0
         for i in range(a.n):
-            img, prompt, tools, score, _ = scene(name, f"{name}-{i}", i)
+            img, prompt, tools, score, _ = scene(name, f"{name}-{i}", i, new=a.new)
             if a.shift:
                 img = shifted(img, i)
             t = time.time()
@@ -295,6 +299,25 @@ def cmd_eval(a):
     os.makedirs(RES, exist_ok=True)
     with open(os.path.join(RES, f"eval-{a.key}.json"), "w") as f:
         json.dump(res, f, indent=1, default=str)
+
+
+def cmd_vision(a):
+    """The vision probe's items through this model. Saves raw answers in run_vision.py's format, for its scorer."""
+    proc, model = load(a.model, a.adapter)
+    model.eval()
+    root = os.path.join(os.path.dirname(HERE), "vision")
+    with open(os.path.join(root, "items.json"), encoding="utf-8") as f:
+        items = json.load(f)
+    out = os.path.join(RES, "vision-raw", a.key)
+    os.makedirs(out, exist_ok=True)
+    for it in items:
+        img = Image.open(os.path.join(root, "items", it["image"])).convert("RGB")
+        t = time.time()
+        raw = answer(proc, model, img, it["prompt"], None, max_new=2000)
+        d = {"choices": [{"message": {"content": raw.replace("<|im_end|>", "").strip()}}], "_wall_s": round(time.time() - t, 1)}
+        with open(os.path.join(out, it["id"] + ".json"), "w") as f:
+            json.dump(d, f, indent=1)
+        print(f"{it['id']}: {d['_wall_s']} s", flush=True)
 
 
 def trainable(model, method):
@@ -384,7 +407,7 @@ def cmd_train(a, steps_only=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["eval", "train", "fit"])
+    ap.add_argument("cmd", choices=["eval", "train", "fit", "vision"])
     ap.add_argument("--task", choices=["glance", "grid", "both"], default="glance",
                     help="grid: train on optimal walks (--n-train = grids), eval closed-loop on the probe's 16 grids; "
                          "both: train on glance and grid together (eval with glance or grid)")
@@ -402,9 +425,12 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--accum", type=int, default=8)
     ap.add_argument("--shift", action="store_true", help="eval on degraded pictures (smaller, JPEG, brightness)")
+    ap.add_argument("--new", action="store_true", help="eval on scenes_new.py: same rules, never-seen drawings")
     a = ap.parse_args()
     if a.cmd == "eval":
         cmd_eval_grid(a) if a.task == "grid" else cmd_eval(a)
+    elif a.cmd == "vision":
+        cmd_vision(a)
     elif a.cmd == "fit":
         cmd_train(a, steps_only=2)
     else:

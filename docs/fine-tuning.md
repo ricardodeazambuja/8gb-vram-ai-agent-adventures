@@ -179,6 +179,27 @@ Out of 150, measured 2026-10-30. The one miss, in both columns, is the same pick
 the untouched model with thinking on (144/150 at 2.7 s, through llama.cpp) at under a quarter of the
 time per decision, and the gap thinking was buying is gone: the rules of these scenes went into the
 weights. It's one seed, and training and test use the same drawing code, so this shows it learned
-*our scenes*, not that it got better at seeing in general. Not measured yet: the
-[vision probe](vision-probe.md) (did it forget anything?), the grid robot, changed colours and
-layouts, or running the adapter in llama.cpp, so for now it only runs in transformers.
+*our scenes*, not that it got better at seeing in general. The checks below test exactly that.
+
+### Did it hold up? (2026-10-30)
+
+| Check | Untouched, thinking off | Tuned |
+|---|---:|---:|
+| Three LoRA seeds, glance | 97 | **149 / 150 / 150** |
+| Three seeds, degraded pictures | — | **149 / 150 / 150** |
+| Three seeds, [scenes never trained on](../bench/finetune/scenes_new.py) (new layouts, palettes, button names) | 105 | **150 / 150 / 149** |
+| [Vision probe](vision-probe.md), one seed | 68% | **78%** (91% for the untouched model with thinking on) |
+
+So it isn't memorising our drawing code, and it forgot nothing. One adapter trained on glance and
+the grid together (47 min, 4.86 GiB): glance 150/150, new scenes 148/150, grid 8/8 open and 3/8
+with walls, 5/8 with the harness rule that never repeats a blocked move.
+
+**In llama.cpp.** `convert_lora_to_gguf.py` from our fork makes a 31 MB adapter, and it runs on the
+stock model with no sandbox: 149/150, 0.42 s a decision, 3.2 GB of VRAM. With the adapter's scale
+set to 0, a 30-scene sample fell to 21/30, so it really is applied.
+
+    QMODEL=lfm3vl EXTRA_ARGS="--lora models/lfm3-vl-2b-adapters/lora.gguf" bash scripts/run-qwen.sh --image
+
+Ask with thinking off (`chat_template_kwargs: {"enable_thinking": false}`). The adapters aren't in
+the repo; `sandbox.sh train` rebuilds one in about 25 minutes.
+

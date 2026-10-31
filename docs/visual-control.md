@@ -157,3 +157,23 @@ The 6 misses on real pages were small, dense targets (a username and a comment c
 an issue number on GitHub, navbar items on Hugging Face). Wikipedia, PyPI and the Python docs were
 8/8. The pages are live, so these numbers won't reproduce exactly, and the screenshots aren't kept
 in the repo.
+
+**Head to head with tuned LFM3-VL** ([`click_compare.py`](../bench/visual-control/click_compare.py),
+2026-10-30). LocateAnything asks the detect-all prompt first and only then takes a box. The real
+pages are the same captures and targets as above, neither model trained on them.
+
+| Test | LocateAnything, two steps | [Tuned LFM3-VL](fine-tuning.md#did-it-hold-up-2026-10-30) |
+|---|---:|---:|
+| Dialogs, button there | 24/24 | 24/24 |
+| Dialogs, button not there | 6/6 | 6/6 |
+| New-style dialogs, there | 24/24 | 24/24 |
+| New-style dialogs, not there | 4/6 | **6/6** |
+| Real pages, there | 39/48 | 40/48 |
+| Real pages, not there | 8/12 | **12/12** |
+| Median per click | 1.2 s | **0.7 s** |
+| VRAM | 5 GB | **3.2 GB** |
+
+Tuned LFM3-VL wins: it finds as much, never clicked something that wasn't there, and also makes
+every other decision in the glance set. LocateAnything's remaining case is finding many things at
+once with exact boxes. One tuned seed; web pages are live.
+

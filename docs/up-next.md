@@ -350,9 +350,10 @@ format but not where to point (73/150).
 
 **Status (2026-10-30): LFM3-VL-2B trained in a sandbox,** repo code pinned, no network: LoRA in
 25 min at 4.86 GiB takes glance from 97/150 to 149/150 with thinking off, 149/150 on degraded
-pictures too, 0.6 s a decision ([details](fine-tuning.md#lfm3-vl-2b-in-a-sandbox)). One seed, on
-our own scenes. Next: more seeds, the vision probe, changed layouts, the grid, and exporting the
-adapter to llama.cpp.
+pictures too, 0.6 s a decision ([details](fine-tuning.md#lfm3-vl-2b-in-a-sandbox)). Later the same day: holds on three seeds and on scenes never trained on (150/150/149
+vs 105), vision probe 78% vs 68%, and it runs in `llama-server` as a 31 MB adapter (149/150, 0.42 s,
+3.2 GB). It also beats two-step LocateAnything on clicking. Next: the walled grid (5/8 with the
+harness rule), and try real camera pictures.
 
 ### Which vision models
 
