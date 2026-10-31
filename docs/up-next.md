@@ -494,7 +494,8 @@ experiment on our fork. The output is no longer identical to normal decoding, so
 and check that tool calls still parse.
 
 **Tried it (2026-10-31): faster, but not worth keeping.** On Gemma 4 26B with its MTP head, n-max 2,
-temperature 1.0, on the local branch `relaxed-accept` (not pushed; [harness](../bench/relaxed/run_relaxed.py)).
+temperature 1.0, on the fork's experiment branch
+[`relaxed-accept`](https://github.com/ricardodeazambuja/llama.cpp/tree/relaxed-accept) ([harness](../bench/relaxed/run_relaxed.py)).
 The rule keeps a drafted token when the target gives it at least τ times the probability of its top
 choice, and turns off once a grammar is active.
 
