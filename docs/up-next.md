@@ -443,8 +443,18 @@ the plan is encoder on the CPU or in RAM, then the image model alone on the GPU.
   computed once up front, which frees a lot. Iris-3B works in pixels, so that second saving doesn't
   apply and it may need small crops.
 
+**Styles are the fine-tuning test we most want.** Style is the classic LoRA job, and it may suit the
+tiny methods unusually well: style-transfer research (AdaIN) found that much of an image's style
+sits in the mean and spread of its features, which is exactly what norm gains and IA3 scales
+control. SDXL's U-Net has ordinary stored norm gains, so it's the best place to try norm-only, and a
+tiny file per style would be a real win over a whole model. Measure three things per method: does a
+small set (about 20 images) move the style, does it hold on subjects outside the training set, and
+what does it cost in VRAM and minutes. Score with fixed prompts and seeds, side by side with the
+untouched model, plus a style-similarity number so it isn't only our eyes. First check how far prompts
+alone go, as the baseline. Train on our own pictures or public-domain art, not living artists' work.
+
 **Order:** security review as usual; build stable-diffusion.cpp; generate with FLUX.2 Klein 4B and
-Iris-3B Turbo and record speed, VRAM and sample images; then a small LoRA test on Klein base 4B.
+Iris-3B Turbo and record speed, VRAM and sample images; then a style test: LoRA and norm-only on SDXL, LoRA on Klein base 4B.
 
 ## Ideas to borrow
 

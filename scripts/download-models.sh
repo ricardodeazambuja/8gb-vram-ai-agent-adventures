@@ -38,6 +38,10 @@
 #   d1       d1-2B Q8_0 (LiquidAI, ~1.9 GB) — decision model
 #   eg2      EmbeddingGemma 2 Q8_0 (ggml-org, ~0.3 GB) — embeddings
 #   clefflash Clef-Flash Q4_K_M (ggml-org, ~6.7 GB) — Cloudflare decision model (/v1/systemone)
+#   image generation (stable-diffusion.cpp; weights only, .safetensors holds no code):
+#     klein + kleinte + kleinvae   FLUX.2 Klein 4B Q4_0 + Qwen3-4B + VAE (~5.3 GB)
+#     iris + iriste                Iris-3B Turbo + Qwen3-VL-4B (~8.5 GB)
+#     sdxl + sdxlvae               SDXL base 1.0 + fp16-fix VAE (~7.3 GB)
 #   lfm25vl  LFM2.5-VL-450M F16 (LiquidAI, ~0.7 GB + 0.2 GB vision) — tiny vision model, fine-tuning subject
 #   locate   LocateAnything-3B Q8_0 (yuuko-eth port of nvidia's, ~3.6 GB + 0.9 GB vision) — grounding
 #            specialist; non-commercial research license (docs/up-next.md)
@@ -96,6 +100,13 @@ MODELS=(
   "locate|yuuko-eth/LocateAnything-3B-GGUF|c3260717380c24cd2fc11f66c43e2feeec3e32fe|locateanything-3b|LocateAnything-3B-Q8_0.gguf:3d039dea2f121006d5dffe2a0371b4979c67dc17ac9d50a557834a064c9e107f mmproj-LocateAnything-3B-BF16.gguf:0216a6647317bc7d5bd152b66bd8b9248472ad090893f75d2f4a689d1789ee80"
   "d1|LiquidAI/d1-2B-GGUF|63be75e6586882defeb706ed4bda812d90256a6d|d1-2b|d1-2B-Q8_0.gguf:073313d92b53b0ac8193db6e906cb3c78a98183d244b15b7b8f5426115c6738c"
   "dflash|z-lab/Qwen3.8-27B-DFlash2-GGUF|2d9571f8ce46e151f61c6499c99dee6079e1d610|qwen38-27b-gsq|Qwen3.8-27B-DFlash2-Q4_K_M.gguf:1a25c56858e1ebe93f2718ac1d49d1151f9323325c1bbfd6209370f4db131ebd"
+  "klein|leejet/FLUX.2-klein-4B-GGUF|3b1f5a9dc3abb32238b053aeb3d823c30afdacbd|image-gen/flux2-klein|flux-2-klein-4b-Q4_0.gguf:d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4"
+  "kleinte|unsloth/Qwen3-4B-GGUF|22c9fc8a8c7700b76a1789366280a6a5a1ad1120|image-gen/flux2-klein|Qwen3-4B-Q4_K_M.gguf:f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a"
+  "kleinvae|Comfy-Org/flux2-klein-4B|5b3abca5c0dc1ecd4eaf3340868d09063fc1c965|image-gen/flux2-klein|split_files/vae/flux2-vae.safetensors:868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3"
+  "iris|speridlabs/iris-3b|adc05b909fb05d4276d26aae5a52b36406b2ef26|image-gen/iris-3b|turbo/model.safetensors:7148dbba3117567e34c86fadaae6e10325feb2c0ff3f43fe4938c15c75b356e1"
+  "iriste|Qwen/Qwen3-VL-4B-Instruct-GGUF|1cd86afb9a95c410a6038ab3b40d8b578c892266|image-gen/iris-3b|Qwen3VL-4B-Instruct-Q4_K_M.gguf:66358cb18bb6b3b1b6675aa412c7a88ef01d228f481184d13668e5201c730a0a"
+  "sdxl|stabilityai/stable-diffusion-xl-base-1.0|462165984030d82259a11f4367a4eed129e94a7b|image-gen/sdxl|sd_xl_base_1.0.safetensors:31e35c80fc4829d14f90153f4c74cd59c90b779f6afe05a74cd6120b893f7e5b"
+  "sdxlvae|madebyollin/sdxl-vae-fp16-fix|207b116dae70ace3637169f1ddd2434b91b3a8cd|image-gen/sdxl|sdxl_vae.safetensors:235745af8d86bf4a4c1b5b4f529868b37019a10f7c0b2e79ad0abca3a22bc6e1"
 )
 
 WANT=("$@")
