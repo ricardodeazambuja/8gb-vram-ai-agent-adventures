@@ -8,6 +8,26 @@ it. Can a model a quarter of that size learn the same job in a few minutes of tr
 Everything is in [`bench/finetune/`](../bench/finetune/): `train_glance.py` (fit test, training,
 evaluation) and the results.
 
+## The tiny methods vs LoRA, in short
+
+| | Norm-only (BN, LN, RMSNorm gains) | IA3 | LoRA |
+|---|---|---|---|
+| What it trains | the gains already in the norm layers | one new scale per row or column of a layer | a small low-rank matrix added to a layer's weights |
+| What that can do | turn existing features up or down | turn existing features up or down | build new mixes of features |
+| Size | smallest | small | biggest of the three |
+| Good for | changing behaviour the model already has in it | the same | adding things the model doesn't know |
+| On disk | [baked into a whole model](#serving-it-through-llamacpp) | baked into a whole model | a separate file you can dial, switch off or stack |
+
+Think of a mixing desk. Norm-only and IA3 only move the faders, so if the sound you want is already
+on a track, that's all you need, and it's why they did so well here: LFM3-VL could already see the
+scenes and only had to change how it acted on them. LoRA adds new tracks. That costs more, but it's
+what you need for knowledge the model doesn't have, like one person's face.
+
+None of this is new. Style carried in norm parameters goes back to Dumoulin et al. and AdaIN (Huang
+& Belongie), "Training BatchNorm and Only BatchNorm" is from Frankle et al., LayerNorm tuning for
+language models from Zhao et al., and IA3 from Liu et al.'s T-Few. Better variants of LoRA exist
+(DoRA, OFT, LoKr), but a well-tuned plain LoRA is still hard to beat.
+
 ## The setup
 
 - **Model:** [LFM2.5-VL-450M](https://huggingface.co/LiquidAI/LFM2.5-VL-450M) (Liquid AI, LFM
