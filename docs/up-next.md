@@ -487,3 +487,20 @@ likely, not only if it matches exactly. The paper reports 46.5% more accepted to
 comparable quality. It might work with llama.cpp's speculative decoding or our MTP setup, as a small
 experiment on our fork. The output is no longer identical to normal decoding, so measure quality
 and check that tool calls still parse.
+
+## 🔥 Backburner: a draft head for a small model
+
+[Soft-MTP](https://github.com/JaydenTeoh/Soft-MTP) ([paper](https://arxiv.org/abs/2610.38331),
+Oct 2026) changes how multi-token prediction heads are trained, so each head learns the model's own
+next-token prediction. By itself it isn't worth using here: about 1.5% more speed over standard MTP
+(1.76× vs 1.74× at 1.2B), well below this laptop's noise, and it needs training from scratch.
+
+**The experiment:** train a small draft head on a frozen, already-trained model such as LFM3-1.7B,
+leaving the model itself untouched, then use it for speculative decoding. Gemma's head gives us
++19–31% at greedy, so the question is whether a head added afterwards can get near that.
+
+**Open before starting:**
+- The paper leaves this case open: a model never trained to predict further ahead may not hold what
+  a head needs.
+- llama.cpp would have to run an MTP head for LFM3; we haven't checked.
+- Gemma's gain vanishes at temperature 1.0, so measure at the temperatures we actually use.
