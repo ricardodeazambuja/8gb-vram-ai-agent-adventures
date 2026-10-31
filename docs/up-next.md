@@ -452,3 +452,38 @@ What it needs before it runs here:
   means re-running their speed tests.
   Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
   builds there serve both.
+
+## ⚡ Parallel Language Models (PLM): watch, and borrow one idea
+
+[Parallel Language Models via Variational Decoding](https://arxiv.org/abs/2610.26693)
+([project page](https://www.justuswill.com/plm/), Oct 2026). A PLM proposes several tokens in one
+forward pass and checks the previous batch in the same pass. One transformer does both jobs, with
+two input embeddings. Rejected drafts never enter the KV cache, so there's no rollback.
+
+**Paper's numbers** (RTX 6000 Ada 48 GB, fp16, one prompt at a time, vLLM). Pretrained, normal /
+exact mode / relaxed mode: 350M 746 / 1,323 / 2,001 t/s, 1.3B 310 / 579 / 856, 3B 140 / 285 / 430.
+Post-trained: 2.3–5.7× faster, 1.3B about 1,090 t/s, only ~10% more time per call at 7 proposed
+tokens. The 1.3B matches or beats an identically trained normal model on math, coding and
+instructions. Before post-training, exact mode keeps up and relaxed loses about 80 Elo. The
+post-training comparison rests on one seed.
+
+**Why not now (checked 2026-10-30):**
+- `github.com/mandt-lab/plm` is empty. The paper promises code "upon publication" and doesn't
+  mention weights.
+- Training from scratch only. The authors tried converting their own normal models and concluded
+  it doesn't work, so nothing we already run can become a PLM.
+- About 1,884 GPU-hours for the 1.3B, ~2.5× a normal run. That figure came from a partial extract
+  (the PDF wouldn't read), so check it before quoting it.
+- vLLM with a custom attention matrix, no sign of llama.cpp support: it would need a port.
+- No memory figures, and nothing on tool calling or JSON. Grammar constraints with relaxed mode are
+  an open question.
+
+**Why watch it:** a 1.3B model fits this card easily, and LFM3-1.7B runs at 107 t/s here, so
+several hundred t/s on 8 GB could be possible. That's extrapolation, not a measurement. Recheck the
+repo for code and weights.
+
+**Idea to try without PLM: relaxed acceptance.** Keep a draft token if the main model finds it
+likely, not only if it matches exactly. The paper reports 46.5% more accepted tokens per call at
+comparable quality. It might work with llama.cpp's speculative decoding or our MTP setup, as a small
+experiment on our fork. The output is no longer identical to normal decoding, so measure quality
+and check that tool calls still parse.
