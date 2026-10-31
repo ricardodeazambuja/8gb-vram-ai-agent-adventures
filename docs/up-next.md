@@ -9,6 +9,7 @@ before it runs, then gets a [model page](models/) and moves into the README line
 | What | Status |
 |---|---|
 | Clef-Flash, d1-2B, EmbeddingGemma 2 | measured (below); only a bigger, harder question set is left |
+| SDXL style and subject training | rerunning after a VAE scaling bug voided the first results; the [plan for faster, better fine-tuning](#faster-and-better-fine-tuning) follows |
 
 Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18);
 [Ornith](models/ornith-1.5-35b-a3b.md) (14/18, vision 97%) and
@@ -410,6 +411,53 @@ drawing code), and rerun the [vision probe](vision-probe.md) to check nothing wa
 4. The best method on LFM2.5-VL-450M (and Qwen3-VL-2B/4B), same reward and held-out scenes.
 5. Antidoom on LFM3-1.7B or LFM3-VL, then pibench again.
 
+### Faster and better fine-tuning
+
+Written and reviewed against the goals above on 2026-10-31. The limit is less often training speed
+than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guesses until measured.
+
+**Do first, it helps everything:**
+1. **Preflight before a long run:** colour round trip, overfit one image in 2 minutes, untrained
+   control. For the vision models the same idea: a one-step fit test and a small scored sample.
+2. **Test through what we ship:** export to stable-diffusion.cpp or llama.cpp and score there. SDXL
+   norm-only needs a bake step first, and our LoRA file's format still has to be tried in `sd-cli`.
+   That also keeps the "everything in ggml" standard.
+3. **Checkpoints at 250, 500 and 1000 steps:** one run gives the learning curve, and fewer steps may do.
+4. **Automatic scores:** a style number and a likeness number, so a queue can drop bad runs. The
+   likeness model is a new download, so safetensors only, with its licence checked; many face
+   models aren't free to use.
+5. **Several short seeds, keep the best:** norm-only seeds ranged from 115 to 139. Choose on a separate
+   validation set, never on the held-out test, or the reported score flatters us.
+
+**Then finish the image goals:**
+6. **Person test:** add DoRA, LoRA + norm and Klein `-r` as a no-training baseline, then stack a person
+   with a style, checking `no-trigger` pictures for leaks.
+7. **A style with no famous name:** the prompt can already ask for Van Gogh, so that test can't show
+   much. The stated prize is a tiny file per style, which needs a style the prompt can't reach.
+8. **LoRA on Klein base 4B:** still the plan, and whether it fits in 8 GB is unknown. Everything fast
+   about SDXL so far doesn't transfer, so this one needs its own fit test.
+9. **Captions from our own vision models,** only if style results stay weak.
+
+**Then the vision goals, which matter more than making them train faster:**
+10. **Real camera pictures,** the open question since 2026-10-30.
+11. **Qwen3-VL-2B or 4B,** to tell "fine-tuning works" from "it works on Liquid's models".
+12. **Antidoom, then pibench,** for LFM3-VL's 0/18.
+13. **Train on mistakes,** in place of the GRPO step we skipped: collect misses on training seeds only,
+    never held-out ones. It's a cheaper version of the same idea. Random recovery data didn't
+    help before, so it needs testing.
+
+**Only if timing says so:** caching the vision tower's output. Our runs see each scene once, so it
+saves nothing on a first run, only on repeats over the same data, and it rules out the
+vision-side-only method. Measure the vision tower's share of a step first. SDXL with gradient checkpointing
+off is a one-line try, but it only helps SDXL.
+
+**Dropped:** caching lower layers. Norm-only and IA3 train every layer, so it would only suit a
+LoRA on the top layers, a method we aren't using.
+
+**Always try the cheap thing first,** in this order: prompt, reference image, a harness rule (skipping
+blocked moves added 2 or more solved mazes to LoRA and IA3), norm-only or IA3, then LoRA or DoRA.
+That doesn't replace the tests above, since they're how we learn where each one stops working.
+
 ## 🖼️ Image generation
 
 Researched and first measured 2026-10-31. Stable Diffusion's own repos are still in `GitStuff/` from
@@ -467,8 +515,8 @@ situations, does it survive a style change, and does it leak into pictures that 
 Keep some photos out of training to compare against. Photos and adapters stay on this machine under
 the git-ignored `models/`, never in `bench/` or a commit, and only of you or people who agreed.
 
-**Order:** the first generation runs are done. Next a style test: LoRA and norm-only on SDXL, LoRA
-on Klein base 4B; then the subject test, and both stacked.
+**Order:** the first generation runs are done, and SDXL style and subject tests are rerunning.
+What follows is in [Faster and better fine-tuning](#faster-and-better-fine-tuning).
 
 ## Ideas to borrow
 
