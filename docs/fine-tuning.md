@@ -136,15 +136,47 @@ LFM3-VL-2B makes without thinking. So the same 34,560 numbers can hold both beha
 which rule survives training is a matter of luck at this size of run. Train each job's adapter
 separately, or check every run, before trusting one.
 
-## Serving it: not through llama.cpp yet
+## Serving it through llama.cpp
 
-The plan was to merge the result, convert it to GGUF and run it through the same visual control
-harness as everyone else. The base model's GGUF (pinned, `download-models.sh lfm25vl`, audit
-clean) loads fine, but in our llama.cpp build (upstream, 2026-10-27) **any request whose tools
-have a string argument fails**: "error parsing grammar: expecting newline or end at ::=
-tool-call". Tools with integer arguments or none get through, though one integer call came back
-cut short (`{"x":1234`). So until that's fixed, an LFM2.5 model with tools is a transformers job
-here (or a raw-prompt job, parsing `<|tool_call_start|>` ourselves).
+LFM2.5 and LFM3-VL both run tuned in `llama-server` now. A LoRA converts to an adapter GGUF
+(tried on LFM3-VL only). Norm-only and IA3 have no adapter format, but they don't need one:
+[`bake_gguf.sh`](../bench/finetune/bake_gguf.sh) writes them into a normal GGUF. Norm-only replaces
+the gains. IA3 multiplies each layer's weight by its scales, along the rows for an output scale and
+the columns for an input one, which is the same sum the live scale does. It's plain arithmetic on
+`model.safetensors`, so none of the model repo's code runs and no sandbox is needed.
+
+    bash bench/finetune/bake_gguf.sh models/lfm3-vl-2b-hf models/lfm3-vl-2b-adapters/ia3 models/lfm3-vl-2b-baked/ia3.gguf Q8_0
+    QMODEL=lfm3vl MODEL=models/lfm3-vl-2b-baked/ia3.gguf bash scripts/run-qwen.sh --image
+
+A baked file is a whole model (1.8 GB for LFM3-VL), not a small add-on, and you can't dial it with
+`/lora-adapters`. Run with no adapter, the pipeline rebuilt both official GGUFs tensor for tensor,
+byte-identical; baking then changed exactly the tensors it should (119 and 46 on LFM3-VL), and
+`audit-gguf` came back clean.
+
+Scores out of 150, clean / never-seen scenes / degraded pictures, thinking off:
+
+| Model | Adapter | In `llama-server` | In transformers |
+|---|---|---:|---:|
+| LFM3-VL-2B Q8_0 | none | 109 / 110 / 109 | 97 / 105 / — |
+| | norm-only | **150 / 149 / 150** | 150 / 149 / 150 |
+| | IA3 | **150 / 148 / 149** | 150 / 147 / 149 |
+| | LoRA (`--lora`) | 149 / — / — | 149 / 150 / 149 |
+| LFM2.5-VL-450M F16 | none | 14 / 14 / 17 | 14 / 14 / 19 |
+| | norm-only | 133 / 77 / 121 | 135 / — / 121 |
+| | IA3 | 139 / 111 / 134 | 138 / — / 133 |
+| | norm-only, glance + grid | 138 / 101 / 118 | 139 / 98 / 118 |
+
+So nothing is lost in the move, and tuned LFM3-VL decides in 0.3 s in 3.1 GB. LFM2.5's norm-only
+adapter barely generalizes (77), which the transformers runs never tested; its IA3 does best (111).
+LFM2.5 served at 1.5 GB and 0.1 s a decision. The untuned LFM3-VL gained 12 points in the server,
+which uses its own sampling, not greedy decoding.
+
+Tools used to be the blocker for LFM2.5: any tool with a string argument failed with "failed to
+parse grammar". llama.cpp looks for the text `List of tools: [`, but the VL template writes
+`"List of tools: " + (tools | tojson)`, so it fell through to a generic analyzer that built a broken
+grammar. One-line fix on our fork (`3cb2992b`, local so far). Start it with
+`QMODEL=lfm3vl MODEL=<gguf> MMPROJ=models/lfm2.5-vl-450m/mmproj-LFM2.5-VL-450m-F16.gguf`: that's how
+it was tested, so the sampling is LFM3-VL's.
 
 ## Run it yourself
 
@@ -196,9 +228,8 @@ weights. It's one seed, and training and test use the same drawing code, so this
 
 So it isn't memorising our drawing code, and it forgot nothing. The tiny methods do the job on the
 2B model as well: about 75 times fewer values than LoRA and within three scenes of it. The misses
-on new scenes are all tanks: IA3's three refill both A and B. On this model LoRA keeps one
-advantage, it's the only one that runs in llama.cpp; the converter has no format for norm gains
-or IA3 scales, so those two stay in transformers. The 450M model tells a different story: its
+on new scenes are all tanks: IA3's three refill both A and B. They run in llama.cpp too,
+[baked into the weights](#serving-it-through-llamacpp). The 450M model tells a different story: its
 adapters do far better than its 14/150 base, but they lose 17 and 41 points on drawings they never
 saw, the norm-only one the most, so its near-perfect clean scores overstated how much it had
 learned. Those LFM2.5 adapters shared their training with the grid, so they aren't a like-for-like

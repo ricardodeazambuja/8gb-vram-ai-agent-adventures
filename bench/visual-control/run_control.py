@@ -331,15 +331,17 @@ SCENES = {"tanks": scene_tanks, "click": scene_click, "pick": scene_pick, "signa
           "gauge": scene_gauge}
 
 
-def run_glance(key, think, n):
+def run_glance(key, think, n, scenes=None, change=None):
     # version 2 (2026-10-28 night): "the leftmost object" scenes have a clear winner, and the click and
     # pick prompts name the tool instead of asking for "the point" (v1 results are in results/v1/)
     out = {"test": "glance", "version": 2, "key": key, "think": think, "tool_choice": TOOL_CHOICE, "items": []}
-    for name, gen in SCENES.items():
+    for name, gen in (scenes or SCENES).items():
         ok = 0
         for i in range(n):
             rng = random.Random(f"{name}-{i}")
             img, prompt, tools, score, truth = gen(rng, i)
+            if change:
+                img = change(img, i)
             msgs = [{"role": "user", "content": [
                 {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{png_b64(img)}"}},
                 {"type": "text", "text": prompt}]}]
@@ -535,6 +537,8 @@ def main():
     ap.add_argument("--tool-choice", choices=["auto", "required", "auto-noaction"], default="auto",
                     help="required: the server only accepts a tool call as the answer (no_action offered); "
                          "auto-noaction: no_action offered, no call forced")
+    ap.add_argument("--new", action="store_true", help="glance on finetune/scenes_new.py: never-seen drawings")
+    ap.add_argument("--shift", action="store_true", help="glance on degraded pictures, as finetune/train_glance.py")
     a = ap.parse_args()
     global TOOL_CHOICE
     TOOL_CHOICE = a.tool_choice
@@ -551,8 +555,17 @@ def main():
     think = a.think == "on"
     os.makedirs(RES, exist_ok=True)
     if a.test == "glance":
-        out = run_glance(a.key, think, a.n or 12)
-        tag = f"glance-{a.key}-think-{a.think}{req}"
+        scenes, change = None, None
+        if a.new or a.shift:
+            sys.path.insert(0, os.path.join(HERE, "..", "finetune"))
+        if a.new:
+            import scenes_new
+            scenes = scenes_new.SCENES
+        if a.shift:
+            import train_glance
+            change = train_glance.shifted
+        out = run_glance(a.key, think, a.n or 12, scenes, change)
+        tag = f"glance-{a.key}{'-new' if a.new else ''}{'-shift' if a.shift else ''}-think-{a.think}{req}"
     else:
         out = run_grid(a.key, think, a.memory, a.n or 8)
         tag = f"grid-{a.key}-think-{a.think}-{a.memory}{req}"
