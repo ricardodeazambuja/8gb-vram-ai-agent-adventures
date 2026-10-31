@@ -57,7 +57,7 @@ mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
 # 2. Flint needs a newer llama.cpp than the stock b9606 build: our llama.cpp (fork, adventures
 #    branch, pinned; upstream of 2026-10-28) next to this repo, so nothing else gets overwritten
 CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  LLAMA_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73 SRC_DIR=$PWD/../llama.cpp \
   bash scripts/build-llama-cuda.sh
 
 # 3. Hugging Face CLI env for the download script (it wants `hf` inside this env)

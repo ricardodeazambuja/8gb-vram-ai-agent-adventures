@@ -54,7 +54,7 @@ After [getting-started.md](../getting-started.md):
 # 1. Our llama.cpp (fork, adventures branch, pinned; upstream of 2026-10-28)
 #    (skip if you already built it for another model)
 CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  LLAMA_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73 SRC_DIR=$PWD/../llama.cpp \
   bash scripts/build-llama-cuda.sh
 
 # 2. Download + sha256-check (~13.6 GB), then audit it

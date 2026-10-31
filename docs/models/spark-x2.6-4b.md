@@ -48,7 +48,7 @@ our llama.cpp fork's `adventures` branch (upstream of 2026-10-28 plus two PRs; s
 ```bash
 # 1. Build our llama.cpp (fork, adventures branch, pinned) next to this repo (~20 min)
 CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  LLAMA_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73 SRC_DIR=$PWD/../llama.cpp \
   bash scripts/build-llama-cuda.sh
 
 # 2. Download the official Q8_0 GGUF, pinned revision, sha256-checked

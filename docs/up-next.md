@@ -443,8 +443,8 @@ What it needs before it runs here:
 - **Our llama.cpp (done 2026-10-30).** A fork,
   [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch
   [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (pinned at
-  `f0456c6`): upstream `8ca4060` (2026-10-28) + LocateAnything PR #24749 (ported) + Dory PR #30306
-  (at `43e865ec`). Cloned next to this repo (`../llama.cpp`; `ADV_LLAMA` overrides), built in
+  `3cb2992`): upstream `8ca4060` (2026-10-28) + LocateAnything PR #24749 (ported) + Dory PR #30306
+  (at `43e865ec`) + our LFM2.5-VL template detection fix. Cloned next to this repo (`../llama.cpp`; `ADV_LLAMA` overrides), built in
   place. Dory, Spark, Flint, Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL,
   Clef-Flash and LocateAnything run on it, rechecked against their documented speeds: all within
   ~3% or faster (Bolt 15.5 vs 14.0 tok/s), except Groot at -5%, and an old/new/old A/B on the same

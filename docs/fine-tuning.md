@@ -174,7 +174,7 @@ which uses its own sampling, not greedy decoding.
 Tools used to be the blocker for LFM2.5: any tool with a string argument failed with "failed to
 parse grammar". llama.cpp looks for the text `List of tools: [`, but the VL template writes
 `"List of tools: " + (tools | tojson)`, so it fell through to a generic analyzer that built a broken
-grammar. One-line fix on our fork (`3cb2992b`, local so far). Start it with
+grammar. One-line fix on our fork (`3cb2992`). Start it with
 `QMODEL=lfm3vl MODEL=<gguf> MMPROJ=models/lfm2.5-vl-450m/mmproj-LFM2.5-VL-450m-F16.gguf`: that's how
 it was tested, so the sampling is LFM3-VL's.
 

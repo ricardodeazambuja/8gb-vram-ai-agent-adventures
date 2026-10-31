@@ -45,7 +45,7 @@ It runs on the same llama.cpp build as Flint (Bolt support landed upstream on 20
 ```bash
 # once: our llama.cpp (fork, adventures branch; see getting-started for the toolchain)
 CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=f0456c64d7b891ada1a0a924716ce3244122e92b SRC_DIR=$PWD/../llama.cpp \
+  LLAMA_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73 SRC_DIR=$PWD/../llama.cpp \
   bash scripts/build-llama-cuda.sh
 
 # once: 22 GB + 1.7 GB, pinned and sha256-checked
