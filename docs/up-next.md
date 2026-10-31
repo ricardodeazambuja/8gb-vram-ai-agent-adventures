@@ -410,6 +410,42 @@ drawing code), and rerun the [vision probe](vision-probe.md) to check nothing wa
 4. The best method on LFM2.5-VL-450M (and Qwen3-VL-2B/4B), same reward and held-out scenes.
 5. Antidoom on LFM3-1.7B or LFM3-VL, then pibench again.
 
+## 🖼️ Image generation
+
+Researched 2026-10-31, nothing run yet. Stable Diffusion's own repos are still in `GitStuff/` from
+years ago, but it's no longer the best fit for this laptop. File sizes below come from Hugging Face;
+speed and VRAM figures are vendor or blog claims until we measure them.
+
+**Runner:** [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), the llama.cpp of
+image models: ggml, CUDA, GGUF, and every model below is on its list. That keeps our "everything in
+ggml" standard. It applies LoRAs at run time on quantized models, and takes `.safetensors` LoRAs.
+
+| Model | Licence | Size | Why try it |
+|---|---|---|---|
+| [**Iris-3B**](https://huggingface.co/speridlabs/iris-3b) + 4-step Turbo (Oct 2026) | Apache 2.0 | [Q4 1.7 GB](https://huggingface.co/realrebelai/iris-3b_GGUFs), Turbo 6 GB | Paints pixels directly, so no VAE. Fine-tuned, it also does depth and upscaling, which suits our vision work. The GGUFs are a third party's. |
+| [**FLUX.2 Klein 4B**](https://huggingface.co/black-forest-labs/FLUX.2-klein-4B) (Jan 2026) | Apache 2.0 | [Q4_K_M about 2.6 GB](https://huggingface.co/unsloth/FLUX.2-klein-4B-GGUF) (blog figure) | The safest 8 GB pick. A [base version](https://huggingface.co/black-forest-labs/FLUX.2-klein-base-4B) exists for fine-tuning. |
+| [Z-Image Turbo](https://huggingface.co/Tongyi-MAI/Z-Image-Turbo) | Apache 2.0 | 6B parameters, GGUF said to need 5-6 GB | Well liked, about 8 steps. Blogs disagree on whether 8 GB is comfortable. |
+| [FLUX 3 Image Klein](https://huggingface.co/black-forest-labs/flux-3-image-klein) (Oct 2026) | FLUX Kommunity, free under $5M revenue, repo gated | 5.3-5.8 GB + 4.9 GB text encoder | Likely the best quality that fits. NVIDIA claims 8 GB with INT8, but it isn't stated whether that includes the text encoder. No GGUF seen yet. |
+| [Qwen-Image 2.1](https://huggingface.co/Qwen/Qwen-Image-2.1) (Sep 2026) | Non-commercial | 7B parameters | One blog says about 6 GB at Q4; Alibaba gives no figure. Licence is the catch. |
+| SDXL | Open RAIL++ | 2.6B parameters | The fallback that's known to fit. |
+
+**Memory:** the text encoder is often as big as the image model. It only runs once per prompt, so
+the plan is encoder on the CPU or in RAM, then the image model alone on the GPU.
+
+**Fine-tuning:** the two apply differently from our vision models.
+- **LoRA** works on all of these. FLUX.2 and FLUX 3 ship a base model for it, and Z-Image has 8 GB
+  guides, so far seen only as search snippets (512 px, low rank, offloading), from a vendor selling
+  cloud GPUs. Klein 4B has no confirmed 8 GB training run.
+- **Norm-only and IA3** are untested on image models. IA3 would bake in as before. Norm-only may
+  have little to train: these models often steer their norms from the prompt and timestep, not from
+  stored gains, so check each model first.
+- **Training memory** is the real question. Text embeddings and, for latent models, images can be
+  computed once up front, which frees a lot. Iris-3B works in pixels, so that second saving doesn't
+  apply and it may need small crops.
+
+**Order:** security review as usual; build stable-diffusion.cpp; generate with FLUX.2 Klein 4B and
+Iris-3B Turbo and record speed, VRAM and sample images; then a small LoRA test on Klein base 4B.
+
 ## Ideas to borrow
 
 ### 🔬 Local autoresearch ([conglu1997/local-autoresearch](https://github.com/conglu1997/local-autoresearch), MIT)
