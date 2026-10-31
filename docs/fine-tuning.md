@@ -23,10 +23,13 @@ on a track, that's all you need, and it's why they did so well here: LFM3-VL cou
 scenes and only had to change how it acted on them. LoRA adds new tracks. That costs more, but it's
 what you need for knowledge the model doesn't have, like one person's face.
 
-None of this is new. Style carried in norm parameters goes back to Dumoulin et al. and AdaIN (Huang
-& Belongie), "Training BatchNorm and Only BatchNorm" is from Frankle et al., LayerNorm tuning for
-language models from Zhao et al., and IA3 from Liu et al.'s T-Few. Better variants of LoRA exist
-(DoRA, OFT, LoKr), but a well-tuned plain LoRA is still hard to beat.
+None of this is new. Style carried in norm parameters goes back to
+[Dumoulin et al.](https://arxiv.org/abs/1610.07629) and [AdaIN](https://arxiv.org/abs/1703.06868)
+(Huang & Belongie). [Training only BatchNorm](https://arxiv.org/abs/2003.00152) is from Frankle et
+al., [LayerNorm tuning](https://arxiv.org/abs/2312.11420) for language models from Zhao et al., and
+[IA3](https://arxiv.org/abs/2205.05638) from Liu et al.'s T-Few. Variants of LoRA exist (DoRA, OFT,
+LoKr), but a [2026 study](https://arxiv.org/abs/2601.22708) reports that a well-tuned plain LoRA
+matches or beats most of them; we've only seen its summary, not read it through.
 
 ## The setup
 
