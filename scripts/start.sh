@@ -166,7 +166,7 @@ configure_menu() {
   # A saved backend prefills the default — but drop a stale cuda pick when the
   # CUDA build is gone, so auto-detect wins. Test the binary directly:
   # resolve_backend echoes $BACKEND verbatim, so it can't answer "is cuda built?".
-  [ "$_saved_be" = cuda ] && [ ! -x "${CUDA_BIN:-$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server}" ] && _saved_be=""
+  [ "$_saved_be" = cuda ] && [ ! -x "${CUDA_BIN:-${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server}" ] && _saved_be=""
   local _be_def; case "$_saved_be" in cuda) _be_def=2;; vulkan) _be_def=3;; cpu) _be_def=4;; *) _be_def=1;; esac
   echo "1) Backend  —  the compute path  (auto-detected: $detected)"
   echo "     1) auto    use the detected backend ($detected)"

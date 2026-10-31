@@ -8,7 +8,7 @@
 # A thin wrapper over scripts/start-qwen.sh with QMODEL=qwen3vl and the vision projector
 # always loaded (--image). The server settings come from run-qwen.sh's qwen3vl defaults:
 # all layers and the projector on the GPU, 16K context, q8_0 KV, at most 1024 tokens per
-# image, stock llama.cpp in vendor/llama.cpp. Details and measurements:
+# image, our llama.cpp fork in ../llama.cpp. Details and measurements:
 # docs/models/qwen3-vl-8b.md. Every start-qwen.sh / run-qwen.sh knob (CTX, IMAGE_MAX_TOKENS,
 # PORT, ...) still works if you set it; you never have to.
 #

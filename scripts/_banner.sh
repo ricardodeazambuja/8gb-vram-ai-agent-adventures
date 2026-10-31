@@ -49,6 +49,6 @@ resolve_backend() {
   if [ -n "${BACKEND:-}" ]; then
     echo "$BACKEND"; return
   fi
-  local cuda_bin="${CUDA_BIN:-${REPO_ROOT:-.}/vendor/llama.cpp/build/bin/llama-server}"
+  local cuda_bin="${CUDA_BIN:-${ADV_LLAMA:-${REPO_ROOT:-.}/../llama.cpp}/build/bin/llama-server}"
   [ -x "$cuda_bin" ] && echo cuda || echo vulkan
 }

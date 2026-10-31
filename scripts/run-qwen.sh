@@ -59,10 +59,9 @@
 #   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot 1 / 2048 / 2048)
 #   EXTRA_ARGS any extra llama-server flags
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
-#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: vendor/llama.cpp, stock b9606 —
-#              bonsai2: vendor/prism-llama.cpp; dory, spark, flint, bolt, e4b, groot, ornith,
-#              lfm25, lfm3, lfm3vl, locate: our fork's adventures branch in ../llama.cpp
-#              (ADV_LLAMA) — and env llamacpp-cuda)
+#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: per QMODEL, usually our fork —
+#              bonsai2: vendor/prism-llama.cpp; everything else: our fork's adventures branch
+#              in ../llama.cpp (ADV_LLAMA) — and env llamacpp-cuda)
 #
 # Flags (CLI args, not env vars):
 #   --image    load the vision projector ($MMPROJ) (CPU unless MMPROJ_GPU=1). Other args pass through.
@@ -374,7 +373,7 @@ UBATCH="${UBATCH:-${_batch:-512}}"
 EXTRA_ARGS="${EXTRA_ARGS:-${_extra:-}}"
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
-CUDA_BIN="${CUDA_BIN:-${_bin:-$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server}}"
+CUDA_BIN="${CUDA_BIN:-${_bin:-$ADV_BIN}}"
 CUDA_ENV="${CUDA_ENV:-llamacpp-cuda}"
 
 USE_IMAGE=0

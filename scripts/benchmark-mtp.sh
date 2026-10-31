@@ -26,7 +26,7 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL="$REPO_ROOT/models/gemma4-26b-a4b-qat/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf"
 HEAD="$REPO_ROOT/models/gemma4-26b-a4b-qat/mtp-gemma-4-26B-A4B-it.gguf"
-CUDA_BIN="$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server"
+CUDA_BIN="${CUDA_BIN:-${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server}"
 CUDA_ENV="${CUDA_ENV:-llamacpp-cuda}"
 
 NMAX="${NMAX:-}"; NCMOE="${NCMOE:-27}"; CTX="${CTX:-32768}"; KVQUANT="${KVQUANT:-q8_0}"
@@ -49,7 +49,7 @@ SPEC_ARGS=()
 echo ">> [$LABEL] launching server: NCMOE=$NCMOE CTX=$CTX KV=$KVQUANT TEMP=$TEMP ${NMAX:+MTP n-max=$NMAX}${PMIN:+ p-min=$PMIN}"
 setsid mamba run --no-capture-output -n "$CUDA_ENV" "$CUDA_BIN" \
   -m "$MODEL" --alias gemma-4-26b-a4b-qat \
-  -ngl 99 --n-cpu-moe "$NCMOE" --no-mmap \
+  -ngl 99 --n-cpu-moe "$NCMOE" --load-mode none \
   -c "$CTX" -ctk "$KVQUANT" -ctv "$KVQUANT" -fa on --jinja \
   --temp "$TEMP" --top-p 0.95 --top-k 64 \
   "${SPEC_ARGS[@]}" \

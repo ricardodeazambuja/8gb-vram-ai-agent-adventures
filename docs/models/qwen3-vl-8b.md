@@ -41,7 +41,7 @@ settings are the defaults for this model. See [How it fits](../how-it-fits.md).
 
 ## Install & run
 
-It uses the stock llama.cpp build in `vendor/llama.cpp` from
+It uses our llama.cpp fork in `../llama.cpp` from
 [Getting started](../getting-started.md). Then:
 
 ```bash

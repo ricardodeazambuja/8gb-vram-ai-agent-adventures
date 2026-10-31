@@ -69,7 +69,7 @@ MODEL="${MODEL:-$REPO_ROOT/models/gemma4-26b-a4b-qat/gemma-4-26B-A4B-it-qat-UD-Q
 ALIAS="${ALIAS:-gemma-4-26b-a4b-qat}"
 # Auto-detect: use the locally-built CUDA binary if present, else fall back to
 # Vulkan (zero-build path for non-NVIDIA / unbuilt machines). Override with BACKEND=.
-CUDA_BIN="${CUDA_BIN:-$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server}"
+CUDA_BIN="${CUDA_BIN:-${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server}"
 BACKEND="$(resolve_backend)"
 CTX="${CTX:-32768}"
 NCMOE="${NCMOE:-}"
@@ -205,6 +205,10 @@ echo ">> sampling: temp=$TEMP top-p=$TOP_P top-k=$TOP_K ${EXTRA_ARGS:+(+ $EXTRA_
 echo ">> context: $CTX   listening: http://$HOST:$PORT/v1"
 echo
 
+# Newer llama.cpp replaced --no-mmap with --load-mode; older builds only know --no-mmap.
+NO_MMAP_ARGS=(--no-mmap)
+"$SERVER_BIN" --help 2>&1 | grep -q -- --load-mode && NO_MMAP_ARGS=(--load-mode none)
+
 exec "${RUN[@]}" "$SERVER_BIN" \
   -m "$MODEL" \
   --alias "$ALIAS" \
@@ -212,7 +216,7 @@ exec "${RUN[@]}" "$SERVER_BIN" \
   "${NGL_ARGS[@]}" \
   "${MOE_ARGS[@]}" \
   "${MMPROJ_ARGS[@]}" \
-  --no-mmap \
+  "${NO_MMAP_ARGS[@]}" \
   -c "$CTX" \
   "${KV_ARGS[@]}" \
   -fa "$FA" \

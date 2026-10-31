@@ -448,9 +448,13 @@ What it needs before it runs here:
   place. Dory, Spark, Flint, Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL,
   Clef-Flash and LocateAnything run on it, rechecked against their documented speeds: all within
   ~3% or faster (Bolt 15.5 vs 14.0 tok/s), except Groot at -5%, and an old/new/old A/B on the same
-  afternoon (37.7 / 37.5 / 37.2 tok/s) shows that is the laptop that day, not the build. Left: the stock-`b9606`
-  models (Qwen3.6, Qwen3.8 distill, Qwen3-VL, Gemma) still use `vendor/llama.cpp`; moving them
-  means re-running their speed tests.
+  afternoon (37.7 / 37.5 / 37.2 tok/s) shows that is the laptop that day, not the build. The stock-`b9606`
+  models moved over the same night after an old/new/old A/B, generation in tok/s: Qwen3.6 23.9 /
+  23.3 / 23.1, the distill 32.9 / 33.2 / 33.3, Qwen3-VL 41.7 / 39.9 / 41.4, Gemma 21.4 / 19.9-21.1
+  / 19.4, prefill within 3%, every tool-call check passed. The distill uses 0.8 GB less VRAM on
+  the fork (5.98 vs 6.82 GB, repeated twice; cause not traced). Newer llama.cpp has no `--no-mmap`
+  (it's `--load-mode none`), which `run-server.sh` now handles. Only the Gemma 12B coder and
+  agentic scripts stay on older builds: they weren't tested.
   Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
   builds there serve both.
 
