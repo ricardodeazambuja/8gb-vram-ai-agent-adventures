@@ -114,7 +114,7 @@ run, median 3,480 output tokens. Both misses are described below.
 
 **[Vision probe](../vision-probe.md):** 100% overall: perfect OCR, perfect understanding and
 CAD reading, and boxes that land right on target, just not in the format you asked for (7% in
-pixels as requested, 100% in its own 0–1000 format). Median 44 s per image, most of it the
+pixels as requested, 100% in its own 0–1000 format). Median 43 s per image, most of it the
 projector chewing on the CPU.
 
 ## How it behaves

@@ -4,7 +4,7 @@
 (Plenty. It's all written down.)
 
 This repo started with one question: *can a 26-billion-parameter model run on a laptop with an
-8 GB graphics card?* It could. Then we got curious, and twelve models later we have install
+8 GB graphics card?* It could. Then we got curious, and seventeen models later we have install
 scripts, measured speeds, a sandboxed agent benchmark, a vision probe, and a graveyard.
 
 Everything here runs on one machine: an **RTX 2070 Max-Q with 8 GB of VRAM and 32 GB of RAM**,
@@ -21,16 +21,16 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md) | 26B MoE, 4B active | 64K | 17.5 t/s | 17/18 | — | Gemma told to think less: half the thinking, one fewer solve. |
 | ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md) | 74B hybrid MoE, 9B active | 128K | 14 t/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
 | 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md) | 35B MoE, 3B active | 128K | 23 t/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
-| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Quick jobs (2.5 min), only Ornith is quicker. Thinks in haiku. |
+| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Quick jobs (2.5 min). Thinks in haiku. |
 | 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md) | 19B MoE, 3B active | 128K | **39.5 t/s** | **18/18** | 74% | Qwen3.6 with half the experts. Fastest big model here. |
 | 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md) | 24B conv/attention MoE, 2B active | 128K | 31.5 t/s | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
 | 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md) | 35B MoE, 3B active | 128K | 31 t/s | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
 | 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 16K | 27 t/s | 14/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
 | ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md) | 4B dense | 108K | 48–50 t/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
-| 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md) | 1.7B tri-hybrid | 128K | **106 t/s** | 12/18 | text only | Tiny, twice as fast as anything else here, and better at chores than models 14× its size. |
-| 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md) | 2B + vision | 32K | 106 t/s | 0/18 | 91% | 2.6 GB, 9 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
+| 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md) | 1.7B tri-hybrid | 128K | **106 t/s** | 12/18 | text only | Tiny, as fast as its VL sibling and twice as fast as the rest, and better at chores than models 14× its size. |
+| 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md) | 2B + vision | 32K | 106 t/s | 0/18 | 91% | 2.6 GB, 8 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
 | 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
-| 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | — | 89% | Reads an invoice in 6 seconds flat. |
+| 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | — | 89% | Reads an image in 5 seconds flat. |
 | 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md) | 4B, looped | 64K | 29 t/s | — | text only | Runs its middle layers twice. Just keeps swimming. |
 | 🧑‍💻 | [**Gemma 4 12B coder**](docs/models/gemma4-12b-coder.md) | 12B dense | 32K | 17 t/s | — | — | A community coding fine-tune; Q4 is the sweet spot. |
 | 🤖 | [**Gemma 4 12B agentic**](docs/models/gemma4-12b-agentic.md) | 12B dense | 16K | 28 t/s | — | — | Fully on the GPU thanks to a ~3.5-bit V cache. |
@@ -75,7 +75,7 @@ copy-paste commands.
   in one vendor's table and 57.4 in another's; on our six chores it went 18 for 18.
 - **The difference between a pass and a fail is checking your work.** Every model ran its code.
   The ones that failed printed a wrong answer and walked right past it. [pibench](docs/pibench.md).
-- **Every model can find shapes in a picture; almost none use the coordinates you ask for.**
+- **Nearly every model can find shapes in a picture; almost none use the coordinates you ask for.**
   [The vision probe](docs/vision-probe.md).
 - **A 2B vision model got better by training 201,472 numbers.** Fine-tuning only its norms took it
   from 109 to 150 of 150 decisions in `llama-server`, and through 5 of 8 mazes where a LoRA 75 times

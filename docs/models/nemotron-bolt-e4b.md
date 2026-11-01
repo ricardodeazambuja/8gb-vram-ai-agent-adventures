@@ -66,12 +66,12 @@ Notice what's missing: no coding benchmarks at all. That's a hint about what it'
 | | |
 |---|---|
 | VRAM at 64K | 4.3 GB loaded, 4.4 GB after a 15K-token prompt |
-| Generation | 52.0 tok/s (the fastest model in this repo) |
+| Generation | 52.0 tok/s (the fastest when measured; LFM3 later reached 106) |
 | Prompt speed | 1,531 tok/s (15.8K tokens in 10 s) |
 | Tool calls | work |
 | Code check | answered without a code block, so there was nothing to run |
 
-**[pibench](../pibench.md): 7/18, last place.** Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
+**[pibench](../pibench.md): 7/18,** ahead of only LFM3-VL. Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
 books 0/3, JS page 2/3. Median 2.0 minutes per attempt (the quickest), one timeout.
 
 ## How it compares
@@ -99,7 +99,7 @@ Spark. The E4B's edge is the VRAM it leaves free.
   form of the pattern every failing model showed: the evidence was on screen, unread.
 - **Skims the spec.** The CLI spec says `'quoted'` counts as the word `quoted`; it kept the
   apostrophes all three times and never tested that case. It kept curly quotes it was told to strip.
-- **Fumbles the tools:** 5.5 tool errors per attempt, the most of any model, mostly `edit` calls
+- **Fumbles the tools:** 5.5 tool errors per attempt, the most of any model that doesn't loop, mostly `edit` calls
   whose text didn't match the file and malformed tool calls.
 - **Inconsistent.** It solved the bug fix perfectly, hidden bugs included, in under four minutes,
   then missed hidden bugs the next two times. It failed the login chore twice, then solved it in

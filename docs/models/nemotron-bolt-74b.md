@@ -90,13 +90,13 @@ Bold claims for a 2-bit model. The usual grain of salt applies: same vendor, its
 Tool calls work; the `merge_intervals` code check passed (0/500 wrong, 2,580 tokens of reasoning).
 
 **[pibench](../pibench.md): 15/18.** Bug fix 2/3, CLI 3/3, feature 3/3, login 3/3, books 1/3,
-JS page 3/3. Median 6.4 minutes per attempt (the slowest model), one timeout, never ran out of
+JS page 3/3. Median 6.4 minutes per attempt (the slowest of the models that finish on time), one timeout, never ran out of
 context.
 
 **[Vision probe](../vision-probe.md): 91 %.** OCR, understanding (chart, counting, grid) and CAD
 drawings all 100 %, including the dot count that tripped Qwen3-VL and the distill. Bounding boxes
 are its weak spot: 21 % in pixels as asked, 64 % even in its own format. It takes its time: median
-115 s per image, up to 11 minutes on one.
+110 s per image, up to 11 minutes on one.
 
 ## How it compares
 

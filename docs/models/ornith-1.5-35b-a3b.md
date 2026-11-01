@@ -110,8 +110,8 @@ same architecture, and fewer than Groot (2.3K–3.0K).
 **[Vision probe](../vision-probe.md):** **97%** overall, just behind Gemma, Qwen3.6 (100%) and Bonsai 2 (98%).
 OCR, chart/count/spatial understanding and CAD all 100%. Boxes come in Qwen's 0–1000
 format rather than the pixels asked for, and score 87% that way: two images perfect (IoU 0.83,
-0.90), one partly (3 of 5 boxes, after 4,900 tokens of deliberating). Median 34 s and 436 tokens
-per image, quicker than Qwen3.6 (44 s). Unlike [Groot](groot-19b-a3b.md), the post-training kept
+0.90), one partly (3 of 5 boxes, after 4,900 tokens of deliberating). Median 33 s and 421 tokens
+per image, quicker than Qwen3.6 (43 s). Unlike [Groot](groot-19b-a3b.md), the post-training kept
 its eyes.
 
 **[pibench](../pibench.md): 14/18 solved**, 94% of hidden tests, median **2.2 min** per run and

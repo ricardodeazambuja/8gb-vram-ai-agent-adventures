@@ -98,7 +98,7 @@ python3 $S/sweep.py --model models/lfm3-vl-2b/LFM3-VL-2B-Q8_0.gguf --vector mode
   --name retry-lfm3vl --scales=0,0.03,0.06,0.1,0.2 --ngl 99
 RAW=$PWD/bench/results/steering-doom MODELS=lfm3vl REPEATS=1 TIME_LIMIT=900 \
   EXTRA_ARGS="--control-vector-scaled $PWD/models/steering/retry-lfm3vl.gguf:0.03" bash bench/run-bench.sh
-MODELS=lfm3vl bash bench/run-bench.sh    # the plain runs to compare with, 18 attempts, up to 6 hours
+CTX=65536 MODELS=lfm3vl bash bench/run-bench.sh    # the plain runs to compare with, 18 attempts, up to 6 hours
 python3 $S/compare_doom.py
 ```
 

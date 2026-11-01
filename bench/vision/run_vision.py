@@ -16,6 +16,7 @@ import os
 import re
 import signal
 import subprocess
+import statistics
 import sys
 import time
 import urllib.request
@@ -263,7 +264,7 @@ def score_all():
         toks = sorted(r["tokens"] for r in res)
         lines.append(f"| {key} | {mean(by['ocr']):.0%} | {mean(by['bbox']):.0%} | {mean(best):.0%} ({', '.join(conv)}) | "
                      f"{mean(by['understanding']):.0%} | {mean(by['cad']):.0%} | **{mean(seen):.0%}** | "
-                     f"{times[len(times) // 2]:.0f} s | {toks[len(toks) // 2]:,} |")
+                     f"{statistics.median(times):.0f} s | {statistics.median(toks):,.0f} |")
     open(os.path.join(RES, "summary.md"), "w").write("\n".join(lines) + "\n")
     print("\n".join(lines))
 

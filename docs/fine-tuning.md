@@ -327,6 +327,7 @@ LFM3-VL:
 | Longest streak of one call, worst run | 769 | 129 |
 | Longest streak of one call, median run | 3 | 8 |
 | Timeouts | 14/18 at 20 min | 4/6 at 15 min |
+| Context | 64K | 32K |
 
 The agent still spends most of its calls repeating itself. The drop in repeats is a weak signal: there
 are 6 runs against 18, and a shorter time limit alone caps the worst streak, so read the 769 vs 129 with
@@ -360,7 +361,9 @@ That's the weights, not the setup. One trap: our first replay left the thinking 
 showed only 15/52. Real prompts include it, and recorded token counts prove that. So reasoning
 that stays in the history feeds the loops, and any replay has to include it.
 
-**VL on pibench.** All at 6 runs, against plain VL's 18:
+**VL on pibench.** All at 6 runs, against plain VL's 18. The plain runs had 64K of context, and the other
+three 32K, which we only noticed later. No run in those three passed 28K, so that shouldn't have changed them, but it's
+a second difference besides the time limit:
 
 | Setup | Solved | Tests passed | Calls that copy an earlier one | Worst streak | Timeouts |
 |---|---:|---:|---:|---:|---:|
@@ -370,8 +373,8 @@ that stays in the history feeds the loops, and any replay has to include it.
 | Temperature 0.7 + agent LoRA, 15 min | 0/6 | 27/54 | 48% | 34 | 3/6 |
 
 - **Temperature is the doom loop fix,** and it costs nothing: `TEMP=0.7`. Scrape-books also passed
-  tests for the first time (2/5, always 0/5 before). Even so, the shorter limit means the streak numbers
-  aren't a fair match.
+  tests for the first time (2/5, always 0/5 before). Even so, the shorter limit and smaller context mean the streak
+  numbers aren't a fair match.
 - **It's still not an agent.** 0/6 only says the true rate is likely under 46%, but it's
   clearly below LFM3-1.7B's 12/18 (Fisher p = 0.01). It now fails on quality, by stopping early or
   checking badly, instead of looping.
@@ -405,7 +408,7 @@ reproduced all 286 of VL's text tensors.
 
 Gemma's and Groot's 30 scenes are the first 6 of each kind, and their ranges are wide: Gemma's 30/30
 means at least 88%, and 30/30 against 27/30 isn't a real gap (p = 0.24). Gemma's score was a surprise
-in speed too, since it took 71 s an image on the [vision probe](vision-probe.md), which is a harder
+in speed too, since it took 70 s an image on the [vision probe](vision-probe.md), which is a harder
 test. All three take about the same time, so the two-model pair's edge is memory, not speed. Its
 driver never sees a picture, only VL's report, and all 3 of its misses were tanks. The pibench score for
 the pair is LFM3-1.7B's alone: nobody has run a task that needs both yet.

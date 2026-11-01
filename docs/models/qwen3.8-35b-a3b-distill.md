@@ -9,7 +9,7 @@
 > | Context | **128K** |
 > | Generation | 26.2 tok/s |
 > | Prompt processing | 167 tok/s (15.6K-token prompt) |
-> | [pibench](../pibench.md) | 16/18 solved (98% of hidden tests), **fastest per run** |
+> | [pibench](../pibench.md) | 16/18 solved (98% of hidden tests), **2.5 min per run** |
 > | [Vision probe](../vision-probe.md) | 88% overall |
 > | Launch | `QMODEL=distill bash scripts/start-qwen.sh` |
 
@@ -91,12 +91,12 @@ RTX 2070 Max-Q (8 GB), 32 GB RAM, q8_0 KV, flash attention on, sampling from the
 **Code check** (`merge_intervals` vs 500 random inputs): correct twice, 0/500 wrong, in
 **557 and 784 tokens**, about 6× fewer than Qwen3.6 (3,558) for the same correct function.
 
-**[pibench](../pibench.md):** 16/18 solved, 98% of hidden tests, and the **fastest big model per
-run: median 2.5 minutes** (only the far less reliable Nemotron Bolt E4B was quicker), median 3,250 output tokens. Ties Qwen3.6 on solved runs.
+**[pibench](../pibench.md):** 16/18 solved, 98% of hidden tests, and **among the quickest big models
+per run: median 2.5 minutes** (Ornith took 2.2), median 3,250 output tokens. Ties Qwen3.6 on solved runs.
 
 **[Vision probe](../vision-probe.md):** 88% overall. Perfect OCR and CAD, boxes 87% once you
 read them in its 0–1000 format (13% in pixels as asked), and understanding 67%: it counted
-8 red and 12 blue dots when there were 7 and 11. Median 36 s per image.
+8 red and 12 blue dots when there were 7 and 11. Median 35 s per image.
 
 The author also drove it by hand in pi for a while. Verdict: "not bad".
 

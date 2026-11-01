@@ -10,7 +10,7 @@
 > | Generation | **~23.5 tok/s** (CUDA) · ~4.9 tok/s (Vulkan) · ~1.9 tok/s (CPU only) |
 > | Prompt processing | ~63 tok/s (llama-bench, CUDA) |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), median 4.8 min per run |
-> | [Vision probe](../vision-probe.md) | **100%** overall (OCR, boxes, understanding, CAD), ~71 s per image |
+> | [Vision probe](../vision-probe.md) | **100%** overall (OCR, boxes, understanding, CAD), ~70 s per image |
 > | Launch | `BACKEND=cuda bash scripts/start.sh` |
 
 ## What is it?
@@ -145,17 +145,17 @@ without a draft, in one run, with no change in scores
 
 **[pibench](../pibench.md)** (64K, `NCMOE=20`, q8_0 KV): **18/18 solved**, 100% of hidden tests,
 median **4.8 min** and ~7.1K output tokens per run. Tied for first with Flint, which is a fine
-plot twist given those 17.4 SWE-bench vibes. It was the slowest per run of the first six (Nemotron Bolt 74B later took that title at 6.4 min).
+plot twist given those 17.4 SWE-bench vibes. It was among the slowest per run of the first six (4.8 min; Nemotron Bolt 74B later took 6.4 min).
 
 **[Vision probe](../vision-probe.md)**: **100% overall.** Perfect OCR (including the blurred,
 rotated "scan"), perfect chart/counting/spatial answers, perfect CAD readings. Boxes were spot on
-too, but in its own format (more below). About 71 s per image; the bounding-box images made it
+too, but in its own format (more below). About 70 s per image; the bounding-box images made it
 think for 4–7K tokens each.
 
 ## How it behaves
 
 - **Thinks first, acts later.** Long reasoning before acting (~12K thinking characters per
-  pibench run), then the **fewest tool calls** of all models (~12 per run).
+  pibench run), then **few tool calls** (~12 per run).
 - **Chases weird data.** In the book-scraping task it noticed a garbled "Noah’s" in its own CSV,
   grepped the live page for it, checked the response headers with `curl -I`, found the missing
   charset, fixed the decoding and re-checked. That exact trap caught two other models.

@@ -144,7 +144,7 @@ the server with `--image`:
 
 ```bash
 curl -L -o models/gemma4-26b-a4b-qat/mmproj-BF16.gguf \
-  https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/mmproj-BF16.gguf
+  https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/c099eb48e663fd284577b04978a94ffccb261841/mmproj-BF16.gguf
 bash scripts/run-server.sh --image        # add NCMOE=22 BACKEND=cuda as usual
 bash scripts/start.sh --image             # or all-in-one: --image is forwarded to the server
 ```

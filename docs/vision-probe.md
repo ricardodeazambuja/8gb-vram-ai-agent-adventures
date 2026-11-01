@@ -23,15 +23,15 @@ answer has to be JSON. Each model uses its own vision projector and launcher def
 
 | Model | 🧾 OCR | 🟥 Boxes in pixels (as asked) | 🟥 Boxes, any format | 📊 Understanding | 📐 CAD | **Overall** | Time per image |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| [**Gemma 4 26B-A4B**](models/gemma4-26b-a4b.md) | 100% | 0% | 100% | 100% | 100% | **100%** | 71 s |
-| [**Qwen3.6-35B-A3B**](models/qwen3.6-35b-a3b.md) | 100% | 7% | 100% | 100% | 100% | **100%** | 44 s |
-| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 100% | 13% | 87% | 100% | 100% | **97%** | 34 s |
+| [**Gemma 4 26B-A4B**](models/gemma4-26b-a4b.md) | 100% | 0% | 100% | 100% | 100% | **100%** | 70 s |
+| [**Qwen3.6-35B-A3B**](models/qwen3.6-35b-a3b.md) | 100% | 7% | 100% | 100% | 100% | **100%** | 43 s |
+| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 100% | 13% | 87% | 100% | 100% | **97%** | 33 s |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | 100% | **67%** | 100% | 100% | 93% | **98%** | 38 s |
-| [LFM3-VL-2B](models/lfm3-vl-2b.md) ² | 100% | 7% | 100% | 69% | 93% | **91%** | 9 s |
-| [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | 100% | 21% | 64% | 100% | 100% | **91%** | 115 s |
-| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | 100% | 7% | 100% | 61% | 96% | **89%** | **6 s** |
-| [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | 100% | 13% | 87% | 67% | 100% | **88%** | 36 s |
-| [Groot-19B-A3B](models/groot-19b-a3b.md) ¹ | 97% | 21% | 21% | 78% | 100% | **74%** | 49 s |
+| [LFM3-VL-2B](models/lfm3-vl-2b.md) ² | 100% | 7% | 100% | 69% | 93% | **91%** | 8 s |
+| [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | 100% | 21% | 64% | 100% | 100% | **91%** | 110 s |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | 100% | 7% | 100% | 61% | 96% | **89%** | **5 s** |
+| [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | 100% | 13% | 87% | 67% | 100% | **88%** | 35 s |
+| [Groot-19B-A3B](models/groot-19b-a3b.md) ¹ | 97% | 21% | 21% | 78% | 100% | **74%** | 44 s |
 
 "Overall" counts boxes in whatever coordinate format the model chose (more on that in a second).
 Measured 2026-10-23 (¹ 2026-10-26, ² 2026-10-27/28), one answer per image. Flint, Spark and the Nemotron E4B are text-only, so they
@@ -41,39 +41,39 @@ sat this one out.
 
 ## What we learned
 
-**OCR is a solved problem here.** All six read every field on every invoice, the blurry rotated
-"scan" included. If you need text out of an image, any of them will do; Qwen3-VL will do it in
+**OCR is nearly solved here.** All but Groot read every field on every invoice, the blurry rotated
+"scan" included, and Groot missed one line item. If you need text out of an image, any of them will do; Qwen3-VL will do it in
 six seconds.
 
-**Everyone can find the shapes. Almost nobody uses the coordinates you ask for.** We asked for
+**Nearly everyone can find the shapes. Almost nobody uses the coordinates you ask for.** We asked for
 pixel coordinates. Gemma answered on a 0–1000 grid: under its own `box_2d` key with *y before x*,
 and under the requested `bbox` key with x first. The Qwen models used `bbox_2d`, also on a
 0–1000 grid. Taken literally, that's a score near zero.
 Converted from their native format, the boxes are good (mean overlap 0.77–0.91, the overlay
-above). Only Bonsai 2 (two of three images) and Bolt 74B (one) used pixels as asked. If you build anything on
+above). Only Bonsai 2 (two of three images), Bolt 74B (one) and Groot (all three, with poor boxes) used pixels as asked. If you build anything on
 detection: ask for each model's native format, or convert from it. That's why the table has two
 box columns, one for "did what it was told" and one for "can actually see".
 
-**Thinking helps with counting.** Qwen3-VL doesn't reason before answering, which makes it 6 to 19
-times faster than the rest, and it shows in the details: it counted 12 blue dots instead of 11,
-miscounted the bars above 50 on the chart, and misplaced one shape in the grid. The reasoning
-models got the understanding questions right, except the distill, which miscounted both colours
-(8 red and 12 blue, for 7 and 11).
+**Thinking helps with counting.** Qwen3-VL doesn't reason before answering, which makes it 7 to 22
+times faster than the big models, and it shows in the details: it counted 12 blue dots instead of 11,
+miscounted the bars above 50 on the chart, and misplaced one shape in the grid. The big reasoning
+models mostly got the understanding questions right. The distill (67%) miscounted both colours
+(8 red and 12 blue, for 7 and 11), Groot scored 78%, and the small LFM3-VL 69%.
 
 **Engineering drawings are surprisingly readable.** Sizes, hole callouts, part number, material:
-nearly perfect across the board. The only slips came on one plate where three dimension labels
+nearly perfect across the board. Most slips came on one plate where three dimension labels
 sit close together (`20`, `2x 30`, `25`): Qwen3-VL read the pitch as 20, Bonsai read both the
-pitch and the edge offset as 25.
+pitch and the edge offset as 25. LFM3-VL got two of 27 dimensions wrong.
 
 **Speed is mostly where the projector lives.** Qwen3-VL keeps its vision encoder on the GPU and
-doesn't think: 6 seconds per image. The others encode images on the CPU (no VRAM to spare next to
-a 20 GB model) and reason first: 36 to 71 seconds, and 115 for the 74B Bolt, whose 1.7 GB
+doesn't think: 5 seconds per image. LFM3-VL also has it on the GPU and thinks: 8 seconds. The big models encode images on the CPU (no VRAM to spare next to
+a 20 GB model) and reason first: 33 to 70 seconds, and 110 for the 74B Bolt, whose 1.7 GB
 projector is the biggest of the lot.
 
 **Bigger isn't better at boxes.** Bolt 74B, the largest model here, read the invoices, chart,
 dots, grid and drawings perfectly, then drew the worst boxes: right x positions and top edges,
-bottoms about twice as low as they should be. Its 64 % "any format" box score is the lowest of the
-six; Bonsai 2, about a third of its size, used pixels as asked and scored 100 %.
+bottoms about twice as low as they should be. Its 64 % "any format" box score was the lowest of the
+first six (Groot later scored 21 %); Bonsai 2, about a third of its size, used pixels as asked and scored 100 %.
 
 ## Run it yourself
 

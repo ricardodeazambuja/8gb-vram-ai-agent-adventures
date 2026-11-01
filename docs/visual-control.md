@@ -93,7 +93,7 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
   The gauge doesn't improve.
 - **Qwen3-VL-8B (no thinking, 1 s a decision) is accurate but over-eager**: it refills tanks that are half full
   and misapplies the gauge thresholds. Click, pick and signal are near perfect.
-- **Stateless beats history, for both models.** With its own previous answers in the context
+- **Stateless mostly beats history, on small samples (8 episodes each).** There are two exceptions: LFM3-VL without thinking did better on open grids with history (5/8 against 3/8), and Qwen3-VL on mazes (2/8 against 1/8). With its own previous answers in the context
   LFM3-VL starts copying them: in the history grid it pasted the same paragraph at every step,
   the pibench loop in miniature (with thinking on it doesn't, but it doesn't do better either: 6/8 and 2/8). Qwen3-VL stopped one cell short of the goal, said "the robot is
   on the green square", and kept saying it for up to 18 steps while every new picture showed

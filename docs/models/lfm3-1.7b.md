@@ -82,7 +82,7 @@ reported bugs and still accepted `5x` and `abc`). Where it fell down was the dat
 - 🪄 **JavaScript page, 1/3.** It kept the curly quotes it was told to drop, and once left `é` as
   the literal text `é`.
 
-It is also the chattiest model here: a median of 12,160 output tokens per attempt (Gemma 7.1K,
+It is also the chattiest model that doesn't loop: a median of 12,160 output tokens per attempt (Gemma 7.1K,
 Ornith 2.7K) and up to 113 tool calls in one attempt. At 106 tok/s that still finishes quickly.
 
 ## Security audit

@@ -9,7 +9,7 @@
 > | Context | 32K here |
 > | Generation | **106 tok/s** |
 > | Prompt processing | **4,875 tok/s** (15K-token prompt) |
-> | [Vision probe](../vision-probe.md) | **91%** overall, **9 s** per image; boxes IoU 0.93–0.94 |
+> | [Vision probe](../vision-probe.md) | **91%** overall, **8 s** per image; boxes IoU 0.93–0.94 |
 > | [pibench](../pibench.md) | **0/18** (47% of hidden tests): loops on tool calls, unlike LFM3-1.7B (12/18) |
 > | [Visual control](../visual-control.md) | **60/60** one-picture decisions with thinking (45/60 without); grid mazes 3/8 |
 > | [Security audit](../security.md) | clean (model and projector) |
@@ -43,8 +43,8 @@ RTX 2070 Max-Q (8 GB), q8_0 KV, 32K context, projector on the GPU, the card's sa
 top-k 50, repeat-penalty 1.1). `scripts/qwen-bench.py`: **106.2 tok/s**, a 15K-token prompt at
 **4,875 tok/s**, tool call ✓, 2.6 GB of VRAM.
 
-**[Vision probe](../vision-probe.md): 91%**, at a median of 9 s per image (only
-[Qwen3-VL-8B](qwen3-vl-8b.md) is quicker, at 6 s, and it scores 89%).
+**[Vision probe](../vision-probe.md): 91%**, at a median of 8 s per image (only
+[Qwen3-VL-8B](qwen3-vl-8b.md) is quicker, at 5 s, and it scores 89%).
 
 - 🧾 **OCR 100%**: every field of all three invoices, the blurred, rotated "scan" included, in
   under 4 s each.

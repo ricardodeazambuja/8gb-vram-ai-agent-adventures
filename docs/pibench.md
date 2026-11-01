@@ -25,7 +25,7 @@ ways before any model touched it: a reference solution passes every hidden test,
 untouched starter files fail them.
 
 **The rules:** plain [pi](https://github.com/badlogic/pi-mono) 1.3.0 with no extensions, each
-model at its launcher's defaults, 20 minutes per attempt, **3 attempts per task**. An attempt
+model at its launcher's defaults unless its page says otherwise (Gemma and LFM3-VL ran at 64K), 20 minutes per attempt, **3 attempts per task**. An attempt
 counts as **solved only if every hidden test passes**. Close doesn't count; it's that kind of
 gym.
 
@@ -128,14 +128,14 @@ through wrong values.
 ### Look first, then write
 
 Flint fetched and grepped the pages before writing any scraper (about three probes per
-attempt, the most of anyone). The distill almost never looked (0.1 probes per attempt) and wrote
+attempt, the most of the 18/18 models). The distill almost never looked (0.1 probes per attempt) and wrote
 scrapers from memory: blazingly fast and usually right, and wrong in exactly the ways memory is
 wrong, like which of two links is which.
 
 ### More thinking ≠ more passing
 
-Spark reasoned the most by far (about 17,000 characters of thinking per attempt) and tied for
-last. The distill thought the least of the big models and tied Qwen3.6. Flint and Gemma think a
+Spark reasoned a lot (about 17,000 characters of thinking per attempt) and solved 14/18. The
+distill thought little (about 4,400) and tied Qwen3.6. Flint and Gemma think a
 lot *and* look at the data, which seems to be the winning combination. The Nemotrons make the
 same point from both ends: the E4B thought the second most and came last, while Bolt 74B thought
 less than half as much and solved 15.
@@ -146,12 +146,12 @@ Bolt 74B has roughly twice the total parameters of anything else here, and more 
 active parameters of the other MoEs. It finished fifth of eight: careful, tidy (the fewest tool calls and tool errors), and done in
 by the same unlabelled character set that tripped the distill and Bonsai. Its 2-bit quantization
 may cost it something we can't separate from the model itself. What the size *does* buy is
-breadth (text, images and video, 128K), at a price: 6.4 minutes per attempt, the slowest here.
+breadth (text, images and video, 128K), at a price: 6.4 minutes per attempt, the slowest of the models that finish on time.
 
 ### Context is a capability
 
-Every model with 64K or more of context never ran out of it (two attempts ran out of *time*, which
-is a different story). Bonsai 2, at 16K,
+No model with 64K or more of context ran out of it. Some attempts ran out of *time* (one each for
+Bolt, E4B and Ornith, 14 for looping LFM3-VL), which is a different story. Bonsai 2, at 16K,
 got cut off mid-thought in two thirds of its attempts; nine of those still passed because the
 files were already written. On a longer job, that's a job half done.
 
@@ -168,7 +168,7 @@ ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
 - **Gemma 4 26B** — the surprise. Weak published agentic scores, perfect here. Thinks long, acts
   in few steps, chases odd data. The only one of the first six to fumble pi's tool format (8 calls without a
   file path), and it recovered every time.
-- **Qwen3.8 distill** — the sprinter. Fastest per attempt of the big models, test-driven on code, writes scrapers
+- **Qwen3.8 distill** — the sprinter. Among the quickest big models per attempt, test-driven on code, writes scrapers
   from memory. Double-check its data.
 - **Qwen3.6** — direct and quick, checks shallowly. Once fixed only the reported bugs and missed
   the hidden one; once overwrote a provided input file without asking.

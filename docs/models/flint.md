@@ -122,7 +122,7 @@ At the default settings:
 | pi one-shot through `start_flint.sh` | correct |
 
 **[pibench](../pibench.md):** **18/18 solved**, 100% of hidden tests, median 4.3 min per run,
-median 5,099 output tokens. One of only two perfect scores.
+median 5,099 output tokens. One of three perfect scores, with Gemma 4 26B and Groot.
 
 ## How it behaves
 

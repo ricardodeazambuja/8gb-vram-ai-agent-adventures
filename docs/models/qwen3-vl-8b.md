@@ -10,7 +10,7 @@
 > | Generation | ~38 tok/s (26 tok/s with the context full) |
 > | Prompt processing | ~830–900 tok/s |
 > | [pibench](../pibench.md) | not run (an image model without a thinking mode) |
-> | [Vision probe](../vision-probe.md) | **89%**, perfect OCR, ~6 s per image |
+> | [Vision probe](../vision-probe.md) | **89%**, perfect OCR, ~5 s per image |
 > | Launch | `bash scripts/start_qwen3vl.sh` |
 
 ## What is it?
@@ -98,8 +98,8 @@ models' scores on the [scoreboard](../scoreboard.md).
 VRAM: 7.39 GB with the projector on the GPU (idle and with the context full), 7.54 GB peak
 during a 2,048-token image.
 
-**[Vision probe](../vision-probe.md): 89% overall, at ~6 s per image** (6–12× faster than the
-thinking models, which encode on the CPU and reason first):
+**[Vision probe](../vision-probe.md): 89% overall, at ~5 s per image** (7–22× faster than the
+big thinking models, which encode on the CPU and reason first):
 
 | OCR | Boxes, any format | Boxes in pixels, as asked | Understanding | CAD |
 |---:|---:|---:|---:|---:|

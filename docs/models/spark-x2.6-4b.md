@@ -7,7 +7,7 @@
 > | Size on disk | 4.07 GiB (`Q8_0`) |
 > | Where it lives | everything on the GPU (~7.4 GB used) |
 > | Context | **108K** (110,592 tokens) |
-> | Generation | **~48–50 tok/s**, second only to the Nemotron Bolt E4B (52) |
+> | Generation | **~48–50 tok/s**, behind only LFM3 (106) and the Nemotron Bolt E4B (52) |
 > | Prompt processing | ~1,450–1,620 tok/s |
 > | [pibench](../pibench.md) | 14/18 solved, 3.3 min median per run |
 > | [Vision probe](../vision-probe.md) | not run (text only) |
@@ -107,8 +107,8 @@ each.
 
 ## How it behaves
 
-- **The busiest model in the room.** The most tool calls (~19 per run), the most output
-  (~9K tokens per run) and by far the most reasoning (~17K thinking characters per run). At
+- **A busy model.** Many tool calls (~19 per run), a lot of output
+  (~9K tokens per run) and heavy reasoning (~17K thinking characters per run), though LFM3 later went further. At
   ~48 tok/s it still finishes a run in a median 3.3 minutes.
 - **It checks often, but it checks the wrong thing.** It inspected its own output in more runs
   than any other model, yet all four of its failures were wrong values that looked plausible:

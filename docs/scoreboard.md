@@ -134,21 +134,21 @@ Qwen3.6, ~4.7K for Spark.
 
 ## How they behave
 
-Numbers say how often; this says how. Drawn from reading every pibench transcript (eight models,
-144 attempts), the vision answers, and our spot checks for the four models that didn't run pibench.
+Numbers say how often; this says how. Drawn from reading the pibench transcripts of the first eight models (144
+attempts; later models are described on their own pages), the vision answers, and our spot checks for the four models that didn't run pibench.
 The last column says how much we watched each one, so you know how far to trust the line.
 
 | Model | In a word | Good at | Watch out for | Based on |
 |---|---|---|---|---|
 | [Flint](models/flint.md) | **careful** | Probes pages before scraping (~3 times per attempt), audits beyond the bug report, checks raw bytes with `xxd`, cleans up after itself | Wanders: the same chore took 6 min once and 13 the next. Can't see images | pibench, 18 attempts |
 | [Gemma 4 26B-A4B](models/gemma4-26b-a4b.md) | **thorough** | Thinks long, acts in few steps, chases odd data until it understands it (found the missing charset with `curl -I`) | Fumbled pi's tool format (8 calls without a file path) and recovered every time. Boxes in its own 0–1000 y-first format | pibench, vision |
-| [Nemotron Bolt 74B](models/nemotron-bolt-74b.md) | **deliberate** | Fewest tool calls and tool errors of all; tests edge cases nobody asked for; perfect OCR, charts and drawings | Slow (5–10 min a job). Chased a symptom until it timed out; draws boxes about twice as tall as they are | pibench, vision |
+| [Nemotron Bolt 74B](models/nemotron-bolt-74b.md) | **deliberate** | Very few tool calls and tool errors; tests edge cases nobody asked for; perfect OCR, charts and drawings | Slow (5–10 min a job). Chased a symptom until it timed out; draws boxes about twice as tall as they are | pibench, vision |
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | **direct** | Read, edit, test, done; little thinking for a big model; perfect vision | Shallow checks (30 quotes with empty authors, "done"); fixes what you report, not always what's hiding; once overwrote a provided file | pibench, vision |
-| [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | **quick** | Fastest big model per job; test-driven on code; the tersest thinker on the code check (under 800 tokens) | Writes scrapers from memory without looking (0.1 probes per attempt), so it's wrong in the ways memory is wrong | pibench, vision |
+| [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | **quick** | Among the quickest big models per job; test-driven on code; the tersest thinker on the code check (under 800 tokens) | Writes scrapers from memory without looking (0.1 probes per attempt), so it's wrong in the ways memory is wrong | pibench, vision |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | **cramped** | Sound reasoning; every code chore solved; best at boxes in pixels, as asked | 16K context: cut off mid-thought in two thirds of its attempts | pibench, vision |
-| [Spark-X2.6-4B](models/spark-x2.6-4b.md) | **busy** | Fast; checks its output more often than anyone (94 % of attempts) | Thinks the most and still waves through plausible wrong values (five stars for every book, one quote ten times) | pibench |
+| [Spark-X2.6-4B](models/spark-x2.6-4b.md) | **busy** | Fast; checks its output in 94 % of attempts | Thinks a lot and still waves through plausible wrong values (five stars for every book, one quote ten times) | pibench |
 | [Nemotron Bolt E4B](models/nemotron-bolt-e4b.md) | **hasty** | Fast (52 tok/s, second only to LFM3); good for short assistant turns | Declares victory on empty output (`{}`, a header-only CSV); skims specs; 5.5 tool errors per attempt | pibench |
-| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | **snappy** | Flawless OCR in 6 seconds per image; boxes right in its own format | Doesn't think, so counting slips (12 dots for 11). 16K context | vision, spot checks |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | **snappy** | Flawless OCR, 5 seconds per image; boxes right in its own format | Doesn't think, so counting slips (12 dots for 11). 16K context | vision, spot checks |
 | [Dory1.0-4B](models/dory1.0-4b.md) | **tunable** | More loops for more depth, fewer for more speed; tool calls work | No character study yet; its llama.cpp support is an unmerged PR | smoke tests only |
 | [Gemma 4 12B coder](models/gemma4-12b-coder.md) | **neat** | Careful small-scale code (edge cases, sensible data structures); tool calls work | Occasionally drops a line (an LRU `put` lost its last insert); review what it writes | spot checks only |
 | [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | **brisk** | 28 tok/s fully on the GPU; native tool calls | Can loop on `0000…` without its repetition penalty; 16K context | spot checks only |
@@ -163,9 +163,9 @@ whether it *reads* what it looked at. The full story, with examples, is in
 |---|---|---|
 | Long agent sessions (128K) | [**Flint**](models/flint.md) | 18/18 on pibench, the best published agentic scores here, 128K, prompts 2.5× faster than Qwen3.6. Can't see images. |
 | A dependable all-rounder that sees | [**Gemma 4 26B-A4B**](models/gemma4-26b-a4b.md) | 18/18 on pibench and 100% on the vision probe. Slower per job than the Qwens. |
-| Quick turns | [**Qwen3.8 distill**](models/qwen3.8-35b-a3b-distill.md) | Fastest per job of the big models (2.5 min median), 16/18, 128K. Double-check its scraped data. |
+| Quick turns | [**Qwen3.8 distill**](models/qwen3.8-35b-a3b-distill.md) | Second quickest of the big models (2.5 min median), 16/18, 128K. Double-check its scraped data. |
 | Careful image reading at 128K | [**Qwen3.6-35B-A3B**](models/qwen3.6-35b-a3b.md) | 100% on the vision probe, 16/18 on pibench. |
-| Fast image reading | [**Qwen3-VL-8B**](models/qwen3-vl-8b.md) | 6 s per image, perfect OCR, all on the GPU. Weaker at counting. |
+| Fast image reading | [**Qwen3-VL-8B**](models/qwen3-vl-8b.md) | 5 s per image, perfect OCR, all on the GPU. Weaker at counting. |
 | A small vision model that acts on what it sees | [**LFM3-VL-2B**](models/lfm3-vl-2b.md) | 60/60 one-picture tool decisions with thinking, ~3 s each, 2.6 GB. One fresh question per step; not an agent ([visual control](visual-control.md)). |
 | Raw speed on small jobs | [**Spark-X2.6-4B**](models/spark-x2.6-4b.md) | 48–50 tok/s, 108K, 14/18; careless with details, but twice the E4B's score at nearly its speed. |
 | The biggest brain that fits | [**Nemotron Bolt 74B**](models/nemotron-bolt-74b.md) | 74B in 2 bits at 14 tok/s, 128K, images and video; 15/18 and 91% vision. Patience required: 5–10 min per agent job. |

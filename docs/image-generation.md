@@ -133,7 +133,7 @@ Same invented man, 20 pictures, two seeds, judged by eye. Pictures for the new r
 |---|---|---|---|---|
 | **Klein `-r`, no training** | one photo | none | Good, weaker at full length; both seeds look alike | n/a, only with the photo |
 | **Textual Inversion, `sd-cli`** | **8 KB** | 35 min | **Strong, about level with LoRA** | **No** |
-| LoRA with regularisation pictures | 45 MB | 17 min, plus making 20 pictures | Strong; one astronaut lost the face | **No** |
+| LoRA with regularisation pictures | 47 MB | 17 min, plus making 20 pictures | Strong; one astronaut lost the face | **No** |
 | LoRA, `sd-cli` | 47 MB | 17 min | Strong | Yes |
 | LoRA + norm | 49 MB | 17 min | Strong, about level with LoRA | Yes |
 | DoRA | 49 MB | 28 min | Strong | Yes |
@@ -146,7 +146,7 @@ Same invented man, 20 pictures, two seeds, judged by eye. Pictures for the new r
 - **The LoRA leak has a cheap fix.** Training also on 20 plain pictures of "a man" made by the
   untouched model ([`make_reg.py`](../bench/imagegen/make_reg.py)) stopped the blue shirt and glasses
   turning up in plain prompts, at no visible cost to likeness on the beach and chef prompts. So
-  the file is what's left to choose between: 8 KB, or 45 MB and half the training time.
+  the file is what's left to choose between: 8 KB, or 47 MB and half the training time.
 - **Fewer steps may do.** With LoRA + norm, 250 steps (about 4 minutes) already showed the glasses
   and beard, and 500 looked close to 1000.
 - **Both file types work in `sd-cli`:** our LoRA loads as it is (1120 of 1120 tensors), and

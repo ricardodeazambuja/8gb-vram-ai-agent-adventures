@@ -8,6 +8,7 @@ Usage: python3 bench/check_numbers.py
 import json
 import math
 import os
+import re
 import statistics
 
 BENCH = os.path.dirname(os.path.abspath(__file__))
@@ -79,6 +80,8 @@ same("agent LoRA pictures 101 against 110 of 150, p", round(fisher(101, 49, 110,
 
 same("Gemma glance", glance("gemma26b-think-on"), (30, 30))
 same("Groot glance", glance("groot-think-on"), (27, 30))
+vision = open(f"{BENCH}/vision/results/summary.md").read()
+same("vision medians, s", [re.search(rf"\| {m} \|.*\| (\d+) s \|", vision)[1] for m in ("qwen3vl", "lfm3vl", "bolt")], ["5", "8", "110"])
 same("Gemma median s", round(statistics.median(i["secs"] for i in load(f"{VC}/glance-gemma26b-think-on.json")["items"])), 17)
 same("Groot median s", round(statistics.median(i["secs"] for i in load(f"{VC}/glance-groot-think-on.json")["items"])), 16)
 same("graft, thinking off", glance("graft-think-off"), (14, 150))

@@ -93,7 +93,7 @@ RTX 2070 Max-Q (8 GB), 32 GB RAM, q8_0 KV, flash attention on, sampling from the
 | **`NCMOE=27`, batch 2048 (default)** | **7.2 GB** | **39.2 tok/s** | **871 tok/s** | ✓ |
 
 The fastest generation of any big model here (Qwen3.6 23, the distill 26, Flint 24 tok/s), and
-the fastest prompt reading.
+very fast prompt reading (LFM2.5 reached about 940).
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **2,315 and 2,988 tokens**. That's a bit under Qwen3.6
@@ -103,7 +103,7 @@ own doctests pass, 0/500 wrong, in **2,315 and 2,988 tokens**. That's a bit unde
 100%, understanding 78% (counted 13 blue dots where there are 11), but **boxes 21%** in any
 format. It answers in pixels as asked, with x roughly right and y shifted and stretched
 unevenly, so few boxes reach IoU 0.5. Qwen3.6, its parent, scores 100% on the same boxes, so the
-pruning or post-training cost it some spatial precision. Median 49 s per image.
+pruning or post-training cost it some spatial precision. Median 44 s per image.
 
 **[pibench](../pibench.md): 18/18 solved**, 100% of hidden tests, median **3.1 min** per run
 (the fastest of the perfect scores: Flint 4.3, Gemma 4.8), 5.2K output tokens per run. Not one
