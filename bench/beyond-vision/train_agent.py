@@ -41,8 +41,8 @@ params = [p for p in model.parameters() if p.requires_grad]
 opt = torch.optim.AdamW(params, lr=a.lr, weight_decay=0.0)
 scaler = torch.amp.GradScaler("cuda")
 order = [r for e in range(a.epochs) for r in random.Random(e).sample(rows, len(rows))]
-if a.limit:
-    order = order[:a.limit]
+if a.limit:  # fit test: the largest examples, so a pass means the whole run fits
+    order = sorted(rows, key=lambda r: -r["tokens"])[:a.limit]
 t0, total = time.time(), 0.0
 for step, r in enumerate(order):
     if time.time() - t0 > a.max_secs:
@@ -53,7 +53,7 @@ for step, r in enumerate(order):
     ids = torch.cat([head, tail], 1).to("cuda")
     n = tail.shape[1]
     with torch.autocast("cuda", dtype=torch.float16):
-        logits = model(input_ids=ids, logits_to_keep=n + 1).logits  # the whole sequence would be 1.75 GiB
+        logits = model(input_ids=ids, logits_to_keep=n + 1, use_cache=False).logits  # the whole sequence would be 1.75 GiB
         loss = torch.nn.functional.cross_entropy(logits[0, :-1], ids[0, -n:]) / a.accum
     scaler.scale(loss).backward()
     total += loss.item()
