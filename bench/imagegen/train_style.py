@@ -200,6 +200,8 @@ def eval_(a):
     out = M / "out/style" / (a.run + (f"-{a.ckpt}" if a.ckpt else ""))
     out.mkdir(parents=True, exist_ok=True)
     pipe = pipe_load()
+    if not a.run.startswith("base") and not any((run / f).exists() for f in ("norms.pt", "pytorch_lora_weights.safetensors")):
+        raise SystemExit(f"{run} has no adapter")  # or it silently scores the plain model
     if not a.run.startswith("base") and (run / "norms.pt").exists():
         sd = torch.load(run / "norms.pt", map_location="cpu", weights_only=True)
         pipe.unet.load_state_dict({k: v.half() for k, v in sd.items()}, strict=False)
