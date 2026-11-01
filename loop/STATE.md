@@ -30,3 +30,4 @@ nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `
 - 04:45 8 KB style word on Van Gogh looks stronger than the 1000-step LoRA, and leak-free, with a green cast (by eye). Next: gris word, 3k LoRA, then loop/queue6.sh (stack person + style words), docs, report.
 - 06:15 all queues done. Stack works on Van Gogh, weak on Gris; word weight 0.7 no effect. Docs updated. Only the final report is left at 07:00.
 - 06:12 last test: Van Gogh word from "art" instead of "painting" (run vangogh-word-art), to see if the green cast comes from the start word. Then final report.
+- 06:57 green cast is not the start word (art start greener). Overnight work complete; final report given.

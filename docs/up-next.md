@@ -420,7 +420,7 @@ than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guess
 [Making pictures](image-generation.md#teaching-sdxl-a-style-or-a-person) and
 [Fine-tuning](fine-tuning.md#steering-vs-training-2026-11-01). Not started: steps 4, 5 and 7 to 13, and
 steering tests 3 and 5. Next for images: regularisation pictures on the 3000-step style LoRA, and why
-style words turn green.
+style words turn green (not the starting word).
 
 **Do first, it helps everything:**
 1. **Preflight before a long run:** colour round trip, overfit one image in 2 minutes, untrained

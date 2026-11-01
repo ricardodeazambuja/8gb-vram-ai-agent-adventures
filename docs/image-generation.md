@@ -171,8 +171,9 @@ eye on two seeds. A 3000-step Van Gogh LoRA (50 minutes) is the comparison.
   a verdict on 1000 steps. Three times as long closes the gap on Van Gogh, at the price of the worst
   leak we've seen. Regularisation pictures fixed the person's leak, but we haven't tried them on a style.
 - **The word has a colour habit.** Van Gogh and Gris both came out green, in pictures of a cat and a
-  street as well as the green coat. We don't know why. Both started from the word "painting", so that's
-  the first thing to change.
+  street as well as the green coat. It isn't the starting word: starting a Van Gogh word from "art"
+  instead of "painting" came out greener still. Mean green over the pictures went from 133 to 150, on
+  10 of the 12 pictures (the scoring run hit its time limit). The cause is still unknown.
 - **Gris didn't work as cubism.** The word gives an old oil look, stronger than LoRA, with no broken
   planes. Neither method learned the shapes, so only naming him gets them. Structure seems much
   harder to teach than paint.
