@@ -15,8 +15,8 @@ import json
 import os
 import re
 import signal
-import subprocess
 import statistics
+import subprocess
 import sys
 import time
 import urllib.request

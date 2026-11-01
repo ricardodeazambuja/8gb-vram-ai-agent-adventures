@@ -81,7 +81,7 @@ for _arg in "$@"; do case "$_arg" in
 esac; done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Our llama.cpp: the user's fork, branch `adventures` (upstream 2026-10-28 + LocateAnything PR
+# Our llama.cpp: our fork, branch `adventures` (upstream 2026-10-28 + LocateAnything PR
 # #24749 + Dory PR #30306), cloned next to this repo. Override with ADV_LLAMA=/path/to/clone.
 ADV_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
 
