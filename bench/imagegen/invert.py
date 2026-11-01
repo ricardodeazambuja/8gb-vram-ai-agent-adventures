@@ -35,6 +35,7 @@ def main():
     ap.add_argument("--like", default="person")
     ap.add_argument("--steps", type=int, default=1000)
     ap.add_argument("--size", type=int, default=768)
+    ap.add_argument("--tag", default="")
     ap.add_argument("--fit", action="store_true")
     a = ap.parse_args()
     random.seed(0)
@@ -85,7 +86,7 @@ def main():
     print(f"done: {steps} steps, {secs:.0f}s, peak {peak:.2f} GiB", flush=True)
     if a.fit:
         return
-    run = RUNS / f"{a.set}-word"
+    run = RUNS / f"{a.set}-word{a.tag}"
     run.mkdir(parents=True, exist_ok=True)
     save_file({"clip_l": e1.weight[i1][None].detach().cpu().float().clone(),
                "clip_g": e2.weight[i2][None].detach().cpu().float().clone()}, run / f"{a.word}.safetensors")

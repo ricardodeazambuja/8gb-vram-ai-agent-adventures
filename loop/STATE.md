@@ -29,3 +29,4 @@ nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `
 - 03:40 pibench with retry vector at +0.03: 0/6, repeats 93% -> 80%. Docs done. queue5 running; after it: view reg leak, word on styles, 3k; docs; stack test; final report at 07:00.
 - 04:45 8 KB style word on Van Gogh looks stronger than the 1000-step LoRA, and leak-free, with a green cast (by eye). Next: gris word, 3k LoRA, then loop/queue6.sh (stack person + style words), docs, report.
 - 06:15 all queues done. Stack works on Van Gogh, weak on Gris; word weight 0.7 no effect. Docs updated. Only the final report is left at 07:00.
+- 06:12 last test: Van Gogh word from "art" instead of "painting" (run vangogh-word-art), to see if the green cast comes from the start word. Then final report.
