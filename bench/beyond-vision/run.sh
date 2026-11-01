@@ -35,6 +35,7 @@ serve() { # NAME PORT VAR=VALUE... COMMAND...
   echo "server $n did not start, see $LOGS/srv-$n.log"; stop; return 1
 }
 stop() { systemctl --user stop 'bv-srv-*.scope' 2>/dev/null; sleep 5; }
+# A failed sandbox run must stop the step: its output is untrusted until sandbox.sh has scanned it.
 sandbox() { # SCRIPT OUT ARGS...: the model repo's code runs only in here
   SCRIPT="$1" OUT="$2" bash bench/finetune/sandbox.sh "${@:3}"
 }
@@ -61,8 +62,8 @@ graft)
   # thinking on is too slow to finish: the partial score is in the log
   timeout 1300 $VPY bench/visual-control/run_control.py glance graft --think on --n 12 | tee $R/results/logs/graft-on.txt; stop ;;
 train-agent)
-  sandbox /bench/beyond-vision/train_agent.py "$A/agent" --limit 16
-  sandbox /bench/beyond-vision/train_agent.py "$A/agent" --epochs 4 --max-secs 2300 | tee $R/results/logs/tr-agent.txt
+  sandbox /bench/beyond-vision/train_agent.py "$A/agent" --limit 16 || exit 1
+  sandbox /bench/beyond-vision/train_agent.py "$A/agent" --epochs 4 --max-secs 2300 | tee $R/results/logs/tr-agent.txt || exit 1
   (cd "$L" && PYTHONPATH=gguf-py CUDA_VISIBLE_DEVICES= $PY convert_lora_to_gguf.py "$A/agent/agent-lora" \
     --base "$OLDPWD/models/lfm3-vl-2b-hf" --outfile "$A/agent-lora.gguf") ;;
 score-agent)
@@ -89,8 +90,8 @@ projector)
   mkdir -p "$TEXT"
   PYTHONPATH=$L/gguf-py $PY $R/gguf_to_state.py check
   PYTHONPATH=$L/gguf-py $PY $R/gguf_to_state.py export
-  sandbox $PROJ "$TEXT" --limit 16
-  sandbox $PROJ "$TEXT" --n-train 300 --max-secs 2700
+  sandbox $PROJ "$TEXT" --limit 16 || exit 1
+  sandbox $PROJ "$TEXT" --n-train 300 --max-secs 2700 || exit 1
   OUT=$TEXT bash bench/finetune/sandbox.sh eval --model /model --adapter /out/run --n 30 --key proj &&
     cp "$TEXT/eval-proj.json" $R/results/projector-eval.json && cp "$TEXT/run/train.json" $R/results/projector-train.json ;;
 overfit)
