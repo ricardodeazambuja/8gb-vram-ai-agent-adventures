@@ -44,3 +44,4 @@ Order: replay test, graft, vision fine-tune on graft or LoRA on VL, two-model fa
 - 13:40 eyes probe: LFM3-1.7B driving, VL reporting: 57/60 (VL alone 60/60), 5.0 GB VRAM for both, median 11 s eye + 2 s driver. No 12B mmproj on disk. Running queue12 (Gemma, Groot n=6 think on). Then projector pilot: 1.7B weights from GGUF in VL's code, sandbox, train only multi_modal_projector, fit test first. Then docs and report.
 - 13:50 gguf_to_state.py verified 286/286 tensors (cos >=0.99 against VL safetensors) and exported 1.7B to proj/. train_projector.py and queue13 ready; run after queue12.
 - 13:55 Groot glance think on n=6: 27/30, mean 18 s, 7.2 GB. Gemma failed (wrong script), queue14 fixes it after queue13.
+- 14:20 projector run: 35/150, but answers are near constant per scene (blind, loss flat at 0.3 from step 30). Base-rate result, not reading. queue15: overfit test after Gemma tells "cannot carry info" from "needs more data". Then docs, report.

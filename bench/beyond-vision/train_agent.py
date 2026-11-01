@@ -10,8 +10,8 @@ import torch
 import transformers.utils
 
 transformers.utils.is_triton_available = lambda: False
-from peft import LoraConfig, get_peft_model  # noqa: E402
-from transformers import AutoModelForImageTextToText, AutoProcessor  # noqa: E402
+from peft import LoraConfig, get_peft_model
+from transformers import AutoModelForImageTextToText, AutoProcessor
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--model", default="/model")

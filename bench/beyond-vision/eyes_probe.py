@@ -11,7 +11,7 @@ import sys
 import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "visual-control"))
-import run_control as rc  # noqa: E402
+import run_control as rc
 
 DRIVER = "http://127.0.0.1:8080/v1/chat/completions"
 EYE = "http://127.0.0.1:8081/v1/chat/completions"

@@ -12,9 +12,8 @@ import os
 import random
 import sys
 
-from transformers import AutoTokenizer
-
 from replay import BENCH, HERE, TOOLS, load, to_openai
+from transformers import AutoTokenizer
 
 MAX_TOKENS = 2300
 MAX_PER_TASK = 70

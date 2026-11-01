@@ -36,7 +36,7 @@ def hf_tensors():
     out = {}
     for f in glob.glob(f"{HF}/*.safetensors"):
         with safe_open(f, "pt") as s:
-            for k in s.keys():
+            for k in s.keys():  # noqa: SIM118
                 if "language_model" in k or k.startswith("lm_head"):
                     out[k] = s.get_tensor(k)
     return out

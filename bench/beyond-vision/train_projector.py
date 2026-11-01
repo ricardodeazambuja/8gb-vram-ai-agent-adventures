@@ -15,7 +15,7 @@ import time
 import torch
 
 sys.path.insert(0, "/bench/finetune")
-import train_glance as tg  # noqa: E402
+import train_glance as tg
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--model", default="/model")
@@ -27,6 +27,7 @@ ap.add_argument("--accum", type=int, default=8)
 ap.add_argument("--fresh", action="store_true", help="start from random projector weights, not VL's")
 ap.add_argument("--keep-vl-text", action="store_true", help="control: VL's own text weights")
 ap.add_argument("--limit", type=int, default=0)
+ap.add_argument("--repeat", type=int, default=1, help="passes over the scenes; many, with few scenes, is an overfit test")
 ap.add_argument("--max-secs", type=int, default=2700)
 a = ap.parse_args()
 assert os.environ.get("ADV_SANDBOX") == "1", "run this through sandbox.sh"
@@ -55,7 +56,7 @@ trained = list(proj.parameters())
 print("trainable", sum(p.numel() for p in trained), flush=True)
 model.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
 model.train()
-data = [(name, i) for name in tg.rc.SCENES for i in range(a.n_train)]
+data = [(name, i) for name in tg.rc.SCENES for i in range(a.n_train)] * a.repeat
 random.Random(0).shuffle(data)
 if a.limit:
     data = data[:a.limit]
