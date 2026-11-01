@@ -19,4 +19,4 @@ User back at 07:00 on 2026-11-01: keep planning and working until then. Terminal
 own scope (`systemd-run --user --scope -p MemoryMax=20G -p OOMPolicy=stop --unit=...`), one GPU job at a time,
 nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `timeout` on every job.
 - bake_sdxl save is slow (10+ min, /backup disk near full); needs 30 min timeout
-- Running: loop/person.sh (dora, lora+norm, ckpts); logs in loop/logs. Next after: compare, Klein -r on person, inversion.
+- Running: loop/person.sh (dora, lora+norm, ckpts); logs in loop/logs. Then run invert.py --fit, full invert, eval_sdcli.py on subject-word/-lora/-norm. Sweep of concise vector on CPU in bench/steering. Next after: compare, Klein -r on person, inversion.

@@ -1,0 +1,1 @@
+timeout 1200 ../llama.cpp/build/bin/llama-cvector-generator -m models/lfm3-1.7b/LFM3-1.7B-Q8_0.gguf -ngl 0 -t 4 --positive-file bench/steering/concise_pos.txt --negative-file bench/steering/concise_neg.txt --method mean -o models/steering/concise-lfm3.gguf
