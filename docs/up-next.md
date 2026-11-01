@@ -415,6 +415,13 @@ drawing code), and rerun the [vision probe](vision-probe.md) to check nothing wa
 Written and reviewed against the goals above on 2026-10-31. The limit is less often training speed
 than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guesses until measured.
 
+**Status, 2026-11-01:** done: steps 1, 2 and 3 (`train_style.py preflight`, `--ckpts`, `eval_sdcli.py`,
+`bake_sdxl.py`), step 6 and steering tests 1, 2, 4 and part of 6. Results are in
+[Making pictures](image-generation.md#teaching-sdxl-a-style-or-a-person) and
+[Fine-tuning](fine-tuning.md#steering-vs-training-2026-11-01). Not started: steps 4, 5 and 7 to 13, and
+steering tests 3 and 5. Next for images: regularisation pictures on the 3000-step style LoRA, and why
+style words turn green.
+
 **Do first, it helps everything:**
 1. **Preflight before a long run:** colour round trip, overfit one image in 2 minutes, untrained
    control. For the vision models the same idea: a one-step fit test and a small scored sample.
@@ -432,8 +439,8 @@ than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guess
 6. **Person test:** norm-only surprised us here, so add DoRA, LoRA + norm and Klein `-r` as a no-training
    baseline, then stack a person with a style. Both person adapters already leak into "a man", so check
    `no-trigger` pictures. A stronger class word or regularisation pictures may help.
-7. **A style with no famous name:** now confirmed, the prompt beat 1000 steps of training on all three
-   famous styles. The stated prize is a tiny file per style, which needs a style the prompt can't reach.
+7. **A style with no famous name:** the prompt beat 1000 steps of training on all three famous styles,
+   though 3000 steps caught it on Van Gogh. The stated prize is a tiny file per style, which needs a style the prompt can't reach.
 8. **LoRA on Klein base 4B:** still the plan, and whether it fits in 8 GB is unknown. Everything fast
    about SDXL so far doesn't transfer, so this one needs its own fit test.
 9. **Captions from our own vision models,** only if style results stay weak.
@@ -539,9 +546,10 @@ the plan is encoder on the CPU or in RAM, then the image model alone on the GPU.
   computed once up front, which frees a lot. Iris-3B works in pixels, so that second saving doesn't
   apply and it may need small crops.
 
-**First SDXL results (2026-10-31):** naming the style in the prompt beat both LoRA and norm-only, and
-norm-only did better on a person than on styles, the reverse of the guess below. The text below is
-the original plan.
+**First SDXL results (2026-10-31):** at 1000 steps, naming the style in the prompt beat both LoRA and
+norm-only, and norm-only did better on a person than on styles, the reverse of the guess below. By
+2026-11-01 an 8 KB learned word had beaten both on the person, and 3000 steps of LoRA had caught the
+prompt on Van Gogh. The text below is the original plan.
 
 **Styles are the fine-tuning test we most want.** Style is the classic LoRA job, and it may suit the
 tiny methods unusually well: style-transfer research (AdaIN) found that much of an image's style

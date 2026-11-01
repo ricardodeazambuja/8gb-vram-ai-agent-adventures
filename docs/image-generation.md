@@ -75,10 +75,13 @@ All the downloads are pinned and sha256-checked, and their audits are in
 
 ## Teaching SDXL a style or a person
 
-**Short version: the tiny norm-only file taught SDXL a person, but neither method beat simply naming
-a famous style in the prompt.** LoRA moved styles further than norm-only, and even LoRA fell well
-short of the prompt. These are judged by eye from two seeds (1 and 2), through diffusers rather than
-`sd-cli`, so treat them as a first look, not a score.
+**Short version: an 8 KB learned word is the best first try, for a person and for a style.** It's
+strong and doesn't leak into prompts without the word, and it stacks. For famous styles, naming them
+in the prompt is still free and at least as good, and 1000 steps of LoRA or norm-only fell short of
+that. The first results below are by eye from two seeds (1 and 2), through diffusers rather than
+`sd-cli`, so treat them as a first look, not a score. Later results are in
+[The best person file is 8 KB](#the-best-person-file-is-8-kb) and
+[Words on styles](#words-on-styles-and-stacking).
 
 ![Each row compares no adapter, the style named in the prompt, LoRA and norm-only; the last row is the person](image-style-samples.jpg)
 
@@ -147,6 +150,37 @@ Same invented man, 20 pictures, two seeds, judged by eye. Pictures for the new r
 - **Both file types work in `sd-cli`:** our LoRA loads as it is (1120 of 1120 tensors), and
   [`bake_sdxl.py`](../bench/imagegen/bake_sdxl.py) writes norm-only into a checkpoint. A learned
   word goes in with `--embd-dir`.
+
+### Words on styles, and stacking
+
+The same kind of 8 KB word, on Van Gogh and Gris. It took 35 minutes each, through `sd-cli`, judged by
+eye on two seeds. A 3000-step Van Gogh LoRA (50 minutes) is the comparison.
+
+![Three rows of the same prompts: Van Gogh LoRA at 1000 steps, at 3000 steps, and the 8 KB learned word; the last column has no trigger word](image-style-word-vs-steps.jpg)
+
+*Seed 1. The last column has no trigger word, so a changed picture there is a leak.*
+
+| Van Gogh | File | Training | Look | Leaks? |
+|---|---|---|---|---|
+| Named in the prompt | none | none | Clear, swirling strokes | n/a |
+| LoRA, 1000 steps | 47 MB | 17 min | Paint and palette, muted | Yes, darkens |
+| **LoRA, 3000 steps** | 47 MB | 50 min | **About level with the prompt** | **Yes, strongly: a plain prompt comes out painted** |
+| **Word** | **8 KB** | 35 min | Bold strokes, stronger than 1000 steps of LoRA, but everything turns green | **No** |
+
+- **Steps mattered more than we'd assumed.** The earlier verdict that the prompt beats training was
+  a verdict on 1000 steps. Three times as long closes the gap on Van Gogh, at the price of the worst
+  leak we've seen. Regularisation pictures fixed the person's leak, but we haven't tried them on a style.
+- **The word has a colour habit.** Van Gogh and Gris both came out green, in pictures of a cat and a
+  street as well as the green coat. We don't know why. Both started from the word "painting", so that's
+  the first thing to change.
+- **Gris didn't work as cubism.** The word gives an old oil look, stronger than LoRA, with no broken
+  planes. Neither method learned the shapes, so only naming him gets them. Structure seems much
+  harder to teach than paint.
+- **Two words stack.** [`stack.py`](../bench/imagegen/stack.py) put `vgword style, zxqtok man` in one
+  prompt, and the invented man kept his beard and glasses in Van Gogh's paint, though he also drifts
+  towards Van Gogh's self-portraits. With Gris the man stayed and the style mostly went, so stacking is
+  only as strong as the weaker word. All 16 pictures took about 12 minutes. Turning the style word
+  down to 0.7 with `(word:0.7)` barely changed anything, so it's not a usable strength control.
 
 ```bash
 mamba run -n vlft python bench/imagegen/train_style.py preflight --set subject --method norm --trigger zxq
