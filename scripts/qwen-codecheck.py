@@ -15,7 +15,7 @@ model that hasn't earned trust can't touch this machine (docs/security.md).
 process, so only use it on an answer you have read.
 
 Usage:  python3 scripts/qwen-codecheck.py [--port 8080] [--out /tmp/merge_intervals.py] [--on-host]
-                                            [--max-tokens 6000]
+                                            [--image pibench:1] [--max-tokens 6000]
 """
 import argparse
 import json
