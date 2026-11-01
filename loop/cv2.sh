@@ -1,0 +1,1 @@
+timeout 280 ../llama.cpp/build/bin/llama-cvector-generator -m models/lfm3-vl-2b/LFM3-VL-2B-Q8_0.gguf -ngl 0 -t 4 --positive-file bench/steering/retry_pos.txt --negative-file bench/steering/retry_neg.txt --method mean -o models/steering/retry-lfm3vl.gguf

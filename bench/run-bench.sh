@@ -34,7 +34,7 @@ MODELS="${MODELS:-flint qwen36 distill spark gemma26b bonsai2}"
 TASKS="${TASKS:-$(find "$BENCH/tasks" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort | tr '\n' ' ')}"
 REPEATS="${REPEATS:-3}"
 TIME_LIMIT="${TIME_LIMIT:-1200}"
-RAW="$BENCH/results/raw"
+RAW="${RAW:-$BENCH/results/raw}"
 SERVER_LOG="$BENCH/results/server.log"
 mkdir -p "$RAW"
 
