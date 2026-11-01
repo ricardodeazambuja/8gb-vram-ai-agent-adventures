@@ -22,7 +22,7 @@ docker run --rm --gpus all --network none --read-only --tmpfs /tmp:exec \
   -v /usr/share/fonts:/usr/share/fonts:ro -v "$OUT:/out" \
   -e ADV_SANDBOX=1 -e ADV_RES=/out -e HF_HOME=/tmp/hf -e HF_HUB_OFFLINE=1 -e HOME=/tmp -e PYTHONDONTWRITEBYTECODE=1 \
   -e PYTORCH_ALLOC_CONF=expandable_segments:True \
-  ubuntu:22.04 "$ENV_DIR/bin/python" "${SCRIPT:-/bench/finetune/train_glance.py}" "$@" || rc=$?
+  ubuntu:22.04@sha256:076e7bf82319619f28dd0aa9c02ab34b055ad37100395b4f49a2ffba04fb5e11 "$ENV_DIR/bin/python" "${SCRIPT:-/bench/finetune/train_glance.py}" "$@" || rc=$?
 # Scan even if the run failed, and treat a folder we can't fully read as a failure.
 if ! bad="$(find "$OUT" ! -type f ! -type d -print -quit)"; then
   echo "ERROR: could not scan all of $OUT; don't copy anything out" >&2

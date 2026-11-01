@@ -1,0 +1,193 @@
+# 🔁 Reproducing our results
+
+Every result in these docs maps to a command and a saved file. This page is that map: what to build,
+which command makes which number, and how close a rerun should land.
+
+You can start with no GPU at all. This recomputes the headline numbers, and their p-values, from the
+committed result files, and it reports any that disagree with the docs:
+
+```bash
+python3 bench/check_numbers.py
+```
+
+## How close a rerun should land
+
+| Kind of result | Examples | Expect |
+|---|---|---|
+| Deterministic | weight distances, baked GGUFs, sha256s, the scenes (drawn from seeds) | the same |
+| Seeded requests to one server | replay | the same on this machine: a rerun from a clean clone matched at all 13 points, in all three arms |
+| Trained | adapters, and the glance scores that depend on them | close, not identical: GPU training isn't bit-exact |
+| Agent runs | pibench | the same range: the model, the sandbox and live sites all vary. Small gaps are noise |
+| Speed and VRAM | time per decision, GB | this laptop on that day; expect about ±5% here, and different numbers elsewhere |
+| Judged by eye | image likeness and style | the same pictures to look at, but the verdict is ours |
+
+## Setup
+
+1. **llama.cpp:** our fork at the pinned commit, as in
+   [getting started](getting-started.md#3-build-llamacpp-once-per-flavour) (`../llama.cpp`,
+   branch `adventures`, `3cb2992`). Every LFM3 result, steering included, ran on this build.
+2. **Weights:** first make the [`llamacpp` download env](getting-started.md#4-a-small-env-for-downloads),
+   then run `bash scripts/download-models.sh lfm3 lfm3vl groot lfm25vl`. These files are pinned and checked
+   by sha256. Gemma has [its own steps](models/gemma4-26b-a4b.md#install--run).
+3. **Python for training,** the exact packages we used:
+
+   ```bash
+   mamba create -y -n vlft python=3.12 pip
+   mamba run -n vlft pip install --extra-index-url https://download.pytorch.org/whl/cu126 -r envs/vlft.txt
+   bash scripts/download-hf-weights.sh lfm25vl
+   bash scripts/download-hf-weights.sh lfm3vl
+   ```
+
+   The second download includes LFM3-VL's own Python. It must only run through
+   [`sandbox.sh`](../bench/finetune/sandbox.sh), which needs Docker with GPU access. Anything that draws
+   scenes, like `run_control.py`, needs this env's Pillow too, so run it with
+   `~/miniforge3/envs/vlft/bin/python`. Plain `python3` is enough for the rest of this page unless shown.
+4. **pibench only:** build the image and network and add the firewall, as in
+   [`bench/README.md`](../bench/README.md#running-it).
+5. **Pictures only:** build `stable-diffusion.cpp` at `0a067120`, as in
+   [Making pictures](image-generation.md#run-it-yourself), and download the weights:
+   `bash scripts/download-models.sh klein kleinte kleinvae iris iriste sdxl sdxlvae`.
+
+Run one GPU job at a time, with servers in their own scope. Overlapping jobs skewed our timings and
+once made a training run time out.
+
+## Can LFM3-VL do more than look?
+
+[`bench/beyond-vision/run.sh`](../bench/beyond-vision/run.sh) `STEP` has every experiment from
+[that section](fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01). Run it with no step for the list.
+
+| Result | Step | Writes to `bench/beyond-vision/results/` unless noted |
+|---|---|---|
+| 286 of 287 tensors differ, cosine about 0.8 | `weights` | prints it |
+| Repeats 32/52, 8/52, 0/52 | `replay` | `replay-lfm3vl-think.json`, `replay-lfm3-think.json` |
+| Temperature 0.7 on pibench | `pibench-temp` | `pibench-temp07.json` |
+| Graft 14/150, 10/48 before the limit | `graft` | `../visual-control/results/glance-graft-think-off.json`, `logs/graft-on.txt`. A run that hits its limit saves no JSON, so the partial score is in that log |
+| Agent LoRA, training | `train-agent` | `logs/tr-agent.txt`, adapter in `models/` |
+| Agent LoRA, 21/24 to 7/24 and 101/150 | `score-agent` | `replay-agent-lora.json`, `../visual-control/results/glance-agent-lora-think-off.json` |
+| Agent LoRA on pibench | `pibench-agent` | `pibench-agent-lora.json` |
+| LFM3-1.7B + VL, 57/60 | `eyes` | `eyes.json` |
+| Gemma 30/30, Groot 27/30 | `big-models` | `../visual-control/results/glance-*-think-on.json` |
+| New projector, 35/150 and constant answers | `projector` | `projector-eval.json`, `projector-train.json` |
+| Overfit, loss 0.15 (run `projector` first) | `overfit` | `projector-overfit.json`, `logs/over-proj.txt` |
+
+The inputs are committed in `bench/beyond-vision/data/`:
+
+- `points.json`: the 13 stuck conversations, with the thinking kept in.
+- `stuck.json`: LFM3-1.7B's replies at those points.
+- `agent.json`: the 177 training examples.
+
+`replay.py find` and `make_agent_data.py` rebuilt these from raw transcripts, which aren't in git.
+A new pibench run gives different transcripts, so use the committed files to repeat our numbers.
+The `replay` step saves LFM3-1.7B's replies to `models/beyond-vision-logs/stuck.json`, for comparison.
+
+## Steering
+
+[The scripts README](../scripts/README.md#steering-vectors) has the general recipe. Our runs: build the
+generator once, make the two vectors on the CPU, sweep their strengths, then run pibench with the vector.
+
+```bash
+mamba run -n llamacpp-cuda cmake --build ../llama.cpp/build --target llama-cvector-generator
+G=../llama.cpp/build/bin/llama-cvector-generator; S=bench/steering; mkdir -p models/steering
+$G -m models/lfm3-1.7b/LFM3-1.7B-Q8_0.gguf -ngl 0 -t 4 --method mean -o models/steering/concise-lfm3.gguf \
+  --positive-file $S/concise_pos.txt --negative-file $S/concise_neg.txt
+$G -m models/lfm3-vl-2b/LFM3-VL-2B-Q8_0.gguf -ngl 0 -t 4 --method mean -o models/steering/retry-lfm3vl.gguf \
+  --positive-file $S/retry_pos.txt --negative-file $S/retry_neg.txt
+python3 $S/sweep.py --model models/lfm3-1.7b/LFM3-1.7B-Q8_0.gguf --vector models/steering/concise-lfm3.gguf \
+  --name concise-lfm3-fine --scales=-0.3,-0.2,-0.1,-0.05,-0.02,0,0.02,0.05,0.1,0.2,0.3 --ngl 99
+python3 $S/sweep.py --model models/lfm3-vl-2b/LFM3-VL-2B-Q8_0.gguf --vector models/steering/retry-lfm3vl.gguf \
+  --name retry-lfm3vl --scales=0,0.03,0.06,0.1,0.2 --ngl 99
+RAW=$PWD/bench/results/steering-doom MODELS=lfm3vl REPEATS=1 TIME_LIMIT=900 \
+  EXTRA_ARGS="--control-vector-scaled $PWD/models/steering/retry-lfm3vl.gguf:0.03" bash bench/run-bench.sh
+MODELS=lfm3vl bash bench/run-bench.sh    # the plain runs to compare with, 18 attempts, up to 6 hours
+python3 $S/compare_doom.py
+```
+
+## Fine-tuning the vision models
+
+**LFM2.5-VL-450M** is native to transformers, so none of the model repo's Python runs and it needs no
+sandbox:
+
+```bash
+M=models/lfm2.5-vl-450m-hf; T="$HOME/miniforge3/envs/vlft/bin/python bench/finetune/train_glance.py"
+$T train --model $M --out models/lfm2.5-vl-450m-adapters/norm --method norm --lr 1e-3    # norm-only
+$T train --model $M --out models/lfm2.5-vl-450m-adapters/lora --method lora --lr 2e-4    # LoRA
+$T train --model $M --out models/lfm2.5-vl-450m-adapters/ia3 --method ia3 --lr 1e-2      # IA3 (also 3e-3)
+$T train --model $M --out models/lfm2.5-vl-450m-adapters/vnorm --method vnorm --lr 1e-3  # vision side
+$T eval  --model $M --adapter models/lfm2.5-vl-450m-adapters/norm --key norm
+$T eval  --model $M --adapter models/lfm2.5-vl-450m-adapters/norm --key norm-shift --shift  # degraded
+$T eval  --model $M --adapter models/lfm2.5-vl-450m-adapters/norm --key norm-new --new      # new scenes
+```
+
+`--key` names the result file, so give every eval its own. Repeat with `--seed 1` and `--seed 2`, each with
+its own `--out` and `--key`. For the grid, add `--task grid`, or `--task both` for one
+adapter on both jobs, with `--recover 4` for the recovery data and `--mask-blocked` on `eval --task grid`
+for the harness rule. Each adapter's `train.json` records its settings, and scores land in
+[`bench/finetune/results/`](../bench/finetune/results/).
+
+**LFM3-VL-2B** uses the same flags, inside the sandbox. Use `--lr 2e-4` for LoRA and norm-only, and
+`--lr 1e-2` for IA3:
+
+```bash
+export OUT=$PWD/models/lfm3-vl-2b-adapters
+bash bench/finetune/sandbox.sh train --model /model --out /out/norm --method norm --lr 2e-4
+bash bench/finetune/sandbox.sh eval --model /model --adapter /out/norm --key lfm3vl-norm
+bash bench/finetune/sandbox.sh eval --model /model --adapter /out/norm --key lfm3vl-norm-new --new
+```
+
+Results stay in `OUT`, so check them before copying them out. To serve an adapter,
+[bake or convert it](fine-tuning.md#serving-it-through-llamacpp), then score it with
+`run_control.py glance KEY --think off`, with `--new` or `--shift` for the other sets (and the vlft Python).
+
+## Pictures
+
+Everything uses `P="mamba run --no-capture-output -n vlft python"`. Runs land in
+`models/image-gen/style-runs/`, and their cost in
+[`style-runs.json`](../bench/imagegen/results/style-runs.json).
+
+```bash
+python3 bench/imagegen/run_gen.py klein iris sdxl                    # the speed table
+$P bench/imagegen/run_inputs.py klein iris sdxl                      # picture, mask and reference inputs
+python3 bench/imagegen/fetch_commons.py                              # our exact public domain sets
+python3 bench/imagegen/make_subject.py                               # the invented person
+T="$P bench/imagegen/train_style.py"
+$T train --set vangogh --method lora --trigger vgstyl                # also norm
+$T train --set gris --method lora --trigger grsstyl                  # also norm
+$T train --set atget --method lora --trigger atgstyl                 # also norm
+$T train --set vangogh --method lora --trigger vgstyl --steps 3000 --tag=-3k
+$T train --set subject --method dora --trigger zxq                   # also lora, norm, lora+norm
+$P bench/imagegen/make_reg.py --word man --count 20
+$T train --set subject --method lora --trigger zxq --reg reg-man --tag=-reg
+$T eval --run subject-lora-reg --trigger zxq
+$P bench/imagegen/klein_person.py                                    # Klein -r, no training
+$P bench/imagegen/bake_sdxl.py --run subject-norm                    # 10+ minutes when the disk is nearly full
+$P bench/imagegen/invert.py --set subject --word zxqtok              # the 8 KB word
+$P bench/imagegen/invert.py --set vangogh --word vgword --like painting
+$P bench/imagegen/invert.py --set gris --word grword --like painting
+$P bench/imagegen/invert.py --set vangogh --word vgart --like art --tag=-art
+$P bench/imagegen/eval_sdcli.py --run subject-word --trigger zxqtok  # sd-cli pictures, for any run
+$P bench/imagegen/stack.py                                           # person + style words
+```
+
+Write `--tag=-3k` with the `=`: on its own, argparse reads `-3k` as a flag.
+
+## The other benchmarks
+
+| Benchmark | How to run it |
+|---|---|
+| pibench | [`bench/README.md`](../bench/README.md#running-it) |
+| Vision probe | [`bench/vision/README.md`](../bench/vision/README.md) |
+| Visual control | [Run it yourself](visual-control.md#run-it-yourself) |
+| Decision models and the command guard | Weights: `download-models.sh d1 clefflash`. `bench/grading/run_guard.py` runs from its own prompts; `run_judge.py` also needs the raw pibench transcripts. Each script's header has its usage, and [`bench/grading/results/`](../bench/grading/results/) the scores |
+| Retrieval | Weights: `download-models.sh eg2`. `bench/retrieval/run_retrieval.py bm25` needs no server; `embed KEY` needs an embedding server on port 8080. Scores: [`bench/retrieval/results/`](../bench/retrieval/results/) |
+| Relaxed acceptance | Build the fork's `relaxed-accept` branch into `../llama.cpp-relaxed` (`LLAMA_REPO`, `LLAMA_REF`, `SRC_DIR`, as in [getting started](getting-started.md#3-build-llamacpp-once-per-flavour)), then `bench/relaxed/run_relaxed.py` |
+
+## What isn't in git, and why
+
+| Not committed | Size | Why it's OK |
+|---|---|---|
+| Model weights, adapters, pictures | 133 GB | Downloads are pinned, and the commands above rebuild the rest |
+| Raw pibench transcripts in `bench/results/` | 850 MB | Scores and per-run stats are committed. Later analysis of the raw text, like a new replay, needs a new run |
+| The server logs in `loop/logs/` | small | The ones behind a result were copied to `bench/beyond-vision/results/logs/` |
+
+[`loop/`](../loop/README.md) keeps the night-by-night commands and journal. It's a record of what
+happened, so use this page to repeat anything.

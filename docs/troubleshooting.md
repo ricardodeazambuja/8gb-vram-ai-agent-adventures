@@ -241,6 +241,50 @@ the `pkill`, because its command line contains the pattern.
 **Fix:** stop servers by port (`scripts/stop-server.sh`) or by PID. If you must pattern-match, use
 the bracket trick: `pgrep -f '[l]lama-server'`.
 
+## Experiments and training
+
+### A training run "scored" like the untouched model
+
+A DoRA run hit its time limit, and the eval that followed quietly ran the base model, adapter or no
+adapter. `train_style.py eval` now refuses a run with no weights. After any timeout, check that the
+adapter exists before you trust the score that follows it.
+
+### A training run is much slower than usual
+
+A CPU job on the side halved training speed here: a laptop shares its power budget between CPU and GPU.
+Never overlap them. A very full disk does the same to big saves (`bake_sdxl.py` took over 10 minutes).
+
+### Results vanish when a job times out
+
+A script that only writes its file at the end loses everything to a timeout, as a graft run did.
+Send progress to a log, and keep each scoring run well inside its limit.
+
+### A flag disappears or fails to parse
+
+`mamba run` takes some flags for itself, `--n` for one, so call the env's `python` directly. Argparse
+reads `--tag -3k` as two flags, so write `--tag=-3k`.
+
+### A script sits there doing nothing
+
+`AutoTokenizer` on a repo with custom code stops to ask a question that nobody sees. Pass
+`trust_remote_code=False`.
+
+### Training runs out of memory on long examples
+
+Attention memory grows with the square of the length, so the longest example decides. Set a token cap,
+`logits_to_keep` and `use_cache=False`, and run the fit test on the largest examples, not the first few.
+
+### A low score that looks like progress
+
+A new projector scored 35/150, up from 14, and was still blind: it gave one identical answer to all 30
+tanks, signals and gauges. Before you believe a small gain, check that answers change with the picture.
+
+### A replay can't reproduce a loop
+
+Our first replay of stuck conversations left the thinking out of the history and understated the loops,
+15/52 against 32/52. Real prompts include it, which the recorded token counts showed. Compare your token
+count with the real run's. Tool-call arguments cut off by `max_tokens` also come back as invalid JSON.
+
 ## Images
 
 ### The model "can't see" an image you gave it

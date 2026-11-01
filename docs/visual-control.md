@@ -61,6 +61,8 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | (none) | | 8 | 12 | 11 | 12 | 8 | **51/60** | 1.0 s |
 | Qwen3-VL-8B | (none) | ✓ | 8 | 12 | 11 | 12 | 6 | **49/60** | 1.0 s |
 | Qwen3-VL-8B, 30 | (none) | ✓ | 18 | 30 | 29 | 30 | 17 | **124/150** | 0.9 s |
+| [Gemma 4 26B](models/gemma4-26b-a4b.md), 6 per kind | on | | 6 | 6 | 6 | 6 | 6 | **30/30** | 17 s |
+| [Groot-19B](models/groot-19b-a3b.md), 6 per kind | on | | 6 | 4 | 5 | 6 | 6 | **27/30** | 16 s |
 
 **grid** (8 open episodes, 8 with walls):
 
@@ -118,7 +120,7 @@ tool call, a harness that keeps the state. Don't hand it a conversation or a maz
 
 ```bash
 systemd-run --user --scope --unit=llama-lfm3vl -E QMODEL=lfm3vl bash scripts/run-qwen.sh --image
-python3 bench/visual-control/run_control.py glance lfm3vl --think on
+python3 bench/visual-control/run_control.py glance lfm3vl --think on   # any Python with Pillow
 python3 bench/visual-control/run_control.py grid lfm3vl --think on --memory stateless
 python3 bench/visual-control/run_control.py summary
 ```

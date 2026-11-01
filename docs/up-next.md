@@ -19,12 +19,6 @@ vision encoder, if a projector for it exists.
 |---|---|
 | Clef-Flash, d1-2B, EmbeddingGemma 2 | measured (below); only a bigger, harder question set is left |
 
-Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18);
-[Ornith](models/ornith-1.5-35b-a3b.md) (14/18, vision 97%) and
-[ThinkingCap Gemma](models/thinkingcap-gemma4-26b-a4b.md) (17/18 with 47% less thinking) and [LFM3-1.7B](models/lfm3-1.7b.md) (12/18 at 106 tok/s) have pages.
-[LFM3-VL-2B](models/lfm3-vl-2b.md) is done: vision 91%, pibench 0/18, and the new
-[visual control probe](visual-control.md) (60/60 one-picture decisions with thinking).
-
 ## Models to try
 
 ### 🧲 EmbeddingGemma 2 (Google, Apache 2.0)
@@ -340,84 +334,20 @@ more experts in RAM (Groot at a higher `NCMOE`), or a server swaps models per ta
 
 ## 🎛️ Fine-tuning the small models
 
-Liquid's [cookbook](https://github.com/Liquid4All/cookbook/tree/main/finetuning) has LoRA
-notebooks (TRL, Unsloth) for exactly the models we have, and three of them line up with what we
-measured:
+The first rounds are done, and [Fine-tuning](fine-tuning.md) has the results: norm-only, IA3 and LoRA on
+LFM2.5-VL and LFM3-VL, the grid robot, and serving from `llama-server`. Still open from that plan:
 
-| Notebook | Our reason |
-|---|---|
-| GRPO on LFM3-VL-2B (formula transcription, rule-based rewards) | The [visual control probe](visual-control.md) is a ready-made reward: seeded scenes without end and an exact scorer. LFM3-VL is 60/60 with thinking at ~3 s, 45/60 without at 0.4 s. Can training close that gap? |
-| Antidoom (FTPO, "eliminate doom loops") | LFM3-VL-2B's pibench 0/18 is doom loops: 14 of 18 attempts repeating one command. |
-| SFT for decision models (d1-3B on Banking77) | d1-2B is already in the queue. |
+- **[Liquid's cookbook](https://github.com/Liquid4All/cookbook/tree/main/finetuning):** GRPO with the
+  [visual control probe](visual-control.md) as its reward, Antidoom (FTPO) for doom loops, and SFT for
+  d1-3B on Banking77.
+- **FiLM, conditioned:** one model, several tasks switched by a code.
+- **Another family:** Qwen3-VL-2B or 4B, to tell "fine-tuning works" from "it works on Liquid's models".
+  Confirm its sizes and licence on Hugging Face first.
+- **LFM3-Omni-2B,** which adds audio and ties in with the voice agents.
 
-**Status (2026-10-29): first results on [their own page](fine-tuning.md).** LFM2.5-VL-450M, a
-few minutes of training on the glance scenes: 14/150 → about 134/150 with LoRA, the same
-training only the language model's norm gains (34,560 parameters, mean 133 over 3 seeds), and IA3
-less steady (mean 123, 109–138). On the grid robot, the tuned models plus a harness that never
-repeats a blocked move solve 5/8 mazes, 6/8 when one adapter learns both jobs (LFM3-VL-2B with thinking: 3/8, at 44 s a step). The vision side's norms alone teach the call
-format but not where to point (73/150).
-
-**Status (2026-10-30): LFM3-VL-2B trained in a sandbox,** repo code pinned, no network: LoRA in
-25 min at 4.86 GiB takes glance from 97/150 to 149/150 with thinking off, 149/150 on degraded
-pictures too, 0.6 s a decision ([details](fine-tuning.md#lfm3-vl-2b-in-a-sandbox)). Later the same day: holds on three seeds and on scenes never trained on (150/150/149
-vs 105), vision probe 78% vs 68%, and it runs in `llama-server` as a 31 MB adapter (149/150, 0.42 s,
-3.2 GB). It also beats two-step LocateAnything on clicking. Next: the walled grid (5/8 with the
-harness rule), and try real camera pictures.
-
-### Which vision models
-
-| Model | Role | Status |
-|---|---|---|
-| **[LFM3-VL-2B](models/lfm3-vl-2b.md)** | the main subject: the most measured small vision model here (vision 91%, visual control 60/60 with thinking, 45/60 without: the gap to close), ~2B fits LoRA in 16-bit on 8 GB, cookbook notebooks for this exact model | audited, on our llama.cpp build |
-| **LFM2.5-VL-450M** | "how small can it go": a quarter of the size, fast enough to train and maybe even a full fine-tune instead of LoRA. If training lifts it to ~55/60, it's the cheapest set of eyes to deploy | in the cookbook (satellite, wildfire examples); not downloaded or audited |
-| **Qwen3-VL-2B or 4B** | a different family at a similar size, to tell "fine-tuning works" from "it works on Liquid's models"; same 0–1000 coordinates, so the scorers work unchanged | from memory, not checked: confirm sizes and licence on Hugging Face first |
-
-Skipped for now: [Qwen3-VL-8B](models/qwen3-vl-8b.md) (only fits with 4-bit base weights, and
-its misses, over-eager tank refills and misapplied gauge thresholds, look like judgement, which
-is harder to train); LFM3-Omni-2B (adds audio, more to train, measure and audit; a follow-up
-that ties in with the voice agents); the big vision models (too big to train here).
-
-### What to train: LoRA vs LayerNorm vs FiLM-style scaling
-
-These models have no BatchNorm (the language model uses RMSNorm, the vision encoder LayerNorm),
-but the idea of "tune only the normalization" carries over. Same reward, same held-out scenes,
-how few parameters does it take?
-
-| Method | What it trains | Size | Why try it |
-|---|---|---|---|
-| **LoRA** | a low-rank update (rank 8–32) next to the attention and MLP weights | ~0.1–1% of the weights | the cookbook default; the baseline |
-| **(IA)³** (in PEFT) | one learned scale per channel on keys, values and the MLP | ~0.01% | FiLM without the conditioning input: a per-channel gain |
-| **Norm-only** (LN / RMSNorm tuning) | just the norm layers' gains (and biases, where there are any) | ~0.01% | the "first BN layer" idea for transformers; see BitFit / LN-tuning |
-| **Vision side only** | norms or LoRA in the vision encoder and projector, the language model frozen | small | if the gauge misses are reading errors (3 read as 35), fix the eye; if they're rule errors (93 read as 90, then `report`), the language model needs the change |
-| **FiLM, conditioned** | a small network that turns a task embedding into per-channel scale and shift | small | one model, several tasks switched by a code; later, if the simple ones work |
-
-All of them except the conditioned FiLM merge back into the weights (or load with llama.cpp's
-`--lora`), so the result goes through our usual GGUF audit and probes.
-
-### Will it fit in 8 GB?
-
-To check first:
-- LFM3-VL-2B weights are ~4 GB in 16-bit. LoRA plus gradient checkpointing plus short answers
-  probably fits; 4-bit base weights (QLoRA) are the fallback.
-- The RTX 2070 is Turing: no bf16, no FlashAttention 2. Train in fp16; some notebook settings
-  will need changing.
-- GRPO generates several answers per example. Without thinking an answer is a ~30-token tool
-  call, so that's affordable; with thinking it isn't.
-
-### Safety
-
-Training needs safetensors weights and Python, not a GGUF: pin the revision, no
-`trust_remote_code`, read each notebook before running it, use its own mamba environment. Score
-on held-out seeds and on scenes with changed colours and layouts (so it isn't learning our
-drawing code), and rerun the [vision probe](vision-probe.md) to check nothing was forgotten.
-
-### Order
-
-1. Fit test: LFM3-VL-2B in transformers, one LoRA step on one scene, peak VRAM.
-2. A small GRPO run on the glance scenes with thinking off, scored on held-out seeds.
-3. LoRA vs (IA)³ vs norm-only vs vision-side-only, at equal steps.
-4. The best method on LFM2.5-VL-450M (and Qwen3-VL-2B/4B), same reward and held-out scenes.
-5. Antidoom on LFM3-1.7B or LFM3-VL, then pibench again.
+Same rules as before: safetensors weights, a pinned revision, no `trust_remote_code` outside the
+sandbox, its own mamba environment, and notebooks read before they run. Score on held-out seeds and
+changed layouts, then rerun the [vision probe](vision-probe.md).
 
 ### Faster and better fine-tuning
 
@@ -457,8 +387,9 @@ style words turn green (not the starting word).
 **Then the vision goals, which matter more than making them train faster:**
 10. **Real camera pictures,** the open question since 2026-10-30.
 11. **Qwen3-VL-2B or 4B,** to tell "fine-tuning works" from "it works on Liquid's models".
-12. **Antidoom, then pibench,** for LFM3-VL's 0/18. On LFM3-1.7B, this is also our first plain text
-    fine-tune, so add a system prompt test: can training replace part of the prompt? Measure the agent's
+12. **A system prompt test on LFM3-1.7B,** our first plain text fine-tune. (VL's doom loops are
+    [dealt with](fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01): temperature 0.7 ends them, and an agent LoRA
+    didn't help.) The question: can training replace part of the prompt? Measure the agent's
     system prompt first and skip this if it's small next to the context. Move habits such as tone,
     format and thinking first into training; keep tool schemas, facts and safety rules in the prompt.
     Compare the full prompt, a short stub, and the stub plus the tuned model on pibench. It saves
@@ -503,9 +434,8 @@ but can't add facts.
 
 **Steering docs:** a repeatable script and saved results under `bench/`, then a short "steering vs
 training" section in [Fine-tuning](fine-tuning.md) with what worked and failed, the image results in
-[Making pictures](image-generation.md), setup commands in `scripts/README.md`, and a README line only
-if it beats the cheaper option. Any new script goes in with its links checked, and failed tests get
-written up too.
+[Making pictures](image-generation.md), and commands in [Reproducing our results](reproduce.md). Failed tests
+get written up too.
 
 **Only if timing says so:** caching the vision tower's output. Our runs see each scene once, so it
 saves nothing on a first run, only on repeats over the same data, and it rules out the

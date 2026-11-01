@@ -3,7 +3,8 @@
 
 Each example is one assistant turn: the conversation so far as text, and the turn itself, thinking
 included. Stuck points with LFM3-1.7B's reply are added from replay.py --save; odd-numbered points are
-kept out of training, so the replay can score them. Writes data/agent.json, git-ignored.
+kept out of training, so the replay can score them. Needs bench/results/raw/lfm3/ (git-ignored), so the
+result, data/agent.json, is committed.
 """
 import collections
 import glob

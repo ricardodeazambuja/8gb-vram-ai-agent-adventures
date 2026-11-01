@@ -83,6 +83,9 @@ copy-paste commands.
   [Fine-tuning](docs/fine-tuning.md).
 - **Stable Diffusion is no longer the easy choice on 8 GB.** FLUX.2 Klein draws 1024×1024 in 23 s
   in 3.5 GB and can spell. On SDXL, an 8 KB learned word taught it a person, without leaking into other prompts. [Making pictures](docs/image-generation.md).
+- **Two models can be better than one.** LFM3-VL sees but can't work as an agent, and neither a LoRA nor
+  a new projector fixed that. Temperature 0.7 did end its doom loops. Letting LFM3-1.7B drive with VL as its
+  eyes took 57/60 picture decisions in 5 GB. [The tests](docs/fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01).
 - **A GGUF can load perfectly and still be garbage.** Verify the sha256 before you blame the
   model, the kernel, or the universe. [Troubleshooting](docs/troubleshooting.md).
 
@@ -101,21 +104,24 @@ copy-paste commands.
 | [The graveyard](docs/graveyard.md) | Things we tried that didn't make the cut, and why |
 | [Troubleshooting](docs/troubleshooting.md) | Every way this went wrong for us, and the fix |
 | [Security](docs/security.md) | What a stranger's GGUF can hide, and the audit every new model gets before it runs |
+| [Reproducing our results](docs/reproduce.md) | Which command makes which number, what's pinned, and how close a rerun lands |
 | [Up next](docs/up-next.md) | Models and chores waiting their turn |
 | [Model pages](docs/models/) | One page per model: install, run, official and measured numbers, quirks |
 | [`scripts/README.md`](scripts/README.md) | Every script and knob |
 | [`bench/README.md`](bench/README.md) | Running the benchmarks yourself |
+| [`utils/README.md`](utils/README.md) | The GGUF inspector and security auditor |
 
 ## What's in the box
 
 ```
 scripts/     launchers, downloads (pinned + sha256-checked), builds, quick benchmarks
 config/      the pi provider definition (all models, context sizes, thinking levels)
-envs/        the pinned CUDA build toolchain
+envs/        the pinned CUDA build toolchain and the Python packages for training
 patches/     the llama.cpp patch for Dory
-bench/       pibench (sandboxed agent benchmark), the vision and visual control probes, fine-tuning, image generation
+bench/       pibench (sandboxed agent benchmark), the vision and visual control probes, fine-tuning, steering, image generation
 docs/        everything you read above
 utils/       a GGUF inspector and a GGUF security auditor
+loop/        the raw overnight commands and journal
 models/      where downloads go (not in git)
 vendor/      where llama.cpp builds go (not in git)
 ```

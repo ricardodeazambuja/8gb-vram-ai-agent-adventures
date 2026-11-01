@@ -44,8 +44,7 @@ measured the same way.
 
 ## Seeing and acting
 
-The [visual control probe](visual-control.md): look at a picture, decide, call a tool. Only the
-two small vision models have taken it so far. **Decisions** = one picture, one tool call (tanks,
+The [visual control probe](visual-control.md): look at a picture, decide, call a tool. **Decisions** = one picture, one tool call (tanks,
 buttons, objects, traffic lights, gauges; 60 scenes, "30" = 150 scenes). **Grid** = steer a robot
 to a goal one move at a time, open grids and mazes, 8 episodes each.
 
@@ -54,6 +53,8 @@ to a goal one move at a time, open grids and mazes, 8 episodes each.
 | [LFM3-VL-2B](models/lfm3-vl-2b.md) | on | **60/60** (30: 144/150 ¹) | 2.9 s | **8/8** open, **3/8** mazes | 6/8, 2/8 | ~43 s |
 | LFM3-VL-2B | off | 45/60 (30: 117/150 ¹) | **0.4 s** | 3/8, 0/8 (6/8, 0/8 ¹) | 5/8, 0/8 | **0.7 s** |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | (none) | 51/60 (30: 124/150 ¹) | 1.0 s | **8/8**, 1/8 | 4/8, 2/8 | 0.7 s |
+| [Gemma 4 26B](models/gemma4-26b-a4b.md) | on | **30/30** (6 per kind) | 17 s | — | — | — |
+| [Groot-19B](models/groot-19b-a3b.md) | on | 27/30 (6 per kind) | 16 s | — | — | — |
 
 ¹ With a forced tool call (`tool_choice: required`, plus a `no_action` tool to decline).
 

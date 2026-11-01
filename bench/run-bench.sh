@@ -17,6 +17,8 @@
 #   TASKS    space-separated task names   (default: every folder in bench/tasks)
 #   REPEATS  runs per model × task        (default: 3)
 #   TIME_LIMIT  seconds per run           (default: 1200)
+#   RAW      folder for this batch        (default: bench/results/raw; use another for an experiment)
+#   TEMP, EXTRA_ARGS  passed to the server, for sampling and adapter tests
 #   PREFLIGHT_ONLY=1  only check the sandbox, then exit
 #
 set -euo pipefail

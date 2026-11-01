@@ -158,7 +158,7 @@ if [ "$USE_IMAGE" = 1 ]; then
     echo "       $MMPROJ"
     echo "Download it (~1.2 GB, BF16):"
     echo "  curl -L -o \"$MMPROJ\" \\"
-    echo "    https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/mmproj-BF16.gguf"
+    echo "    https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/c099eb48e663fd284577b04978a94ffccb261841/mmproj-BF16.gguf"
     exit 1
   fi
   # Keep the projector on the CPU: on an 8 GB card there is no VRAM left for a

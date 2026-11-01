@@ -1,8 +1,12 @@
 """Compare a steered pibench run with the plain one: score and how much the agent repeats itself.
 
 repeat_share is the part of a run's tool calls that are exact copies of an earlier call. longest_run
-is the longest streak of one call in a row. Writes results/doom-lfm3vl.json.
+is the longest streak of one call in a row.
+
+Usage: compare_doom.py                                     plain against steered: results/doom-lfm3vl.json
+       compare_doom.py FOLDER --limit 900 --note T --out F  one pibench folder (a RAW=), for later arms
 """
+import argparse
 import glob
 import itertools
 import json
@@ -52,10 +56,27 @@ def arm(pattern, time_limit, note):
             "per_run": runs}
 
 
-result = {"plain": arm(f"{BENCH}/results/raw/lfm3vl/*/*/score.json", 1200, "no vector"),
-          "steered": arm(f"{BENCH}/results/steering-doom/lfm3vl/*/*/score.json", 900,
-                         "retry-lfm3vl.gguf at +0.03")}
-with open(os.path.join(BENCH, "steering/results/doom-lfm3vl.json"), "w") as f:
-    json.dump(result, f, indent=1)
-for name, a in result.items():
-    print(name, {k: v for k, v in a.items() if k != "per_run"})
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("folder", nargs="?", help="a pibench RAW folder holding lfm3vl/<task>/<run>/")
+    ap.add_argument("--limit", type=int, default=900, help="the run's TIME_LIMIT")
+    ap.add_argument("--note", default="")
+    ap.add_argument("--out")
+    a = ap.parse_args()
+    if a.folder:
+        result = arm(f"{a.folder}/lfm3vl/*/*/score.json", a.limit, a.note)
+        shown = {a.note: result}
+        out = a.out
+    else:
+        result = shown = {"plain": arm(f"{BENCH}/results/raw/lfm3vl/*/*/score.json", 1200, "no vector"),
+                          "steered": arm(f"{BENCH}/results/steering-doom/lfm3vl/*/*/score.json", 900,
+                                         "retry-lfm3vl.gguf at +0.03")}
+        out = os.path.join(BENCH, "steering/results/doom-lfm3vl.json")
+    with open(out, "w") as f:
+        json.dump(result, f, indent=1)
+    for name, r in shown.items():
+        print(name, {k: v for k, v in r.items() if k != "per_run"})
+
+
+if __name__ == "__main__":
+    main()

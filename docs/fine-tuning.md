@@ -6,7 +6,8 @@ it. Can a model a quarter of that size learn the same job in a few minutes of tr
 8 GB GPU? And how much of the model do we actually have to train?
 
 Everything is in [`bench/finetune/`](../bench/finetune/): `train_glance.py` (fit test, training,
-evaluation) and the results.
+evaluation) and the results. Every run on this page has its commands in
+[Reproducing our results](reproduce.md).
 
 ## The tiny methods vs LoRA, in short
 
@@ -206,20 +207,21 @@ scripts/run-qwen.sh --image`, which uses the sampling it was tested with, the sa
 ```bash
 mamba create -n vlft python=3.12 pip
 mamba activate vlft
-pip install --index-url https://download.pytorch.org/whl/cu126 torch==2.8.0 torchvision==0.23.0
-pip install transformers==5.22.0 peft accelerate pillow safetensors
-# weights: LiquidAI/LFM2.5-VL-450M at revision fc6221c into models/lfm2.5-vl-450m-hf/
+pip install --extra-index-url https://download.pytorch.org/whl/cu126 -r envs/vlft.txt
+bash scripts/download-hf-weights.sh lfm25vl
 python bench/finetune/train_glance.py fit   --model models/lfm2.5-vl-450m-hf          # one step, peak VRAM
 python bench/finetune/train_glance.py train --model models/lfm2.5-vl-450m-hf --out models/lfm2.5-vl-450m-adapters/norm --method norm --lr 1e-3
 python bench/finetune/train_glance.py eval  --model models/lfm2.5-vl-450m-hf --adapter models/lfm2.5-vl-450m-adapters/norm --key norm [--shift]
 ```
 
-(Call the env's `python` directly: `mamba run` takes `--n` for itself.)
+(Call the env's `python` directly: `mamba run` takes `--n` for itself.) [Reproducing our results](reproduce.md#fine-tuning-the-vision-models)
+has the rest.
 
 ## LFM3-VL-2B, in a sandbox
 
 Same scenes, same recipe, thinking off, and this time the model repo's own Python had to run
-(`trust_remote_code`), pinned at revision `ba44bd5`, weights checked by sha256.
+(`trust_remote_code`), pinned at revision `ba44bd5`, every file checked by sha256
+(`scripts/download-hf-weights.sh lfm3vl`).
 [`sandbox.sh`](../bench/finetune/sandbox.sh) runs it in Docker with the GPU, no network, a read-only
 root and code, not as root, one writable folder. A search of the 3,328 lines of Python found no
 network, shell or `eval` calls; they were not read line by line, so the sandbox is what we rely on.
@@ -244,7 +246,6 @@ weights. It's one seed, and training and test use the same drawing code, so this
 | Three seeds, degraded pictures | — | **149 / 150 / 150** |
 | Three seeds, [scenes never trained on](../bench/finetune/scenes_new.py) (new layouts, palettes, button names) | 105 | **150 / 150 / 149** |
 | [Vision probe](vision-probe.md), one seed | 68% | **78%** (91% for the untouched model with thinking on) |
-
 | Norm-only (language model, 201K values, 0.4 MB, 20 min, 4.69 GiB, lr 2e-4), one seed | 97 clean, 105 new | **150** clean, **149** new, **150** degraded |
 | IA3 (196K values, 0.8 MB, 21 min, 4.63 GiB, lr 1e-2), one seed | 97 clean, 105 new | **150** clean, **147** new, **149** degraded |
 | *LFM2.5-VL-450M, adapters trained on glance + grid, on new scenes* | *14* | *LoRA 110, norm-only 98 (127 and 139 on the drawings they trained on)* |
@@ -334,7 +335,7 @@ care. It solved nothing either way, and its best task, feature-inventory, stayed
 **Where steering stands against training:** training taught LFM3-VL a visual task it couldn't do, and
 a vector can't add a skill like that. A vector is a quick way to shift a habit, at a strength you have
 to find by hand, and worth trying when that's all you need. The results are in
-[`bench/steering/`](../bench/steering/).
+[`bench/steering/`](../bench/steering/), the commands in [Reproducing our results](reproduce.md#steering).
 
 ## Can LFM3-VL do more than look? (2026-11-01)
 
@@ -399,12 +400,14 @@ reproduced all 286 of VL's text tensors.
 |---|---:|---:|---:|---:|
 | **Gemma 4 26B** (projector on CPU, 32K context) | **30/30** | **18/18** | 6.2 GB | 17 s |
 | Groot-19B | 27/30 | 18/18 | 7.2 GB | 16 s |
-| **LFM3-1.7B drives, VL reports in words** | **57/60** | 12/18 for the driver | **5.0 GB** both | 13 s |
+| **LFM3-1.7B drives, VL reports in words** | **57/60** | 12/18 for the driver | **5.0 GB** both | 16 s |
 | LFM3-VL alone | 60/60 | 0/18 | 2.6 GB | |
 
 Gemma's and Groot's 30 scenes are the first 6 of each kind, and their ranges are wide: Gemma's 30/30
 means at least 88%, and 30/30 against 27/30 isn't a real gap (p = 0.24). Gemma's score was a surprise
 in speed too, since it took 71 s an image on the [vision probe](vision-probe.md), which is a harder
-test. The two-model pair is the small option, and the driver never sees a picture, only VL's report.
-All 3 of its misses were tanks. [`bench/beyond-vision/`](../bench/beyond-vision/) has the scripts and
-results. The pibench score for the pair is LFM3-1.7B's alone: nobody has run a task that needs both yet.
+test. All three take about the same time, so the two-model pair's edge is memory, not speed. Its
+driver never sees a picture, only VL's report, and all 3 of its misses were tanks. The pibench score for
+the pair is LFM3-1.7B's alone: nobody has run a task that needs both yet.
+
+Every test here can be repeated: see [Reproducing our results](reproduce.md#can-lfm3-vl-do-more-than-look).

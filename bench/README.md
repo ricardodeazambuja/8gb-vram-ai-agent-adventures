@@ -55,6 +55,9 @@ MODELS="flint qwen36" REPEATS=1 bash bench/run-bench.sh   # a subset
 python3 bench/summarize.py                    # -> bench/results/summary.md, results.csv
 ```
 
+To repeat a batch under other settings without touching the main results, use `RAW`, `TEMP` and
+`EXTRA_ARGS` (`bash bench/run-bench.sh --help`), as in [Reproducing our results](../docs/reproduce.md).
+
 Each run keeps its full transcript in `bench/results/raw/<model>/<task>/r<N>/` (`pi.jsonl`,
 the final `/work`, `junit.xml`, `score.json`); those are git-ignored, the summary is not.
 

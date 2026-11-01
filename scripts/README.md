@@ -38,6 +38,7 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 | `benchmark-config.sh` | Finds the fastest `NCMOE`/`CTX` for Gemma 4 26B on *your* GPU. |
 | `benchmark-mtp.sh`, `run-server-mtp.sh` | Speculative decoding with Gemma's MTP head (it didn't pay off; see the [graveyard](../docs/graveyard.md)). |
 | `make-speed-chart.py` | Redraws the backend speed chart. |
+| `download-hf-weights.sh` | The pinned safetensors repos for fine-tuning; `--check` verifies them. |
 | `_banner.sh`, `_tuning.sh` | Shared helpers sourced by the launchers. |
 
 The bigger benchmarks (pibench and the vision probe) live in [`../bench/`](../bench/README.md).

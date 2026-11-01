@@ -2,9 +2,12 @@
 """Public-domain training pictures from Wikimedia Commons, with a manifest of where each came from.
 
 Usage: fetch_commons.py [--n 24]
-Pictures go to models/image-gen/train/<style>/ (git-ignored); the manifest to bench/imagegen/data/.
+Pictures go to models/image-gen/train/<style>/ (git-ignored). With a manifest in bench/imagegen/data/, it
+fetches exactly the pictures listed and checks their sha256, so a clone gets our training set. Delete a
+manifest to choose a new set.
 """
 import argparse
+import hashlib
 import json
 import re
 import time
@@ -48,13 +51,34 @@ def members(source):
     return json.loads(get(f"{API}?{urllib.parse.urlencode(q)}"))["query"]["pages"].values()
 
 
+def restore(style, rows):
+    """Fetch the pictures a manifest lists. Commons can re-render a thumbnail, so a changed file is reported."""
+    out = TRAIN / style
+    out.mkdir(parents=True, exist_ok=True)
+    changed = 0
+    for r in rows:
+        path = out / r["file"]
+        if not path.exists():
+            q = {"action": "query", "format": "json", "prop": "imageinfo", "iiprop": "url",
+                 "iiurlwidth": "1280", "titles": r["title"]}
+            page = next(iter(json.loads(get(f"{API}?{urllib.parse.urlencode(q)}"))["query"]["pages"].values()))
+            path.write_bytes(get(page["imageinfo"][0]["thumburl"]))
+            time.sleep(6)
+        if hashlib.sha256(path.read_bytes()).hexdigest() != r["sha256"]:
+            changed += 1
+            print("differs from our copy:", style, r["file"], r["title"], flush=True)
+    print(style, len(rows), "pictures,", changed, "differ", flush=True)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=24)
     a = ap.parse_args()
     DATA.mkdir(exist_ok=True)
     for style, cat in STYLES.items():
-        if (DATA / f"{style}.json").exists():
+        manifest = DATA / f"{style}.json"
+        if manifest.exists():
+            restore(style, json.loads(manifest.read_text()))
             continue
         out = TRAIN / style
         out.mkdir(parents=True, exist_ok=True)
@@ -72,7 +96,8 @@ def main():
         for p, info, licence in usable[:: max(1, len(usable) // a.n)]:
             name = f"{len(rows):02d}.jpg"
             (out / name).write_bytes(get(info["thumburl"]))
-            rows.append({"file": name, "title": p["title"], "licence": licence, "page": info["descriptionurl"]})
+            rows.append({"file": name, "title": p["title"], "licence": licence, "page": info["descriptionurl"],
+                         "sha256": hashlib.sha256((out / name).read_bytes()).hexdigest()})
             time.sleep(6)
             if len(rows) == a.n:
                 break

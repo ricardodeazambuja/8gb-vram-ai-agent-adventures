@@ -6,7 +6,9 @@ loops that alternate) made identical tool calls and the run really did repeat th
 there is sent to the server on 127.0.0.1:8080, several times with different seeds, per sampling arm.
 Points are the unit of analysis: at low temperature, samples from one point are nearly copies.
 
-Usage: replay.py find                       list the stuck points
+The 13 points are kept in data/points.json, so a replay needs no raw transcripts.
+
+Usage: replay.py find                       rebuild data/points.json from bench/results/raw/ and list it
        replay.py run NAME [--arms a,b] [--samples 4]   writes results/replay-NAME.json
 """
 import argparse
@@ -18,6 +20,7 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 BENCH = os.path.dirname(HERE)
 URL = "http://127.0.0.1:8080/v1/chat/completions"
+POINTS = f"{HERE}/data/points.json"
 MAX_CHARS = 60000  # keep prefixes well inside the context
 TOOLS = [{"type": "function", "function": {"name": n, "description": d, "parameters": {
     "type": "object", "properties": {k: {"type": t} for k, t in p.items()}, "required": r}}} for n, d, p, r in [
@@ -94,9 +97,12 @@ def find_point(path):
     return None
 
 
-def points():
+def scan():
     found = (find_point(p) for p in sorted(glob.glob(f"{BENCH}/results/raw/lfm3vl/*/*/pi.jsonl")))
-    return [p for p in found if p]
+    pts = [p for p in found if p]
+    with open(POINTS, "w") as f:
+        json.dump(pts, f)
+    return pts
 
 
 def ask(messages, sampling, seed):
@@ -114,12 +120,13 @@ def main():
     ap.add_argument("--samples", type=int, default=4)
     ap.add_argument("--save", help="also keep the first reply at each point, for training data")
     a = ap.parse_args()
-    pts = points()
     if a.mode == "find":
-        for p in pts:
+        for p in scan():
             print(p["run"], "turn", p["turn"], "period", p["period"], len(p["messages"]), "messages",
                   sum(len(str(m["content"])) for m in p["messages"]), "chars", p["expected"][0][:90])
         return
+    with open(POINTS) as f:
+        pts = json.load(f)
     rows, targets = [], []
     for p in pts:
         for arm in a.arms.split(","):

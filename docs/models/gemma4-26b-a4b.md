@@ -79,7 +79,8 @@ images only, no audio). Download it once:
 
 ```bash
 curl -L -o models/gemma4-26b-a4b-qat/mmproj-BF16.gguf \
-  https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/main/mmproj-BF16.gguf
+  https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/c099eb48e663fd284577b04978a94ffccb261841/mmproj-BF16.gguf
+echo "41926ed5f1403cf5add23b0684992805ea6f97253096132e769e65646b8cef9d  models/gemma4-26b-a4b-qat/mmproj-BF16.gguf" | sha256sum --check
 ```
 
 `--image` keeps the projector on the CPU (there's no VRAM left for it), so encoding an image is a

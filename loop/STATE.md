@@ -46,3 +46,4 @@ Order: replay test, graft, vision fine-tune on graft or LoRA on VL, two-model fa
 - 13:55 Groot glance think on n=6: 27/30, mean 18 s, 7.2 GB. Gemma failed (wrong script), queue14 fixes it after queue13.
 - 14:20 projector run: 35/150, but answers are near constant per scene (blind, loss flat at 0.3 from step 30). Base-rate result, not reading. queue15: overfit test after Gemma tells "cannot carry info" from "needs more data". Then docs, report.
 - 14:45 plan done: Gemma glance 30/30 6.2 GB 17 s, overfit loss 0.15 not clear. Written up in docs/fine-tuning.md. Only the report remains.
+- 2026-11-01 repro audit: docs/reproduce.md is now the map; bench/check_numbers.py checks the numbers. Clean-clone replay matched 32/52, 8/52, 0/52 at every point. This file stays a journal; see loop/README.md.

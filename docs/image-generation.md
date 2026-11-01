@@ -116,8 +116,10 @@ adapter" uses the same prompt as the adapters, trigger word included.*
 Both train in the 8 GB card by caching text and image encodings first. Numbers are in
 [`style-runs.json`](../bench/imagegen/results/style-runs.json).
 
+The `vlft` environment is [here](reproduce.md#setup).
+
 ```bash
-python3 bench/imagegen/fetch_commons.py        # public domain sets, listed in bench/imagegen/data/
+python3 bench/imagegen/fetch_commons.py        # our public domain sets, listed in bench/imagegen/data/
 mamba run -n vlft python bench/imagegen/train_style.py train --set vangogh --method norm --trigger vgstyl
 mamba run -n vlft python bench/imagegen/train_style.py eval --run vangogh-norm --trigger vgstyl
 ```
@@ -193,7 +195,8 @@ mamba run -n vlft python bench/imagegen/eval_sdcli.py --run subject-word --trigg
 instead of 0.13025. Pictures come out off-colour and training quietly learns the wrong thing. It voided
 our first full round of runs, so `train_style.py` now sets it explicitly.
 
+Everything else on this page, flag for flag, is in [Reproducing our results](reproduce.md#pictures).
+
 ## What's next
 
-A person and a style stacked, DoRA and LoRA + norm on the person, a style the prompt can't name, and
-LoRA on Klein. See [Faster and better fine-tuning](up-next.md#faster-and-better-fine-tuning).
+Automatic style and likeness scores, a style the prompt can't name, and LoRA on Klein. See [Faster and better fine-tuning](up-next.md#faster-and-better-fine-tuning).
