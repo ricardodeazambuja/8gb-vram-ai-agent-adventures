@@ -452,8 +452,10 @@ than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guess
     never held-out ones. It's a cheaper version of the same idea. Random recovery data didn't
     help before, so it needs testing.
 
-**Try steering before training, on both kinds of model:** nothing here has been run yet, and it can
-push a behaviour or look but can't add facts.
+**Try steering before training, on both kinds of model:** tests 1, 2 and 4 below are done, see
+[steering vs training](fine-tuning.md#steering-vs-training-2026-11-01): it works, in a narrow strength
+window, and didn't fix doom loops (0/6). Test 6 is done on the person. It can push a behaviour or look
+but can't add facts.
 - **Text and vision models:** [steering vectors](https://arxiv.org/abs/2312.06681v2) need no gradient
   training. Our llama.cpp fork already has `--control-vector` and `cvector-generator`, and `lfm2.cpp`
   and `lfm3.cpp` apply the vectors. Check that the generator works on them, then add two tries to step

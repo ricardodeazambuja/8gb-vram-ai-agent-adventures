@@ -9,9 +9,9 @@ Queue (from docs/up-next.md "Faster and better fine-tuning"):
 - [x] train_style: preflight, checkpoints, dora, lora+norm
 - [x] sd-cli: LoRA loads (1120/1120); bake_sdxl.py works, watercolour likeness kept
 - [ ] automatic style score (no new model if avoidable)
-- [ ] person: DoRA, LoRA + norm, Klein -r; leak fix
-- [ ] Textual Inversion on person (SDXL)
-- [ ] steering test 1 and 2 (cvector-generator on LFM3)
+- [x] person: DoRA, LoRA + norm, Klein -r (leak fix: word yes; reg LoRA see log)
+- [x] Textual Inversion on person (SDXL)
+- [x] steering tests 1, 2, 4; written up in docs/fine-tuning.md
 
 Next: first unchecked item.
 
@@ -26,3 +26,4 @@ nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `
 - 00:55 LoRA+norm done, about level with LoRA, 250 steps already has glasses and beard; leak remains. Queue after queue2: loop/queue3.sh (klein -r, reg pictures, reg LoRA and norm, DoRA rerun, Van Gogh 3000 steps). No overlap.
 - 01:15 fine sweep: +0.05 cuts answers 217 -> 151 tokens, 2/2 facts; +0.1 breaks; -0.05 lengthens. Window is narrow. queue3 running (ETA ~05:00). After it: doom-loop vector (bench/steering), pibench if firewall preflight is clean (no peekexec), then docs and final report by 07:00.
 - 01:40 (DST ended: clock repeated 01:xx, 07:00 is later than it looks) queue3: word 8 KB strong and LEAK-FREE; Klein -r good with no training; DoRA strong, leaks. reg runs and Van Gogh 3k failed on my argparse (--tag needs =; mamba ate --n). Order now: retry vector sanity, pibench (queue4), then loop/queue5.sh (reg LoRA, word on styles, stack, 3k), docs, report by 07:00.
+- 03:40 pibench with retry vector at +0.03: 0/6, repeats 93% -> 80%. Docs done. queue5 running; after it: view reg leak, word on styles, 3k; docs; stack test; final report at 07:00.

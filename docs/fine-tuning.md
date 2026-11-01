@@ -287,3 +287,51 @@ set to 0, a 30-scene sample fell to 21/30, so it really is applied.
 Ask with thinking off (`chat_template_kwargs: {"enable_thinking": false}`). The adapters aren't in
 the repo; `sandbox.sh train` rebuilds one in about 25 minutes.
 
+
+## Steering vs training (2026-11-01)
+
+A [steering vector](https://arxiv.org/abs/2312.06681v2) is a small nudge added to every layer's output.
+It's built from pairs of contrasting prompts, with no gradient training: under a minute on the CPU, and
+190 KB. We tried it because it's far cheaper than the 25 minutes an adapter takes. Short version:
+**it works on LFM3 and it's real, but the safe range is narrow, and it didn't fix the doom loops.**
+
+**It works here.** `llama-cvector-generator` from our fork runs on both LFM3-1.7B and LFM3-VL-2B, and the
+server applies the result with `--control-vector-scaled FILE:STRENGTH`. Speed didn't change: 105 tokens
+a second with the vector on the GPU.
+
+| Vector, model | Strength | Mean tokens per answer | Facts right |
+|---|---:|---:|---:|
+| Concise, LFM3-1.7B | 0 | 217 | 2/2 |
+| | +0.05 | **151** | 2/2 |
+| | +0.1 | answers start to break | |
+| | -0.05 | 283 | 1/2 |
+| | ±0.5 and beyond | blank or word salad | 0/2 |
+| Try something else, LFM3-VL-2B | 0 | 122 | 2/2 |
+| | +0.03 | **90** | 2/2 |
+| | +0.06 | answers start to break | |
+| | +0.1 | broken | |
+
+That's 8 questions per strength, so a coarse check. One git answer at +0.05 also read weaker, and the
+two fact questions wouldn't catch that. The usable strength is far below the 0.8 in
+[the tool's example](https://github.com/ggml-org/llama.cpp/tree/master/tools/cvector-generator), so sweep from small numbers. The second vector cut answer length as well, so these
+vectors move more than the one habit they were built from.
+
+**It didn't fix doom loops.** The "try something else" vector at +0.03 on pibench, against plain
+LFM3-VL:
+
+| | Plain | With the vector |
+|---|---:|---:|
+| Solved | 0/18 | **0/6** |
+| Calls that copy an earlier call (median) | 93% | 80% |
+| Longest streak of one call, worst run | 769 | 129 |
+| Longest streak of one call, median run | 3 | 8 |
+| Timeouts | 14/18 at 20 min | 4/6 at 15 min |
+
+The agent still spends most of its calls repeating itself. The drop in repeats is a weak signal: there
+are 6 runs against 18, and a shorter time limit alone caps the worst streak, so read the 769 vs 129 with
+care. It solved nothing either way, and its best task, feature-inventory, stayed at 7 of 8 tests.
+
+**Where steering stands against training:** training taught LFM3-VL a visual task it couldn't do, and
+a vector can't add a skill like that. A vector is a quick way to shift a habit, at a strength you have
+to find by hand, and worth trying when that's all you need. The results are in
+[`bench/steering/`](../bench/steering/).

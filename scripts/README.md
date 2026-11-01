@@ -160,6 +160,20 @@ URI). Notes:
 
 Full multimodal write-up: [the Gemma 4 26B page](../docs/models/gemma4-26b-a4b.md).
 
+## Steering vectors
+
+A 190 KB file that pushes a habit, built in under a minute on the CPU from
+[contrasting prompts](../bench/steering/). Try small strengths: LFM3 breaks past about 0.05.
+Results: [steering vs training](../docs/fine-tuning.md#steering-vs-training-2026-11-01).
+
+```bash
+../llama.cpp/build/bin/llama-cvector-generator -m MODEL.gguf --method mean -o models/steering/NAME.gguf \
+  --positive-file bench/steering/concise_pos.txt --negative-file bench/steering/concise_neg.txt
+python bench/steering/sweep.py --model MODEL.gguf --vector models/steering/NAME.gguf --name NAME \
+  --scales=-0.05,0,0.05 --ngl 99
+QMODEL=lfm3 EXTRA_ARGS="--control-vector-scaled $PWD/models/steering/NAME.gguf:0.05" bash scripts/run-qwen.sh
+```
+
 ## Speculative decoding (MTP)
 
 Gemma 4 ships a **Multi-Token Prediction** head that llama.cpp uses for *lossless* self-speculative
