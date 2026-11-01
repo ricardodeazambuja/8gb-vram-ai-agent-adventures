@@ -100,6 +100,7 @@ adapter" uses the same prompt as the adapters, trigger word included.*
 - **It leaks.** Asked for just "a man on a beach", both person adapters drew a man in a blue shirt
   like the training pictures. Style adapters also change pictures without their trigger word,
   mostly darkening or muting them. Stacking a person with a style needs a test for this.
+- **The fix for the person turned out to be a word.** See [below](#the-best-person-file-is-8-kb).
 - **Why Gris rather than Picasso:** Picasso's work is still under copyright. We train only on public
   domain art, and the Atget photos are public domain too. The "person" is invented, drawn by Klein
   ([`make_subject.py`](../bench/imagegen/make_subject.py)).
@@ -116,6 +117,36 @@ Both train in the 8 GB card by caching text and image encodings first. Numbers a
 python3 bench/imagegen/fetch_commons.py        # public domain sets, listed in bench/imagegen/data/
 mamba run -n vlft python bench/imagegen/train_style.py train --set vangogh --method norm --trigger vgstyl
 mamba run -n vlft python bench/imagegen/train_style.py eval --run vangogh-norm --trigger vgstyl
+```
+
+### The best person file is 8 KB
+
+Same invented man, 20 pictures, two seeds, judged by eye. Pictures for the new rows come from
+`sd-cli` where marked, so they're what you'd actually run. There's no automatic likeness score yet.
+
+| Method | File | Training | Likeness | Leaks into "a man on a beach"? |
+|---|---|---|---|---|
+| **Klein `-r`, no training** | one photo | none | Good, weaker at full length; both seeds look alike | n/a, only with the photo |
+| **Textual Inversion, `sd-cli`** | **8 KB** | 35 min | **Strong, about level with LoRA** | **No** |
+| LoRA, `sd-cli` | 47 MB | 17 min | Strong | Yes |
+| LoRA + norm | 49 MB | 17 min | Strong, about level with LoRA | Yes |
+| DoRA | 47 MB | 28 min | Strong | Yes |
+| Norm-only, baked, `sd-cli` | 2.5 MB + a full checkpoint | 16 min | Beard and glasses; misses at a distance | Yes, mildly |
+
+- **Textual Inversion wins here.** It trains one new word in both text encoders and leaves the
+  drawing model alone, so without the word the model is unchanged. It's slower only because the text
+  encoders run on the CPU to fit in 8 GB, and it's a little less stable: one astronaut came out as an
+  illustration, one lost the face.
+- **Fewer steps may do.** With LoRA + norm, 250 steps (about 4 minutes) already showed the glasses
+  and beard, and 500 looked close to 1000.
+- **Both file types work in `sd-cli`:** our LoRA loads as it is (1120 of 1120 tensors), and
+  [`bake_sdxl.py`](../bench/imagegen/bake_sdxl.py) writes norm-only into a checkpoint. A learned
+  word goes in with `--embd-dir`.
+
+```bash
+mamba run -n vlft python bench/imagegen/train_style.py preflight --set subject --method norm --trigger zxq
+mamba run -n vlft python bench/imagegen/invert.py --set subject --word zxqtok
+mamba run -n vlft python bench/imagegen/eval_sdcli.py --run subject-word --trigger zxqtok
 ```
 
 **A bug to avoid:** an SDXL VAE loaded on its own in diffusers gets SD 1.5's scaling factor, 0.18215
