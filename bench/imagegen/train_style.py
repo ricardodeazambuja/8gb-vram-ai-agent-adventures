@@ -124,7 +124,7 @@ def preflight(a):
     print(f"round trip error {err:.1f}/255, latent spread {spread:.2f}", flush=True)
     if err > 12 or not 0.6 < spread < 1.4:
         raise SystemExit("FAIL: the VAE or its scaling factor is wrong")
-    a.steps, a.fit, a.ckpts = 60, False, ""
+    a.steps, a.fit, a.ckpts, a.reg = 60, False, "", ""
     a.tag = "-preflight"
     items = cache(pipe, [(path, cap)], a.size, 1)
     hist = run_steps(pipe, items, a, fixed=True)
@@ -142,10 +142,12 @@ def train(a):
     pipe = pipe_load()
     rows = captions(a.set, a.trigger)
     items = cache(pipe, rows, a.size, 4)
-    run_steps(pipe, items, a)
+    # half the steps on plain pictures of the class, so the trigger word carries the likeness, not "man"
+    reg = cache(pipe, [(p, a.reg_caption) for p in sorted((M / "train" / a.reg).glob("*.png"))], a.size, 1) if a.reg else None
+    run_steps(pipe, items, a, reg=reg)
 
 
-def run_steps(pipe, items, a, fixed=False):
+def run_steps(pipe, items, a, fixed=False, reg=None):
     run = RUNS / f"{a.set}-{a.method}{a.tag}"
     unet = pipe.unet.to("cuda")
     unet.enable_gradient_checkpointing()
@@ -163,7 +165,7 @@ def run_steps(pipe, items, a, fixed=False):
     t0, losses = time.time(), []
     torch.cuda.reset_peak_memory_stats()
     for step in range(steps):
-        lat, pe, pool = random.choice(items)
+        lat, pe, pool = random.choice(reg if reg and step % 2 else items)
         lat, pe, pool = lat.to("cuda"), pe.to("cuda"), pool.to("cuda")
         if fixed:
             torch.manual_seed(0)
@@ -238,6 +240,8 @@ def main():
         t.add_argument("--tag", default="")
         t.add_argument("--noise-offset", type=float, default=0.0)
         t.add_argument("--ckpts", default="", help="steps to save at, such as 250,500")
+        t.add_argument("--reg", default="", help="folder of plain class pictures under models/image-gen/train/")
+        t.add_argument("--reg-caption", default="photo of a man")
     e = sub.add_parser("eval")
     e.add_argument("--run", required=True)
     e.add_argument("--trigger", default="")
