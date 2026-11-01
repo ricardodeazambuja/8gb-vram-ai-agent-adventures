@@ -469,6 +469,26 @@ push a behaviour or look but can't add facts.
   steering vector, but it was shown on older pixel models and would need new code, so it's only
   worth a look if these fall short.
 
+**Steering tests,** each with fixed prompts and seeds, against the same model with no vector:
+1. **Does it work here?** Build one simple vector (a tone or format habit) with `cvector-generator` on
+   LFM3-1.7B and LFM3-VL. Stop and write down why if the generator fails on them.
+2. **Strength sweep:** a few strengths, positive and negative, to find where it starts to help and where
+   the output breaks. Record VRAM and speed too, and the time and size of each vector.
+3. **System prompt arm:** the stub plus a vector on pibench, beside the full prompt, the stub alone and
+   the tuned model.
+4. **Doom loops:** a "try something else" vector on pibench, counting repeated commands and solved tasks.
+5. **Vision control:** the [visual control probe](visual-control.md) on LFM3-VL with a vector, beside
+   the norm-only result, to see whether steering touches decisions or only style.
+6. **Images:** Textual Inversion on the person and the nameless style, through `sd-cli`, scored with the
+   same prompts as the LoRA and norm-only runs, including `no-trigger` leaks. A Concept Slider follows
+   only if the inversion file works and a strength control is still needed.
+
+**Steering docs:** a repeatable script and saved results under `bench/`, then a short "steering vs
+training" section in [Fine-tuning](fine-tuning.md) with what worked and failed, the image results in
+[Making pictures](image-generation.md), setup commands in `scripts/README.md`, and a README line only
+if it beats the cheaper option. Any new script goes in with its links checked, and failed tests get
+written up too.
+
 **Only if timing says so:** caching the vision tower's output. Our runs see each scene once, so it
 saves nothing on a first run, only on repeats over the same data, and it rules out the
 vision-side-only method. Measure the vision tower's share of a step first. SDXL with gradient checkpointing
