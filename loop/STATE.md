@@ -35,3 +35,4 @@ nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `
 ## Plan from 2026-11-01 morning: LFM3-VL beyond vision (user awake, approved; see docs/up-next.md top)
 Pilots, think before cutting, read results with sample size in mind. No push/PR/deletion.
 Order: replay test, graft, vision fine-tune on graft or LoRA on VL, two-model fallback.
+- 09:55 replay on 13 stuck points, 4 samples each: exact repeats VL 15/52 (6 points), VL temp 0.7 1/52 (1 point), window 11/52, both 0/52, 1.7B 0/52 (0 points). VL new calls often near-copies; 1.7B changes approach. Replay only partly reproduces real loops (no thinking text, rebuilt tool schemas). Graft pibench equals plain 1.7B unless images are used, so only vision is tested. Next: graft glance (queue8) then pibench VL TEMP=0.7, 6 runs.
