@@ -40,11 +40,12 @@ Prompts aren't the only input. One test of each on our own 1024×1024 fisherman,
 
 **Klein's reference edit is the one to use:** "wearing a red cap instead of his hat" changed the hat
 and kept the man, the net and the sunset, though the face shifted a little. Iris-3B and SDXL run
-with `-r` and report no error, but they only followed the prompt, so an exit code of 0 proves
-nothing there.
+with `-r` and report no error, but their picture is identical to a run without it, so an exit code
+of 0 proves nothing there.
 
 White in the mask is the area to redraw. Everything outside should stay put, and the average change
-per colour value (out of 255) well outside the mask was 0.0 on Iris-3B, 3.0 on Klein and 7.8 on SDXL;
+per colour value (out of 255) well outside the mask was 0.0 on Iris-3B, 2.5 on Klein and 5.9 on SDXL
+([`run_inputs.py`](../bench/imagegen/run_inputs.py), [results](../bench/imagegen/results/inputs.json));
 the two latent models go through a VAE, which we think explains that. At strength 0.7 the
 "watercolour" request came out as a painted-looking photo, not a real restyle; lower strengths
 keep more, and we only tried this one. ControlNet, IP-Adapter and PhotoMaker also have flags and

@@ -4,8 +4,8 @@ Rules: no push, PR, deletion, `claude -p`, or peekexec (nobody to answer; batch 
 New models only through the security routine. Commit each finished piece. Analyse before rerunning.
 
 Queue (from docs/up-next.md "Faster and better fine-tuning"):
-- [ ] qwen-codecheck: --sandbox default
-- [ ] input test repeatable, saved results
+- [x] qwen-codecheck: container by default (--on-host to opt out)
+- [x] input test repeatable, saved results
 - [ ] train_style: preflight, checkpoints
 - [ ] sd-cli: try our LoRA; SDXL norm bake
 - [ ] automatic style score (no new model if avoidable)
