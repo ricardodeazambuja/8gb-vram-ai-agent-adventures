@@ -45,7 +45,9 @@ def main():
     items = [(latents[i][0], rows[i // 4][1]) for i in range(len(latents))]
     for m in (pipe.unet, pipe.text_encoder, pipe.text_encoder_2):
         m.requires_grad_(False)
-        m.to("cuda")
+    pipe.unet.to("cuda")
+    pipe.text_encoder.to("cpu", torch.float32)  # both encoders plus the U-Net don't fit in 8 GB
+    pipe.text_encoder_2.to("cpu", torch.float32)
     pipe.unet.enable_gradient_checkpointing()
     e1, i1, keep1 = add_word(pipe.tokenizer, pipe.text_encoder, a.word, a.like)
     e2, i2, keep2 = add_word(pipe.tokenizer_2, pipe.text_encoder_2, a.word, a.like)
@@ -61,10 +63,10 @@ def main():
         lat = lat.to("cuda")
         noise = torch.randn_like(lat)
         t = torch.randint(0, 1000, (1,), device="cuda")
+        pe, _, pool, _ = pipe.encode_prompt(cap, device="cpu", do_classifier_free_guidance=False)
         with torch.amp.autocast("cuda", dtype=torch.float16):
-            pe, _, pool, _ = pipe.encode_prompt(cap, device="cuda", do_classifier_free_guidance=False)
-            pred = pipe.unet(sched.add_noise(lat, noise, t), t, pe,
-                             added_cond_kwargs={"text_embeds": pool, "time_ids": ids}).sample
+            pred = pipe.unet(sched.add_noise(lat, noise, t), t, pe.to("cuda"),
+                             added_cond_kwargs={"text_embeds": pool.to("cuda"), "time_ids": ids}).sample
             loss = torch.nn.functional.mse_loss(pred.float(), noise.float())
         opt.zero_grad()
         scaler.scale(loss).backward()

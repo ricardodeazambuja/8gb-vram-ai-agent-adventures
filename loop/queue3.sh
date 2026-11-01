@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 P="mamba run --no-capture-output -n vlft python"; T="$P bench/imagegen/train_style.py"
+bash loop/gpu.sh inv-fit 300 $P bench/imagegen/invert.py --set subject --word zxqtok --fit; echo "fit rc=$?"
+if grep -q "^done" loop/logs/inv-fit.log; then
+  bash loop/gpu.sh inv 3000 $P bench/imagegen/invert.py --set subject --word zxqtok; echo "inv rc=$?"
+  bash loop/gpu.sh ev-word 900 $P bench/imagegen/eval_sdcli.py --run subject-word --trigger zxqtok; echo "ev word rc=$?"
+fi
 bash loop/gpu.sh klein-ref 900 $P bench/imagegen/klein_person.py; echo "klein rc=$?"
 bash loop/gpu.sh reg 1800 $P bench/imagegen/make_reg.py --word man --n 20; echo "reg rc=$?"
 bash loop/gpu.sh tr-reg 3000 $T train --set subject --method lora --trigger zxq --reg reg-man --tag -reg --ckpts 250,500; echo "tr reg rc=$?"
