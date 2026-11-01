@@ -128,6 +128,9 @@ vendor/      where llama.cpp builds go (not in git)
 
 ## Fine print
 
+This repo's own work is under the [MIT License](LICENSE). Third-party material keeps its own terms:
+the llama.cpp patch, model outputs and generated pictures, and text from the practice websites.
+
 Each model comes with its own license (Apache 2.0, MIT, NVIDIA's, Google's Gemma terms…); check
 its page and model card before you build something on it. Numbers are from one laptop and mostly
 single runs; your mileage will vary, possibly in your favour. Nothing here is endorsed by the
