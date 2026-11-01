@@ -24,3 +24,4 @@ nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `
 - Queue after person.sh: loop/queue2.sh
 - DoRA train timed out at 1800 s (CPU sweep slowed it), eval then silently ran the base model (images moved to models/image-gen/invalid/; eval now refuses). Rerun DoRA with 3000 s after queue2. Never overlap.
 - 00:55 LoRA+norm done, about level with LoRA, 250 steps already has glasses and beard; leak remains. Queue after queue2: loop/queue3.sh (klein -r, reg pictures, reg LoRA and norm, DoRA rerun, Van Gogh 3000 steps). No overlap.
+- 01:15 fine sweep: +0.05 cuts answers 217 -> 151 tokens, 2/2 facts; +0.1 breaks; -0.05 lengthens. Window is narrow. queue3 running (ETA ~05:00). After it: doom-loop vector (bench/steering), pibench if firewall preflight is clean (no peekexec), then docs and final report by 07:00.
