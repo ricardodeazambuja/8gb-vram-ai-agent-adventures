@@ -130,7 +130,7 @@ Same invented man, 20 pictures, two seeds, judged by eye. Pictures for the new r
 | **Textual Inversion, `sd-cli`** | **8 KB** | 35 min | **Strong, about level with LoRA** | **No** |
 | LoRA, `sd-cli` | 47 MB | 17 min | Strong | Yes |
 | LoRA + norm | 49 MB | 17 min | Strong, about level with LoRA | Yes |
-| DoRA | 47 MB | 28 min | Strong | Yes |
+| DoRA | 49 MB | 28 min | Strong | Yes |
 | Norm-only, baked, `sd-cli` | 2.5 MB + a full checkpoint | 16 min | Beard and glasses; misses at a distance | Yes, mildly |
 
 - **Textual Inversion wins here.** It trains one new word in both text encoders and leaves the
