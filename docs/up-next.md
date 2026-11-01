@@ -4,6 +4,22 @@ Models and chores waiting their turn. Each model goes through the [security audi
 before it runs, then gets a [model page](models/) and moves into the README lineup (or the
 [graveyard](graveyard.md)).
 
+## First: can LFM3-VL do more than look?
+
+LFM3-1.7B solves pibench 12/18 and LFM3-VL solves 60/60 one-picture decisions, but VL scores 0/18 on
+pibench. The two have the same 287 tensor shapes, and 286 tensors differ. So we want one setup that does
+both, cheapest test first. Each test is a pilot: small samples, read as direction only.
+
+1. **Replay test:** feed both models the same stuck conversation and see which repeats. Also try VL at a
+   higher temperature and with a longer repeat-penalty window. If those help, training may not be needed.
+2. **Graft:** LFM3-1.7B's text weights with VL's vision projector, scored on the
+   [visual control probe](visual-control.md) and pibench.
+3. **Short vision fine-tune** on the graft, if it can almost read pictures.
+4. **LoRA on VL** from LFM3-1.7B's solved pibench runs plus examples of leaving a loop, if the graft fails.
+5. **Fallback and baseline:** LFM3-1.7B drives and VL is its eyes, as a tool.
+
+Long shots, only if time allows: a weight blend of the two models. Steering is out: it solved 0/6.
+
 ## In progress
 
 | What | Status |

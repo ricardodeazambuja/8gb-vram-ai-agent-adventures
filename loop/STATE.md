@@ -31,3 +31,7 @@ nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `
 - 06:15 all queues done. Stack works on Van Gogh, weak on Gris; word weight 0.7 no effect. Docs updated. Only the final report is left at 07:00.
 - 06:12 last test: Van Gogh word from "art" instead of "painting" (run vangogh-word-art), to see if the green cast comes from the start word. Then final report.
 - 06:57 green cast is not the start word (art start greener). Overnight work complete; final report given.
+
+## Plan from 2026-11-01 morning: LFM3-VL beyond vision (user awake, approved; see docs/up-next.md top)
+Pilots, think before cutting, read results with sample size in mind. No push/PR/deletion.
+Order: replay test, graft, vision fine-tune on graft or LoRA on VL, two-model fallback.
