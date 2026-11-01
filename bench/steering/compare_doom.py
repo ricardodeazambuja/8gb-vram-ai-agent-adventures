@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 """Compare a steered pibench run with the plain one: score and how much the agent repeats itself.
 
 repeat_share is the part of a run's tool calls that are exact copies of an earlier call. longest_run
 is the longest streak of one call in a row. Writes results/doom-lfm3vl.json.
 """
 import glob
+import itertools
 import json
 import os
 import statistics
@@ -29,10 +29,11 @@ def calls(path):
 
 
 def run_stats(folder):
-    score = json.load(open(os.path.join(folder, "score.json")))
+    with open(os.path.join(folder, "score.json")) as f:
+        score = json.load(f)
     made = calls(os.path.join(folder, "pi.jsonl"))
     longest = streak = 1 if made else 0
-    for a, b in zip(made, made[1:]):
+    for a, b in itertools.pairwise(made):
         streak = streak + 1 if a == b else 1
         longest = max(longest, streak)
     return {"task": score["task"], "rep": score["rep"], "solved": score["solved"], "passed": score["passed"],
