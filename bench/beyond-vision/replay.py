@@ -100,7 +100,7 @@ def points():
 
 
 def ask(messages, sampling, seed):
-    body = {"model": "x", "messages": messages, "tools": TOOLS, "max_tokens": 1200, "seed": seed, **sampling}
+    body = {"model": "x", "messages": messages, "tools": TOOLS, "max_tokens": 2500, "seed": seed, **sampling}
     req = urllib.request.Request(URL, json.dumps(body).encode(), {"Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=180) as r:
         return json.load(r)["choices"][0]
@@ -123,14 +123,17 @@ def main():
     rows, targets = [], []
     for p in pts:
         for arm in a.arms.split(","):
-            hits, nocall, other = 0, 0, []
+            hits, nocall, other, truncated = 0, 0, [], 0
             saved = None
             for seed in range(a.samples):
                 c = ask(p["messages"], ARMS[arm], seed + 1)
                 calls = c["message"].get("tool_calls") or []
                 saved = saved or c["message"]
-                got = sorted(x["function"]["name"] + json.dumps(json.loads(x["function"]["arguments"]), sort_keys=True)
-                             for x in calls)
+                try:
+                    got = sorted(x["function"]["name"] + json.dumps(json.loads(x["function"]["arguments"]), sort_keys=True)
+                                 for x in calls)
+                except json.JSONDecodeError:  # cut off by max_tokens
+                    got, truncated = [], truncated + 1
                 if not got:
                     nocall += 1
                 elif set(got) & set(p["expected"]):
@@ -139,7 +142,7 @@ def main():
                     other.append(got[0][:120])
             if a.save:
                 targets.append({"run": p["run"], "messages": p["messages"], "reply": saved})
-            rows.append({"run": p["run"], "turn": p["turn"], "arm": arm, "repeats": hits, "no_call": nocall,
+            rows.append({"run": p["run"], "turn": p["turn"], "arm": arm, "repeats": hits, "no_call": nocall, "truncated": truncated,
                          "new_call": len(other), "samples": a.samples, "new_examples": other[:2]})
             print(rows[-1], flush=True)
             with open(f"{HERE}/results/replay-{a.name}.json", "w") as f:

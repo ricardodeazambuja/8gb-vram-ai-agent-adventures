@@ -51,10 +51,10 @@ for step, r in enumerate(order):
     head = tok(r["head"], add_special_tokens=False, return_tensors="pt").input_ids
     tail = tok(r["tail"], add_special_tokens=False, return_tensors="pt").input_ids
     ids = torch.cat([head, tail], 1).to("cuda")
-    labels = ids.clone()
-    labels[:, :head.shape[1]] = -100
+    n = tail.shape[1]
     with torch.autocast("cuda", dtype=torch.float16):
-        loss = model(input_ids=ids, labels=labels).loss / a.accum
+        logits = model(input_ids=ids, logits_to_keep=n + 1).logits  # the whole sequence would be 1.75 GiB
+        loss = torch.nn.functional.cross_entropy(logits[0, :-1], ids[0, -n:]) / a.accum
     scaler.scale(loss).backward()
     total += loss.item()
     if (step + 1) % a.accum == 0:
