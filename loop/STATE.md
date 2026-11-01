@@ -20,3 +20,5 @@ own scope (`systemd-run --user --scope -p MemoryMax=20G -p OOMPolicy=stop --unit
 nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `timeout` on every job.
 - bake_sdxl save is slow (10+ min, /backup disk near full); needs 30 min timeout
 - Running: loop/person.sh (dora, lora+norm, ckpts); logs in loop/logs. Then run invert.py --fit, full invert, eval_sdcli.py on subject-word/-lora/-norm. Sweep of concise vector on CPU in bench/steering. Next after: compare, Klein -r on person, inversion.
+- 00:05 concise vector: +-0.5 and up breaks LFM3 completely (blank or word salad), so sweep +-0.02..0.3 next, on the GPU after the image queue. CPU sweep during training halves training speed (laptop power); never overlap them.
+- Queue after person.sh: loop/queue2.sh

@@ -8,7 +8,7 @@ import argparse
 import subprocess
 
 from run_gen import MODELS, SD
-from train_style import M, RUNS, SUBJECT_TEST, TEST
+from train_style import RUNS, SUBJECT_TEST, TEST, M
 
 
 def main():
