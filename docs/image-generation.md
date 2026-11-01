@@ -75,7 +75,7 @@ All the downloads are pinned and sha256-checked, and their audits are in
 
 ## Teaching SDXL a style or a person
 
-**Short version: an 8 KB learned word is the best first try, for a person and for a style.** It's
+An 8 KB learned word is the best first try, for a person and for a style. It's
 strong and doesn't leak into prompts without the word, and it stacks. For famous styles, naming them
 in the prompt is still free and at least as good, and 1000 steps of LoRA or norm-only fell short of
 that. The first results below are by eye from two seeds (1 and 2), through diffusers rather than
@@ -95,16 +95,16 @@ adapter" uses the same prompt as the adapters, trigger word included.*
 | Atget (old photo) | 24 | Clear on both seeds | Faded tones, sepia only sometimes | Little |
 | A person | 20 | Can't: an invented man has no name | Face, hair, beard and glasses | Beard and glasses, often the face; weaker at full length |
 
-- **The person is the surprise.** With no adapter, the same prompts give a stranger. Norm-only gets
+- The person worked best. With no adapter, the same prompts give a stranger. Norm-only gets
   the round glasses and red beard on both seeds in the watercolour and chef pictures, from a file
   about 19x smaller. Neither method shows much through the astronaut's visor.
-- **It went the opposite way from our guess.** We expected style to suit norm-only, because
+- It went the opposite way from our guess. We expected style to suit norm-only, because
   style-transfer research ties style to feature means and spreads. Here, it did better on the person.
-- **It leaks.** Asked for just "a man on a beach", both person adapters drew a man in a blue shirt
+- It leaks. Asked for just "a man on a beach", both person adapters drew a man in a blue shirt
   like the training pictures. Style adapters also change pictures without their trigger word,
   mostly darkening or muting them. Stacking a person with a style needs a test for this.
-- **The fix for the person turned out to be a word.** See [below](#the-best-person-file-is-8-kb).
-- **Why Gris rather than Picasso:** Picasso's work is still under copyright. We train only on public
+- The fix for the person turned out to be a word. See [below](#the-best-person-file-is-8-kb).
+- Why Gris rather than Picasso: Picasso's work is still under copyright. We train only on public
   domain art, and the Atget photos are public domain too. The "person" is invented, drawn by Klein
   ([`make_subject.py`](../bench/imagegen/make_subject.py)).
 
@@ -139,17 +139,17 @@ Same invented man, 20 pictures, two seeds, judged by eye. Pictures for the new r
 | DoRA | 49 MB | 28 min | Strong | Yes |
 | Norm-only, baked, `sd-cli` | 2.5 MB + a full checkpoint | 16 min | Beard and glasses; misses at a distance | Yes, mildly |
 
-- **Textual Inversion wins here.** It trains one new word in both text encoders and leaves the
+- Textual Inversion wins here. It trains one new word in both text encoders and leaves the
   drawing model alone, so without the word the model is unchanged. It's slower only because the text
   encoders run on the CPU to fit in 8 GB, and it's a little less stable: one astronaut came out as an
   illustration, one lost the face.
-- **The LoRA leak has a cheap fix.** Training also on 20 plain pictures of "a man" made by the
+- The LoRA leak has a cheap fix. Training also on 20 plain pictures of "a man" made by the
   untouched model ([`make_reg.py`](../bench/imagegen/make_reg.py)) stopped the blue shirt and glasses
   turning up in plain prompts, at no visible cost to likeness on the beach and chef prompts. So
   the file is what's left to choose between: 8 KB, or 47 MB and half the training time.
-- **Fewer steps may do.** With LoRA + norm, 250 steps (about 4 minutes) already showed the glasses
+- Fewer steps may do. With LoRA + norm, 250 steps (about 4 minutes) already showed the glasses
   and beard, and 500 looked close to 1000.
-- **Both file types work in `sd-cli`:** our LoRA loads as it is (1120 of 1120 tensors), and
+- Both file types work in `sd-cli`: our LoRA loads as it is (1120 of 1120 tensors), and
   [`bake_sdxl.py`](../bench/imagegen/bake_sdxl.py) writes norm-only into a checkpoint. A learned
   word goes in with `--embd-dir`.
 
@@ -169,17 +169,17 @@ eye on two seeds. A 3000-step Van Gogh LoRA (50 minutes) is the comparison.
 | **LoRA, 3000 steps** | 47 MB | 50 min | **About level with the prompt** | **Yes, strongly: a plain prompt comes out painted** |
 | **Word** | **8 KB** | 35 min | Bold strokes, stronger than 1000 steps of LoRA, but everything turns green | **No** |
 
-- **Steps mattered more than we'd assumed.** The earlier verdict that the prompt beats training was
+- Steps mattered more than we'd assumed. The earlier verdict that the prompt beats training was
   a verdict on 1000 steps. Three times as long closes the gap on Van Gogh, at the price of the worst
   leak we've seen. Regularisation pictures fixed the person's leak, but we haven't tried them on a style.
-- **The word has a colour habit.** Van Gogh and Gris both came out green, in pictures of a cat and a
+- The word has a colour habit. Van Gogh and Gris both came out green, in pictures of a cat and a
   street as well as the green coat. It isn't the starting word: starting a Van Gogh word from "art"
   instead of "painting" came out greener still. Mean green over the pictures went from 133 to 150, on
   10 of the 12 pictures (the scoring run hit its time limit). The cause is still unknown.
-- **Gris didn't work as cubism.** The word gives an old oil look, stronger than LoRA, with no broken
+- Gris didn't work as cubism. The word gives an old oil look, stronger than LoRA, with no broken
   planes. Neither method learned the shapes, so only naming him gets them. Structure seems much
   harder to teach than paint.
-- **Two words stack.** [`stack.py`](../bench/imagegen/stack.py) put `vgword style, zxqtok man` in one
+- Two words stack. [`stack.py`](../bench/imagegen/stack.py) put `vgword style, zxqtok man` in one
   prompt, and the invented man kept his beard and glasses in Van Gogh's paint, though he also drifts
   towards Van Gogh's self-portraits. With Gris the man stayed and the style mostly went, so stacking is
   only as strong as the weaker word. All 16 pictures took about 12 minutes. Turning the style word

@@ -34,20 +34,20 @@ matches or beats most of them; we've only seen its summary, not read it through.
 
 ## The setup
 
-- **Model:** [LFM2.5-VL-450M](https://huggingface.co/LiquidAI/LFM2.5-VL-450M) (Liquid AI, LFM
+- Model: [LFM2.5-VL-450M](https://huggingface.co/LiquidAI/LFM2.5-VL-450M) (Liquid AI, LFM
   Open License v1.0), loaded in fp16 with plain transformers 5.22: native support, **no
   `trust_remote_code`**, weights pinned and checked by sha256. [LFM3-VL-2B](models/lfm3-vl-2b.md)
   was the first choice, but transformers has no LFM3 support yet and its repo's own Python has to
   run, so it came later, in a sandbox ([below](#lfm3-vl-2b-in-a-sandbox)).
-- **Task:** the five glance scenes (tanks, a dialog's buttons, objects on a table, a traffic
+- Task: the five glance scenes (tanks, a dialog's buttons, objects on a table, a traffic
   light, a pressure gauge). Training uses 400 scenes of each kind from seeds the test never uses
   (`train-tanks-17`), so no test picture is ever trained on.
-- **Target:** the right tool call, rendered through the model's own chat template
+- Target: the right tool call, rendered through the model's own chat template
   (`<|tool_call_start|>[refill(tank="B")]<|tool_call_end|>`), or a one-line "no such button"
   when no call is right. The loss covers only the answer.
-- **Training:** one pass over 2,000 scenes, batch 8 (gradient accumulation), fp16 autocast with
+- Training: one pass over 2,000 scenes, batch 8 (gradient accumulation), fp16 autocast with
   fp32 copies of what is trained (the RTX 2070 has no bf16), gradient checkpointing.
-- **Scoring:** the probe's own 30 scenes per kind and the probe's own scorers. The answers are
+- Scoring: the probe's own 30 scenes per kind and the probe's own scorers. The answers are
   parsed with Python's `ast` (call names and literal arguments only); nothing the model writes is
   run.
 
@@ -72,33 +72,33 @@ llama.cpp with a forced call, so the harnesses differ.
 
 ## What we learned
 
-- **The base model never calls a tool with a picture in front of it.** Its card says function
+- The base model never calls a tool with a picture in front of it. Its card says function
   calling works "for text-only input", and here it held: 0 calls in 150 scenes. It answered in
   prose ("I'm sorry, I don't have the capability to control a robot arm"), wrote the tool's
   name as plain text (`stop`, `close_valve`), and misread the tanks ("A: 50% (below 30%)"). Its
   14 points are all scenes where *no* call was the right answer.
-- **A few minutes of training fixes that, and more.** Around 134/150 after LoRA: well above
+- A few minutes of training fixes that, and more. Around 134/150 after LoRA: well above
   LFM3-VL-2B without thinking (117), close to it with thinking (144), at a quarter of its size
   and without a 3-second think. Every answer is now a well-formed call, multiple tank refills
   included. What's left is mostly clicks and picks a little off target.
-- **Training only the language model's norm gains is as good as LoRA on clean pictures** (mean
+- Training only the language model's norm gains is as good as LoRA on clean pictures (mean
   133 against 134, and the seeds overlap: 130–135 against 129–137) with 173× fewer trainable
   numbers. On degraded pictures LoRA keeps a little more (mean 122 against 117). Our first,
   single-seed run said the opposite (121 against 118): one run was not enough to tell them apart.
   So the "tune only the normalization" idea works on a transformer for teaching it *how to
   answer* in a narrow domain; it just isn't more robust than LoRA.
-- **IA3 is the least predictable.** At 3e-3 it lagged (117, calling `close_valve` on 13 dials
+- IA3 is the least predictable. At 3e-3 it lagged (117, calling `close_valve` on 13 dials
   where something else was right). At 1e-2 its first run was the best of all (138 clean, 133
   degraded), and the next two seeds gave 122 and 109: a mean of 123, with the widest spread.
   LoRA and the norms are steadier.
-- **The vision side alone teaches the format, not the pointing.** Training only the image
+- The vision side alone teaches the format, not the pointing. Training only the image
   encoder's LayerNorms made the model *call* tools (traffic light 30/30, gauge 28/30), so a
   nudge in what the language model sees is enough to switch it into tool-calling mode. But its
   clicks and picks are placeholders, the same (500, 500) or (400, 400) whatever the picture
   (0/30 each), and it refills all three tanks. Where to point is decided in the language model.
-- **LoRA's misses on degraded pictures look like over-learning the clean ones:** in its first
+- LoRA's misses on degraded pictures look like over-learning the clean ones: in its first
   run it refilled tanks that aren't low, often all three, and the tank score fell from 30 to 11.
-- **The caveat:** training and test pictures come from the same drawing code, with different
+- The caveat: training and test pictures come from the same drawing code, with different
   seeds. This shows the model can learn *our* scenes, not that it learned gauges in general. The
   degraded-picture test is a first step; real photos would be the real test.
 
@@ -293,8 +293,8 @@ the repo; `sandbox.sh train` rebuilds one in about 25 minutes.
 
 A [steering vector](https://arxiv.org/abs/2312.06681v2) is a small nudge added to every layer's output.
 It's built from pairs of contrasting prompts, with no gradient training: under a minute on the CPU, and
-190 KB. We tried it because it's far cheaper than the 25 minutes an adapter takes. Short version:
-**it works on LFM3 and it's real, but the safe range is narrow, and it didn't fix the doom loops.**
+190 KB. We tried it because it's far cheaper than the 25 minutes an adapter takes. It works on LFM3, but the safe range is narrow, and it
+didn't fix the doom loops.
 
 **It works here.** `llama-cvector-generator` from our fork runs on both LFM3-1.7B and LFM3-VL-2B, and the
 server applies the result with `--control-vector-scaled FILE:STRENGTH`. Speed didn't change: 105 tokens
@@ -341,9 +341,9 @@ to find by hand, and worth trying when that's all you need. The results are in
 ## Can LFM3-VL do more than look? (2026-11-01)
 
 LFM3-VL reads pictures well and scores 0/18 on pibench; LFM3-1.7B scores 12/18 and has no eyes. We tried
-to get one setup that does both, cheapest test first. **Short version: temperature ended the doom
-loops but didn't make VL an agent, and no fine-tune did either. Pairing the two models works, and
-Gemma 4 26B already does both by itself.** Every test here is a pilot, so read the ranges, not the
+to get one setup that does both, cheapest test first. Temperature ended the doom loops but didn't make
+VL an agent, and no fine-tune did either. Pairing the two models works, and Gemma 4 26B already does
+both by itself. Every test here is a pilot, so read the ranges, not the
 points.
 
 **Why VL loops.** We replayed 13 real stuck conversations, 4 samples each, and counted exact repeats of
@@ -357,7 +357,7 @@ trained apart.
 | LFM3-VL, temperature 0.7 | 8/52 | 5/13 |
 | LFM3-1.7B, temperature 0.1 | **0/52** | **0/13** |
 
-That's the weights, not the setup. One trap: our first replay left the thinking out of the history and
+So the cause is in the weights. One trap: our first replay left the thinking out of the history and
 showed only 15/52. Real prompts include it, and recorded token counts prove that. So reasoning
 that stays in the history feeds the loops, and any replay has to include it.
 
@@ -372,13 +372,13 @@ a second difference besides the time limit:
 | **Temperature 0.7, 15 min** | 0/6 | 30/54 | **24%** | **3** | 3/6 |
 | Temperature 0.7 + agent LoRA, 15 min | 0/6 | 27/54 | 48% | 34 | 3/6 |
 
-- **Temperature is the doom loop fix,** and it costs nothing: `TEMP=0.7`. Scrape-books also passed
+- Temperature is the doom loop fix, and it costs nothing: `TEMP=0.7`. Scrape-books also passed
   tests for the first time (2/5, always 0/5 before). Even so, the shorter limit and smaller context mean the streak
   numbers aren't a fair match.
-- **It's still not an agent.** 0/6 only says the true rate is likely under 46%, but it's
+- It's still not an agent. 0/6 only says the true rate is likely under 46%, but it's
   clearly below LFM3-1.7B's 12/18 (Fisher p = 0.01). It now fails on quality, by stopping early or
   checking badly, instead of looping.
-- **The agent LoRA didn't pay off.** We trained VL for 24 minutes on 177 turns from LFM3-1.7B's solved
+- The agent LoRA didn't pay off. We trained VL for 24 minutes on 177 turns from LFM3-1.7B's solved
   runs, plus examples of getting out of a loop. On held-out stuck points, repeats fell from 21/24 to
   7/24, and vision held (101/150 against 110, p = 0.31). On pibench it was no better than temperature
   alone. Loss fell from 0.84 to 0.25, so it likely memorised 177 examples rather than learning a habit.
@@ -391,7 +391,7 @@ a second difference besides the time limit:
 | A new projector, 15 min on 1500 scenes | 35/150 | Still blind: one identical answer to all 30 tanks, signals and gauges |
 | Overfit that projector on 40 scenes, 30 passes | loss 0.15 | Still falling slowly, not clearly learning |
 
-The 35/150 looks like progress and isn't: 20/30 on signals is what always answering `stop` gets. The
+The 35/150 isn't progress: 20/30 on signals is what always answering `stop` gets. The
 projector alone didn't teach 1.7B to read pictures. Whether more data would is still open, but
 [LLaVA](https://arxiv.org/abs/2304.08485) reportedly needed hundreds of thousands of examples, so
 it's not a cheap test. Loading 1.7B into VL's code was the easy part: mapping the GGUF back
@@ -407,8 +407,8 @@ reproduced all 286 of VL's text tensors.
 | LFM3-VL alone | 60/60 | 0/18 | 2.6 GB | |
 
 Gemma's and Groot's 30 scenes are the first 6 of each kind, and their ranges are wide: Gemma's 30/30
-means at least 88%, and 30/30 against 27/30 isn't a real gap (p = 0.24). Gemma's score was a surprise
-in speed too, since it took 70 s an image on the [vision probe](vision-probe.md), which is a harder
+means at least 88%, and 30/30 against 27/30 isn't a real gap (p = 0.24). Gemma was also quicker than we expected,
+since it took 70 s an image on the [vision probe](vision-probe.md), which is a harder
 test. All three take about the same time, so the two-model pair's edge is memory, not speed. Its
 driver never sees a picture, only VL's report, and all 3 of its misses were tanks. The pibench score for
 the pair is LFM3-1.7B's alone: nobody has run a task that needs both yet.
