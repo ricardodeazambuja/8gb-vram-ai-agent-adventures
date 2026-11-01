@@ -81,6 +81,19 @@ embed at 13/s (longer in tokens than prose). A trap we fell into first: the prob
 holds the questions, so it matched them word for word; it is left out of the corpus. Still to
 do: a bigger, harder question set.
 
+**Test TIPS alongside it.** [TIPS](https://arxiv.org/abs/2410.16512) and
+[TIPSv2](https://arxiv.org/abs/2604.12012) (Google DeepMind,
+[code](https://github.com/google-deepmind/tips), Apache 2.0, other materials CC-BY 4.0) also
+embed images and text, and add one vector per image patch. Not measured here yet. Compare it
+with EmbeddingGemma 2's vision side on two things: an automatic style score for the image
+experiments, and text queries on outdoor scenes for WildSeed. Don't expect it to help with clicks:
+at 448×448 it works on a 32×32 grid, too coarse for small page targets.
+
+It needs Python and `.npz` weights, which breaks the `.gguf`-only rule, so it needs the user's
+approval first and then runs only in `bench/finetune/sandbox.sh`. Start with a small model (S/14
+or B/14). A copy of the weights is in `../tips/pytorch/checkpoints`; check that the v2 files can
+still be downloaded before deleting them.
+
 ### ⚖️ Clef / Clef-Flash (Cloudflare, Apache 2.0)
 
 [`Cloudflare/clef-flash`](https://huggingface.co/Cloudflare/clef-flash) (Qwen3.5-9B backbone) and
