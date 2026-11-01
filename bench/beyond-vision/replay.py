@@ -69,7 +69,10 @@ def to_openai(system, messages):
             calls = [{"id": p["id"], "type": "function", "function": {
                 "name": p["name"], "arguments": json.dumps(p.get("arguments"))}}
                 for p in m.get("content") or [] if isinstance(p, dict) and p.get("type") == "toolCall"]
-            out.append({"role": "assistant", "content": text, **({"tool_calls": calls} if calls else {})})
+            thinking = "".join(p.get("thinking", "") for p in m.get("content") or []
+                               if isinstance(p, dict) and p.get("type") == "thinking")
+            out.append({"role": "assistant", "content": text, "reasoning_content": thinking,
+                        **({"tool_calls": calls} if calls else {})})
     return out
 
 
@@ -109,6 +112,7 @@ def main():
     ap.add_argument("name", nargs="?")
     ap.add_argument("--arms", default=",".join(ARMS))
     ap.add_argument("--samples", type=int, default=4)
+    ap.add_argument("--save", help="also keep the first reply at each point, for training data")
     a = ap.parse_args()
     pts = points()
     if a.mode == "find":
@@ -116,13 +120,15 @@ def main():
             print(p["run"], "turn", p["turn"], "period", p["period"], len(p["messages"]), "messages",
                   sum(len(str(m["content"])) for m in p["messages"]), "chars", p["expected"][0][:90])
         return
-    rows = []
+    rows, targets = [], []
     for p in pts:
         for arm in a.arms.split(","):
             hits, nocall, other = 0, 0, []
+            saved = None
             for seed in range(a.samples):
                 c = ask(p["messages"], ARMS[arm], seed + 1)
                 calls = c["message"].get("tool_calls") or []
+                saved = saved or c["message"]
                 got = sorted(x["function"]["name"] + json.dumps(json.loads(x["function"]["arguments"]), sort_keys=True)
                              for x in calls)
                 if not got:
@@ -131,11 +137,16 @@ def main():
                     hits += 1
                 else:
                     other.append(got[0][:120])
+            if a.save:
+                targets.append({"run": p["run"], "messages": p["messages"], "reply": saved})
             rows.append({"run": p["run"], "turn": p["turn"], "arm": arm, "repeats": hits, "no_call": nocall,
                          "new_call": len(other), "samples": a.samples, "new_examples": other[:2]})
             print(rows[-1], flush=True)
             with open(f"{HERE}/results/replay-{a.name}.json", "w") as f:
                 json.dump(rows, f, indent=1)
+    if a.save:
+        with open(a.save, "w") as f:
+            json.dump(targets, f)
 
 
 if __name__ == "__main__":
