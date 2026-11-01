@@ -72,7 +72,56 @@ Pictures land in `models/image-gen/out/`, timings in [`bench/imagegen/results/`]
 All the downloads are pinned and sha256-checked, and their audits are in
 [Security](security.md#audits-so-far).
 
+## Teaching SDXL a style or a person
+
+**Short version: the tiny norm-only file taught SDXL a person, but neither method beat simply naming
+a famous style in the prompt.** LoRA moved styles further than norm-only, and even LoRA fell well
+short of the prompt. These are judged by eye from two seeds (1 and 2), through diffusers rather than
+`sd-cli`, so treat them as a first look, not a score.
+
+![Each row compares no adapter, the style named in the prompt, LoRA and norm-only; the last row is the person](image-style-samples.jpg)
+
+*Seed 1. The last row's second picture is the training reference, not a generated result. "No
+adapter" uses the same prompt as the adapters, trigger word included.*
+
+| Teaching | Pictures | Named in the prompt | LoRA | Norm-only |
+|---|---|---|---|---|
+| Van Gogh | 17 | Clear on both seeds | Paint and palette, without the swirling strokes | Slight, some paint texture |
+| Juan Gris (cubism) | 23 | Clear on both seeds | Muted paint, no cubist shapes | Little, some odd geometry |
+| Atget (old photo) | 24 | Clear on both seeds | Faded tones, sepia only sometimes | Little |
+| A person | 20 | Can't: an invented man has no name | Face, hair, beard and glasses | Beard and glasses, often the face; weaker at full length |
+
+- **The person is the surprise.** With no adapter, the same prompts give a stranger. Norm-only gets
+  the round glasses and red beard on both seeds in the watercolour and chef pictures, from a file
+  about 19x smaller. Neither method shows much through the astronaut's visor.
+- **It went the opposite way from our guess.** We expected style to suit norm-only, because
+  style-transfer research ties style to feature means and spreads. Here, it did better on the person.
+- **It leaks.** Asked for just "a man on a beach", both person adapters drew a man in a blue shirt
+  like the training pictures. Style adapters also change pictures without their trigger word,
+  mostly darkening or muting them. Stacking a person with a style needs a test for this.
+- **Why Gris rather than Picasso:** Picasso's work is still under copyright. We train only on public
+  domain art, and the Atget photos are public domain too. The "person" is invented, drawn by Klein
+  ([`make_subject.py`](../bench/imagegen/make_subject.py)).
+
+| Method | Trainable | File | 1000 steps at 768 px | Peak VRAM |
+|---|---|---|---|---|
+| LoRA, rank 8 | 11.6M | 47 MB | 17 min | 5.4 GiB |
+| Norm-only | 0.59M | 2.5 MB | 15.5 min | 5.3 GiB |
+
+Both train in the 8 GB card by caching text and image encodings first. Numbers are in
+[`style-runs.json`](../bench/imagegen/results/style-runs.json).
+
+```bash
+python3 bench/imagegen/fetch_commons.py        # public domain sets, listed in bench/imagegen/data/
+mamba run -n vlft python bench/imagegen/train_style.py train --set vangogh --method norm --trigger vgstyl
+mamba run -n vlft python bench/imagegen/train_style.py eval --run vangogh-norm --trigger vgstyl
+```
+
+**A bug to avoid:** an SDXL VAE loaded on its own in diffusers gets SD 1.5's scaling factor, 0.18215
+instead of 0.13025. Pictures come out off-colour and training quietly learns the wrong thing. It voided
+our first full round of runs, so `train_style.py` now sets it explicitly.
+
 ## What's next
 
-Fine-tuning: teaching these models a style, and then your own photos, so you can ask for your dog
-as a watercolour. That's planned but not started; see [Up next](up-next.md#️-image-generation).
+A person and a style stacked, DoRA and LoRA + norm on the person, a style the prompt can't name, and
+LoRA on Klein. See [Faster and better fine-tuning](up-next.md#faster-and-better-fine-tuning).

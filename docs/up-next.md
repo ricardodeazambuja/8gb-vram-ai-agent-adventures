@@ -9,7 +9,6 @@ before it runs, then gets a [model page](models/) and moves into the README line
 | What | Status |
 |---|---|
 | Clef-Flash, d1-2B, EmbeddingGemma 2 | measured (below); only a bigger, harder question set is left |
-| SDXL style and subject training | rerunning after a VAE scaling bug voided the first results; the [plan for faster, better fine-tuning](#faster-and-better-fine-tuning) follows |
 
 Done: pibench for [Groot](models/groot-19b-a3b.md) (18/18) and [LFM2.5](models/lfm2.5-24b-a2b.md) (10/18);
 [Ornith](models/ornith-1.5-35b-a3b.md) (14/18, vision 97%) and
@@ -430,10 +429,11 @@ than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guess
    validation set, never on the held-out test, or the reported score flatters us.
 
 **Then finish the image goals:**
-6. **Person test:** add DoRA, LoRA + norm and Klein `-r` as a no-training baseline, then stack a person
-   with a style, checking `no-trigger` pictures for leaks.
-7. **A style with no famous name:** the prompt can already ask for Van Gogh, so that test can't show
-   much. The stated prize is a tiny file per style, which needs a style the prompt can't reach.
+6. **Person test:** norm-only surprised us here, so add DoRA, LoRA + norm and Klein `-r` as a no-training
+   baseline, then stack a person with a style. Both person adapters already leak into "a man", so check
+   `no-trigger` pictures. A stronger class word or regularisation pictures may help.
+7. **A style with no famous name:** now confirmed, the prompt beat 1000 steps of training on all three
+   famous styles. The stated prize is a tiny file per style, which needs a style the prompt can't reach.
 8. **LoRA on Klein base 4B:** still the plan, and whether it fits in 8 GB is unknown. Everything fast
    about SDXL so far doesn't transfer, so this one needs its own fit test.
 9. **Captions from our own vision models,** only if style results stay weak.
@@ -494,6 +494,10 @@ the plan is encoder on the CPU or in RAM, then the image model alone on the GPU.
   computed once up front, which frees a lot. Iris-3B works in pixels, so that second saving doesn't
   apply and it may need small crops.
 
+**First SDXL results (2026-10-31):** naming the style in the prompt beat both LoRA and norm-only, and
+norm-only did better on a person than on styles, the reverse of the guess below. The text below is
+the original plan.
+
 **Styles are the fine-tuning test we most want.** Style is the classic LoRA job, and it may suit the
 tiny methods unusually well: style-transfer research (AdaIN) found that much of an image's style
 sits in the mean and spread of its features, which is exactly what norm gains and IA3 scales
@@ -515,8 +519,8 @@ situations, does it survive a style change, and does it leak into pictures that 
 Keep some photos out of training to compare against. Photos and adapters stay on this machine under
 the git-ignored `models/`, never in `bench/` or a commit, and only of you or people who agreed.
 
-**Order:** the first generation runs are done, and SDXL style and subject tests are rerunning.
-What follows is in [Faster and better fine-tuning](#faster-and-better-fine-tuning).
+**Order:** the first generation runs and the [SDXL style and person tests](image-generation.md#teaching-sdxl-a-style-or-a-person)
+are done. What follows is in [Faster and better fine-tuning](#faster-and-better-fine-tuning).
 
 ## Ideas to borrow
 

@@ -82,7 +82,7 @@ copy-paste commands.
   bigger managed 1.
   [Fine-tuning](docs/fine-tuning.md).
 - **Stable Diffusion is no longer the easy choice on 8 GB.** FLUX.2 Klein draws 1024×1024 in 23 s
-  in 3.5 GB and can spell. [Making pictures](docs/image-generation.md).
+  in 3.5 GB and can spell. On SDXL, a 2.5 MB norm-only file taught it a person. [Making pictures](docs/image-generation.md).
 - **A GGUF can load perfectly and still be garbage.** Verify the sha256 before you blame the
   model, the kernel, or the universe. [Troubleshooting](docs/troubleshooting.md).
 
