@@ -6,8 +6,8 @@ New models only through the security routine. Commit each finished piece. Analys
 Queue (from docs/up-next.md "Faster and better fine-tuning"):
 - [x] qwen-codecheck: container by default (--on-host to opt out)
 - [x] input test repeatable, saved results
-- [ ] train_style: preflight, checkpoints
-- [ ] sd-cli: try our LoRA; SDXL norm bake
+- [x] train_style: preflight, checkpoints, dora, lora+norm
+- [x] sd-cli: LoRA loads (1120/1120); bake_sdxl.py works, watercolour likeness kept
 - [ ] automatic style score (no new model if avoidable)
 - [ ] person: DoRA, LoRA + norm, Klein -r; leak fix
 - [ ] Textual Inversion on person (SDXL)
@@ -18,3 +18,5 @@ Next: first unchecked item.
 User back at 07:00 on 2026-11-01: keep planning and working until then. Terminal safety: every heavy job in its
 own scope (`systemd-run --user --scope -p MemoryMax=20G -p OOMPolicy=stop --unit=...`), one GPU job at a time,
 nothing >15 GB while downloading, watch /proc/pressure/memory, no broad pkill, `timeout` on every job.
+- bake_sdxl save is slow (10+ min, /backup disk near full); needs 30 min timeout
+- Running: loop/person.sh (dora, lora+norm, ckpts); logs in loop/logs. Next after: compare, Klein -r on person, inversion.

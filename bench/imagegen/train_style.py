@@ -3,7 +3,8 @@
 
 Usage:
   train_style.py train --set vangogh --method lora --trigger vgstyl [--steps 1000] [--size 768] [--fit]
-  train_style.py eval  --run vangogh-lora --trigger vgstyl
+  train_style.py preflight --set vangogh --method norm --trigger vgstyl      (2 minutes, run it first)
+  train_style.py eval  --run vangogh-lora --trigger vgstyl [--ckpt 500]
 Sets are folders under models/image-gen/train/. Adapters and pictures stay under models/image-gen/.
 """
 import argparse
@@ -84,12 +85,12 @@ def cache(pipe, rows, size, n_crops):
 
 def setup(unet, method):
     unet.requires_grad_(False)
-    if method == "lora":
-        unet.add_adapter(LoraConfig(r=8, lora_alpha=8, init_lora_weights="gaussian",
+    if method != "norm":
+        unet.add_adapter(LoraConfig(r=8, lora_alpha=8, init_lora_weights="gaussian", use_dora="dora" in method,
                                     target_modules=["to_k", "to_q", "to_v", "to_out.0"]))
     params = []
     for n, p in unet.named_parameters():
-        if method == "lora" and "lora" in n or method == "norm" and re.search(r"norm\w*\.(weight|bias)$", n):
+        if method != "norm" and "lora" in n or "norm" in method and re.search(r"norm\w*\.(weight|bias)$", n):
             p.requires_grad_(True)
         else:
             continue
@@ -98,32 +99,76 @@ def setup(unet, method):
     return params
 
 
+def save(unet, method, run):
+    run.mkdir(parents=True, exist_ok=True)
+    if method != "norm":
+        sd = get_peft_model_state_dict(unet)
+        StableDiffusionXLPipeline.save_lora_weights(run, unet_lora_layers=sd, safe_serialization=True)
+    if "norm" in method:
+        torch.save({n: p.detach().cpu() for n, p in unet.named_parameters()
+                    if p.requires_grad and "lora" not in n}, run / "norms.pt")
+
+
+def preflight(a):
+    """Catch a broken setup before a long run: colour round trip, then one latent overfitted."""
+    pipe = pipe_load()
+    path, cap = captions(a.set, a.trigger)[0]
+    im = next(crops(path, a.size, 1))
+    x = torch.from_numpy(np.asarray(im).copy()).float().permute(2, 0, 1)[None] / 127.5 - 1
+    pipe.vae.to("cuda")
+    with torch.no_grad():
+        lat = pipe.vae.encode(x.to("cuda", torch.float16)).latent_dist.mean * pipe.vae.config.scaling_factor
+        back = pipe.vae.decode(lat / pipe.vae.config.scaling_factor).sample.float().cpu()
+    err = (back - x).abs().mean().item() * 127.5
+    spread = lat.std().item()
+    print(f"round trip error {err:.1f}/255, latent spread {spread:.2f}", flush=True)
+    if err > 12 or not 0.6 < spread < 1.4:
+        raise SystemExit("FAIL: the VAE or its scaling factor is wrong")
+    a.steps, a.fit, a.ckpts = 60, False, ""
+    a.tag = "-preflight"
+    items = cache(pipe, [(path, cap)], a.size, 1)
+    hist = run_steps(pipe, items, a, fixed=True)
+    head, tail = np.mean(hist[:15]), np.mean(hist[-15:])
+    print(f"overfit one picture: loss {head:.4f} -> {tail:.4f}", flush=True)
+    if tail >= head:
+        raise SystemExit("FAIL: loss did not fall on one picture")
+    print("preflight passed")
+
+
 def train(a):
     seed = 0
     random.seed(seed)
     torch.manual_seed(seed)
-    run = RUNS / f"{a.set}-{a.method}{a.tag}"
-    run.mkdir(parents=True, exist_ok=True)
     pipe = pipe_load()
     rows = captions(a.set, a.trigger)
     items = cache(pipe, rows, a.size, 4)
+    run_steps(pipe, items, a)
+
+
+def run_steps(pipe, items, a, fixed=False):
+    run = RUNS / f"{a.set}-{a.method}{a.tag}"
     unet = pipe.unet.to("cuda")
     unet.enable_gradient_checkpointing()
     unet.train()
     params = setup(unet, a.method)
     n_train = sum(p.numel() for p in params)
-    opt = torch.optim.AdamW(params, lr=1e-4 if a.method == "lora" else 1e-3, weight_decay=0)
+    groups = [{"params": [p for n, p in unet.named_parameters() if p.requires_grad and ("lora" in n) == lo],
+               "lr": 1e-4 if lo else 1e-3} for lo in (True, False)]
+    opt = torch.optim.AdamW([g for g in groups if g["params"]], weight_decay=0)
     scaler = torch.amp.GradScaler("cuda")
     sched = DDPMScheduler.from_config(pipe.scheduler.config)
     ids = torch.tensor([[a.size, a.size, 0, 0, a.size, a.size]], device="cuda", dtype=torch.float16)
     steps = 5 if a.fit else a.steps
+    ckpts = {int(s) for s in a.ckpts.split(",") if s}
     t0, losses = time.time(), []
     torch.cuda.reset_peak_memory_stats()
     for step in range(steps):
         lat, pe, pool = random.choice(items)
         lat, pe, pool = lat.to("cuda"), pe.to("cuda"), pool.to("cuda")
+        if fixed:
+            torch.manual_seed(0)
         noise = torch.randn_like(lat) + a.noise_offset * torch.randn(*lat.shape[:2], 1, 1, device="cuda", dtype=lat.dtype)
-        t = torch.randint(0, 1000, (1,), device="cuda")
+        t = torch.tensor([500], device="cuda") if fixed else torch.randint(0, 1000, (1,), device="cuda")
         noisy = sched.add_noise(lat, noise, t)
         with torch.amp.autocast("cuda", dtype=torch.float16):
             pred = unet(noisy, t, pe, added_cond_kwargs={"text_embeds": pool, "time_ids": ids}).sample
@@ -135,32 +180,30 @@ def train(a):
         losses.append(loss.item())
         if step % 100 == 0:
             print(step, round(sum(losses[-100:]) / len(losses[-100:]), 4), round(time.time() - t0), flush=True)
+        if step + 1 in ckpts:
+            save(unet, a.method, run / f"ckpt-{step + 1}")
     secs = time.time() - t0
     peak = torch.cuda.max_memory_allocated() / 2**30
     print(f"done: {n_train} params, {steps} steps, {secs:.0f}s, peak {peak:.2f} GiB", flush=True)
-    if a.fit:
-        return
-    if a.method == "lora":
-        sd = get_peft_model_state_dict(unet)
-        StableDiffusionXLPipeline.save_lora_weights(run, unet_lora_layers=sd, safe_serialization=True)
-    else:
-        torch.save({n: p.detach().cpu() for n, p in unet.named_parameters() if p.requires_grad}, run / "norms.pt")
+    if a.fit or fixed:
+        return losses
+    save(unet, a.method, run)
     (run / "train.json").write_text(json.dumps({"set": a.set, "method": a.method, "trainable": n_train, "steps": steps,
                                                 "size": a.size, "secs": round(secs), "peak_gib": round(peak, 2),
-                                                "images": len(rows), "trigger": a.trigger}))
+                                                "images": len(items) // 4, "trigger": a.trigger,
+                                                "loss_last_100": round(float(np.mean(losses[-100:])), 4)}))
+    return losses
 
 
 def eval_(a):
-    run = RUNS / a.run
-    out = M / "out/style" / a.run
+    run = RUNS / a.run / f"ckpt-{a.ckpt}" if a.ckpt else RUNS / a.run
+    out = M / "out/style" / (a.run + (f"-{a.ckpt}" if a.ckpt else ""))
     out.mkdir(parents=True, exist_ok=True)
     pipe = pipe_load()
-    if a.run.startswith("base"):
-        pass
-    elif (run / "norms.pt").exists():
+    if not a.run.startswith("base") and (run / "norms.pt").exists():
         sd = torch.load(run / "norms.pt", map_location="cpu", weights_only=True)
         pipe.unet.load_state_dict({k: v.half() for k, v in sd.items()}, strict=False)
-    else:
+    if not a.run.startswith("base") and (run / "pytorch_lora_weights.safetensors").exists():
         pipe.load_lora_weights(run)
     pipe.enable_model_cpu_offload()
     pipe.vae.enable_tiling()
@@ -182,21 +225,24 @@ def eval_(a):
 def main():
     ap = argparse.ArgumentParser()
     sub = ap.add_subparsers(dest="cmd", required=True)
-    t = sub.add_parser("train")
-    t.add_argument("--set", required=True)
-    t.add_argument("--method", choices=["lora", "norm"], required=True)
-    t.add_argument("--trigger", required=True)
-    t.add_argument("--steps", type=int, default=1000)
-    t.add_argument("--size", type=int, default=768)
-    t.add_argument("--fit", action="store_true")
-    t.add_argument("--tag", default="")
-    t.add_argument("--noise-offset", type=float, default=0.0)
+    for name in ("train", "preflight"):
+        t = sub.add_parser(name)
+        t.add_argument("--set", required=True)
+        t.add_argument("--method", choices=["lora", "norm", "dora", "lora+norm"], required=True)
+        t.add_argument("--trigger", required=True)
+        t.add_argument("--steps", type=int, default=1000)
+        t.add_argument("--size", type=int, default=768)
+        t.add_argument("--fit", action="store_true")
+        t.add_argument("--tag", default="")
+        t.add_argument("--noise-offset", type=float, default=0.0)
+        t.add_argument("--ckpts", default="", help="steps to save at, such as 250,500")
     e = sub.add_parser("eval")
     e.add_argument("--run", required=True)
     e.add_argument("--trigger", default="")
     e.add_argument("--suffix", default="")
+    e.add_argument("--ckpt", type=int)
     a = ap.parse_args()
-    train(a) if a.cmd == "train" else eval_(a)
+    {"train": train, "preflight": preflight, "eval": eval_}[a.cmd](a)
 
 
 if __name__ == "__main__":
