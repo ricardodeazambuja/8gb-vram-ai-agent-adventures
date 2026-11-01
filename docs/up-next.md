@@ -441,7 +441,13 @@ than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guess
 **Then the vision goals, which matter more than making them train faster:**
 10. **Real camera pictures,** the open question since 2026-10-30.
 11. **Qwen3-VL-2B or 4B,** to tell "fine-tuning works" from "it works on Liquid's models".
-12. **Antidoom, then pibench,** for LFM3-VL's 0/18.
+12. **Antidoom, then pibench,** for LFM3-VL's 0/18. On LFM3-1.7B, this is also our first plain text
+    fine-tune, so add a system prompt test: can training replace part of the prompt? Measure the agent's
+    system prompt first and skip this if it's small next to the context. Move habits such as tone,
+    format and thinking first into training; keep tool schemas, facts and safety rules in the prompt.
+    Compare the full prompt, a short stub, and the stub plus the tuned model on pibench. It saves
+    context and first-request time, but RAM only if `-c` also goes down, and each prompt change means
+    retraining.
 13. **Train on mistakes,** in place of the GRPO step we skipped: collect misses on training seeds only,
     never held-out ones. It's a cheaper version of the same idea. Random recovery data didn't
     help before, so it needs testing.
