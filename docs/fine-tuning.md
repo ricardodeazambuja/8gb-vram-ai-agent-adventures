@@ -335,3 +335,76 @@ care. It solved nothing either way, and its best task, feature-inventory, stayed
 a vector can't add a skill like that. A vector is a quick way to shift a habit, at a strength you have
 to find by hand, and worth trying when that's all you need. The results are in
 [`bench/steering/`](../bench/steering/).
+
+## Can LFM3-VL do more than look? (2026-11-01)
+
+LFM3-VL reads pictures well and scores 0/18 on pibench; LFM3-1.7B scores 12/18 and has no eyes. We tried
+to get one setup that does both, cheapest test first. **Short version: temperature ended the doom
+loops but didn't make VL an agent, and no fine-tune did either. Pairing the two models works, and
+Gemma 4 26B already does both by itself.** Every test here is a pilot, so read the ranges, not the
+points.
+
+**Why VL loops.** We replayed 13 real stuck conversations, 4 samples each, and counted exact repeats of
+the stuck call. The two models share 287 tensor shapes, but 286 tensors differ: mean cosine about 0.8
+and relative distance about 0.6, or 0.46 and 1.0 for the token embeddings. So they're close relatives
+trained apart.
+
+| Same 13 stuck points | Repeats the call | Points where it repeats |
+|---|---:|---:|
+| LFM3-VL, temperature 0.1 | 32/52 | 11/13 |
+| LFM3-VL, temperature 0.7 | 8/52 | 5/13 |
+| LFM3-1.7B, temperature 0.1 | **0/52** | **0/13** |
+
+That's the weights, not the setup. One trap: our first replay left the thinking out of the history and
+showed only 15/52. Real prompts include it, and recorded token counts prove that. So reasoning
+that stays in the history feeds the loops, and any replay has to include it.
+
+**VL on pibench.** All at 6 runs, against plain VL's 18:
+
+| Setup | Solved | Tests passed | Calls that copy an earlier one | Worst streak | Timeouts |
+|---|---:|---:|---:|---:|---:|
+| Plain, temperature 0.1, 20 min | 0/18 | 76/162 | 93% | 769 | 14/18 |
+| [Steering vector](#steering-vs-training-2026-11-01), 15 min | 0/6 | 7/28 | 80% | 129 | 4/6 |
+| **Temperature 0.7, 15 min** | 0/6 | 30/54 | **24%** | **3** | 3/6 |
+| Temperature 0.7 + agent LoRA, 15 min | 0/6 | 27/54 | 48% | 34 | 3/6 |
+
+- **Temperature is the doom loop fix,** and it costs nothing: `TEMP=0.7`. Scrape-books also passed
+  tests for the first time (2/5, always 0/5 before). Even so, the shorter limit means the streak numbers
+  aren't a fair match.
+- **It's still not an agent.** 0/6 only says the true rate is likely under 46%, but it's
+  clearly below LFM3-1.7B's 12/18 (Fisher p = 0.01). It now fails on quality, by stopping early or
+  checking badly, instead of looping.
+- **The agent LoRA didn't pay off.** We trained VL for 24 minutes on 177 turns from LFM3-1.7B's solved
+  runs, plus examples of getting out of a loop. On held-out stuck points, repeats fell from 21/24 to
+  7/24, and vision held (101/150 against 110, p = 0.31). On pibench it was no better than temperature
+  alone. Loss fell from 0.84 to 0.25, so it likely memorised 177 examples rather than learning a habit.
+
+**Giving LFM3-1.7B eyes.**
+
+| Test | Score | Meaning |
+|---|---:|---|
+| VL's projector on LFM3-1.7B, as it is | 14/150 | Blind: answers restate the prompt |
+| A new projector, 15 min on 1500 scenes | 35/150 | Still blind: one identical answer to all 30 tanks, signals and gauges |
+| Overfit that projector on 40 scenes, 30 passes | loss 0.15 | Still falling slowly, not clearly learning |
+
+The 35/150 looks like progress and isn't: 20/30 on signals is what always answering `stop` gets. The
+projector alone didn't teach 1.7B to read pictures. Whether more data would is still open, but
+[LLaVA](https://arxiv.org/abs/2304.08485) reportedly needed hundreds of thousands of examples, so
+it's not a cheap test. Loading 1.7B into VL's code was the easy part: mapping the GGUF back
+reproduced all 286 of VL's text tensors.
+
+**What does work.** One-picture decisions with thinking on, against pibench:
+
+| Setup | Glance | pibench | VRAM | Time per decision |
+|---|---:|---:|---:|---:|
+| **Gemma 4 26B** (projector on CPU, 32K context) | **30/30** | **18/18** | 6.2 GB | 17 s |
+| Groot-19B | 27/30 | 18/18 | 7.2 GB | 16 s |
+| **LFM3-1.7B drives, VL reports in words** | **57/60** | 12/18 for the driver | **5.0 GB** both | 13 s |
+| LFM3-VL alone | 60/60 | 0/18 | 2.6 GB | |
+
+Gemma's and Groot's 30 scenes are the first 6 of each kind, and their ranges are wide: Gemma's 30/30
+means at least 88%, and 30/30 against 27/30 isn't a real gap (p = 0.24). Gemma's score was a surprise
+in speed too, since it took 71 s an image on the [vision probe](vision-probe.md), which is a harder
+test. The two-model pair is the small option, and the driver never sees a picture, only VL's report.
+All 3 of its misses were tanks. [`bench/beyond-vision/`](../bench/beyond-vision/) has the scripts and
+results. The pibench score for the pair is LFM3-1.7B's alone: nobody has run a task that needs both yet.

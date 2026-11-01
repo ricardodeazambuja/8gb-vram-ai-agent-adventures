@@ -59,7 +59,8 @@ top-k 50, repeat-penalty 1.1). `scripts/qwen-bench.py`: **106.2 tok/s**, a 15K-t
 For 2.6 GB, it's a good little eye: a pi session on a big model could hand it screenshots.
 
 **[pibench](../pibench.md): 0/18**, 47% of hidden tests, at 64K context. Don't let it drive.
-It is [LFM3-1.7B](lfm3-1.7b.md) (12/18) plus a vision encoder, and its chat template is
+It has the same architecture as [LFM3-1.7B](lfm3-1.7b.md) (12/18), plus a vision encoder, but its
+weights differ, and that's the cause (see [the replay](../fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01)). The chat template is
 byte-for-byte the same, yet 14 of 18 attempts ran into the 20-minute timeout, each stuck
 running one command over and over: the books scraper re-ran the same `curl | grep` 419 times,
 and one feature attempt repeated a command 769 times out of 772 calls. LFM3-1.7B never repeated a
@@ -90,5 +91,5 @@ identical to the source repo's, no hidden characters, no Jinja internals; the pr
 - Boxes come back in 0–1000 coordinates whatever you ask for; scale them yourself.
 - Thinking off, it's weak at one-picture decisions (109/150), but fine-tuning fixes that: 150/150 in
   `llama-server`, and through mazes as well. See [Fine-tuning](../fine-tuning.md#one-adapter-for-both-jobs).
-- Not an agent: in long conversations with tools it falls into loops. Use [LFM3-1.7B](lfm3-1.7b.md)
+- Not an agent: in long conversations with tools it falls into loops. `TEMP=0.7` stops the loops, but it still solved 0/6. Use [LFM3-1.7B](lfm3-1.7b.md)
   for that, or give it one picture and one decision at a time ([visual control](../visual-control.md)).

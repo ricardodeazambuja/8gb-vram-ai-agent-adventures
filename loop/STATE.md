@@ -45,3 +45,4 @@ Order: replay test, graft, vision fine-tune on graft or LoRA on VL, two-model fa
 - 13:50 gguf_to_state.py verified 286/286 tensors (cos >=0.99 against VL safetensors) and exported 1.7B to proj/. train_projector.py and queue13 ready; run after queue12.
 - 13:55 Groot glance think on n=6: 27/30, mean 18 s, 7.2 GB. Gemma failed (wrong script), queue14 fixes it after queue13.
 - 14:20 projector run: 35/150, but answers are near constant per scene (blind, loss flat at 0.3 from step 30). Base-rate result, not reading. queue15: overfit test after Gemma tells "cannot carry info" from "needs more data". Then docs, report.
+- 14:45 plan done: Gemma glance 30/30 6.2 GB 17 s, overfit loss 0.15 not clear. Written up in docs/fine-tuning.md. Only the report remains.

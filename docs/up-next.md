@@ -4,22 +4,14 @@ Models and chores waiting their turn. Each model goes through the [security audi
 before it runs, then gets a [model page](models/) and moves into the README lineup (or the
 [graveyard](graveyard.md)).
 
-## First: can LFM3-VL do more than look?
+## Next: a task that needs an agent and eyes
 
-LFM3-1.7B solves pibench 12/18 and LFM3-VL solves 60/60 one-picture decisions, but VL scores 0/18 on
-pibench. The two have the same 287 tensor shapes, and 286 tensors differ. So we want one setup that does
-both, cheapest test first. Each test is a pilot: small samples, read as direction only.
-
-1. **Replay test:** feed both models the same stuck conversation and see which repeats. Also try VL at a
-   higher temperature and with a longer repeat-penalty window. If those help, training may not be needed.
-2. **Graft:** LFM3-1.7B's text weights with VL's vision projector, scored on the
-   [visual control probe](visual-control.md) and pibench.
-3. **Short vision fine-tune** on the graft, if it can almost read pictures.
-4. **LoRA on VL** from LFM3-1.7B's solved pibench runs plus examples of leaving a loop, if the graft fails.
-5. **Fallback and baseline:** LFM3-1.7B drives and VL is its eyes, as a tool.
-6. **Compare against models that already do both:** Gemma 4 26B and Groot have 18/18 on pibench and vision, but have never had the visual control probe.
-
-Long shots, only if time allows: a weight blend of the two models. Steering is out: it solved 0/6.
+[The LFM3-VL tests](fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01) are done: temperature 0.7
+ends its doom loops but not its failures, and neither a LoRA nor a new projector made one model do
+both. Gemma 4 26B already does (18/18, glance 30/30), and LFM3-1.7B driving with VL as eyes gets 57/60 in
+5 GB. No test yet needs both skills at once, so that's next: a pibench task with pictures, on those two.
+Then the larger glance sample for Gemma, and a Gemma 12B fit check, which has image input with no
+vision encoder, if a projector for it exists.
 
 ## In progress
 
