@@ -49,7 +49,7 @@ before a new model runs on this machine.
 6. **Keep its first runs tool-less or sandboxed.** Speed tests (`scripts/qwen-bench.py`,
    `llama-bench`, a plain chat request) give the model no tools; `qwen-bench.py` only checks
    that a tool call is well-formed, it never runs it. Code checks run with
-   `scripts/qwen-codecheck.py --sandbox`, never on the host.
+   `scripts/qwen-codecheck.py`, which uses a container by default, never on the host.
 7. **Its first shell is pibench**, in a container with no LAN, no host files and no
    capabilities. The firewall that seals it (`bench/firewall.sh`) is not saved and disappears on
    reboot. `PREFLIGHT_ONLY=1 bash bench/run-bench.sh` tells you: `SEALED INTERNET` is good,

@@ -585,7 +585,7 @@ What it needs before it runs here:
 - **A Linux sandbox.** Candidates are model-written code. Upstream isolates them with macOS
   `sandbox-exec` (no network, no fork, writes only to a temp dir, 15 CPU s / 25 wall s) and
   refuses to run elsewhere. Port `runner/evaluate.py` to the same `docker run --network none
-  --read-only --cap-drop ALL ...` that `scripts/qwen-codecheck.py --sandbox` uses, and
+  --read-only --cap-drop ALL ...` that `scripts/qwen-codecheck.py` uses, and
   `runner/resources.py` (macOS `libproc` memory/swap guard) to `/proc` + PSI. Run nothing
   before that.
 - **Fewer workers.** Eight slots × 64K context is a 48 GB Mac's budget. Here: 2–4 slots and a

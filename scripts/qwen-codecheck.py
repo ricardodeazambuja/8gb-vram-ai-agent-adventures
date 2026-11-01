@@ -8,14 +8,13 @@ doctests, then EXECUTES the answer instead of trusting it:
      gets the same inputs)
 and reports tokens used, generation speed and both results.
 
-The model's code runs in a subprocess for the doctests, but the random check
-exec()s it in this process — only point this at a server you trust, and read
-the saved file if in doubt. With --sandbox, both checks run instead in a
-throwaway container (the pibench image) with no network, no capabilities, a
-read-only filesystem and only the saved answer mounted: the way to run it on a
-model that hasn't earned trust yet (docs/security.md).
+Both checks run in a throwaway container (the pibench image) with no network, no
+capabilities, a read-only filesystem and only the saved answer mounted, so a
+model that hasn't earned trust can't touch this machine (docs/security.md).
+--on-host runs them here instead: the random check exec()s the answer in this
+process, so only use it on an answer you have read.
 
-Usage:  python3 scripts/qwen-codecheck.py [--port 8080] [--out /tmp/merge_intervals.py] [--sandbox]
+Usage:  python3 scripts/qwen-codecheck.py [--port 8080] [--out /tmp/merge_intervals.py] [--on-host]
                                             [--max-tokens 6000]
 """
 import argparse
@@ -78,8 +77,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8080)
     ap.add_argument("--out", default="/tmp/merge_intervals.py")
-    ap.add_argument("--sandbox", action="store_true", help="run the model's code in a no-network container")
-    ap.add_argument("--image", default="pibench:1", help="container image for --sandbox")
+    ap.add_argument("--on-host", action="store_true", help="run the model's code here, not in a container")
+    ap.add_argument("--image", default="pibench:1", help="container image for the checks")
     ap.add_argument("--max-tokens", type=int, default=6000, help="cap on the answer, reasoning included")
     ap.add_argument("--check", metavar="FILE", help=argparse.SUPPRESS)  # used inside the sandbox
     a = ap.parse_args()
@@ -102,10 +101,10 @@ def main():
     with open(a.out, "w") as f:
         f.write(code[0])
     print("saved:", a.out)
-    if a.sandbox:
-        check_in_sandbox(a.out, a.image)
-    else:
+    if a.on_host:
         check(a.out)
+    else:
+        check_in_sandbox(a.out, a.image)
 
 
 if __name__ == "__main__":
