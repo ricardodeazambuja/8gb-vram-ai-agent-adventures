@@ -452,6 +452,23 @@ than wasted runs: one VAE scaling bug cost about 3 hours. Time savings are guess
     never held-out ones. It's a cheaper version of the same idea. Random recovery data didn't
     help before, so it needs testing.
 
+**Try steering before training, on both kinds of model:** nothing here has been run yet, and it can
+push a behaviour or look but can't add facts.
+- **Text and vision models:** [steering vectors](https://arxiv.org/abs/2312.06681v2) need no gradient
+  training. Our llama.cpp fork already has `--control-vector` and `cvector-generator`, and `lfm2.cpp`
+  and `lfm3.cpp` apply the vectors. Check that the generator works on them, then add two tries to step
+  12: a fourth arm in the system prompt test, and a "try something else" vector for doom loops. Each
+  vector needs a small strength sweep.
+- **Image models:** `sd-cli` has no such flag. The closest options are
+  [Concept Sliders](https://arxiv.org/abs/2311.12092v1), which are small LoRAs trained to move one
+  concept with an adjustable strength, and [Textual Inversion](https://textual-inversion.github.io),
+  which learns one new word and leaves the model alone. `sd-cli` has `--lora-model-dir` and `--embd-dir`
+  for these, but neither is tried yet. Inversion is the cheap test for steps 6 and 7: can a word
+  replace the 2.5 MB file, and does it leak less into plain prompts? On SDXL only, since Klein has a
+  different text encoder. [h-space](https://arxiv.org/abs/2210.10960v2) is the true equivalent of a
+  steering vector, but it was shown on older pixel models and would need new code, so it's only
+  worth a look if these fall short.
+
 **Only if timing says so:** caching the vision tower's output. Our runs see each scene once, so it
 saves nothing on a first run, only on repeats over the same data, and it rules out the
 vision-side-only method. Measure the vision tower's share of a step first. SDXL with gradient checkpointing
