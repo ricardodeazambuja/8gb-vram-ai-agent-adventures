@@ -79,6 +79,18 @@ still sees well but stops applying the rules (45/60). Steering a robot step by s
 grids (8/8) and mostly not in mazes (3/8), and only when every step is a fresh request: given the
 conversation history, it starts copying its own previous answers.
 
+## As a pair of eyes
+
+Let [LFM3-1.7B](lfm3-1.7b.md) drive and LFM3-VL report what it sees: 57/60, against 60/60 for VL alone,
+in 5.0 GB for both. `bash bench/beyond-vision/run.sh eyes` runs that test, and
+[`eyes_probe.py`](../../bench/beyond-vision/eyes_probe.py) shows how the two servers are wired.
+
+To run a [fine-tuned copy](../fine-tuning.md#serving-it-through-llamacpp), point `MODEL` at the baked file:
+
+```bash
+QMODEL=lfm3vl MODEL=models/lfm3-vl-2b-baked/ia3.gguf bash scripts/run-qwen.sh --image
+```
+
 ## Security audit
 
 `utils/audit-gguf.py --ref` the source repo's chat template, before it was ever loaded

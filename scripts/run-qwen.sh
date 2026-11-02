@@ -483,7 +483,7 @@ if [ "$USE_IMAGE" = 1 ]; then
   [ -f "$MMPROJ" ] || { echo "ERROR: --image given but projector not found: $MMPROJ"; exit 1; }
   if [ "$MMPROJ_GPU" = 1 ]; then
     MMPROJ_ARGS=(--mmproj "$MMPROJ")
-    echo ">> multimodal: ENABLED — vision projector on GPU"
+    echo ">> multimodal: ENABLED — projector on GPU"
   else
     # CPU-side: the big models have no VRAM to spare for a ~0.9 GB tower on an 8 GB card.
     MMPROJ_ARGS=(--mmproj "$MMPROJ" --no-mmproj-offload)
