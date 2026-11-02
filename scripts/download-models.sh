@@ -4,11 +4,9 @@
 # (the Gemma 4 models have their own downloads). Each entry is pinned; vision models get their projector:
 #
 #   qwen36   Qwen3.6-35B-A3B          unsloth UD-IQ4_XS        ~17.7 GB  MoE, 3B active
-#   qwen38   Qwen3.8-27B (dense)      ISTA-DASLab GSQ-RCO      ~10.4 GB  IQ3_XXS + MTP head
 #   distill  Qwen3.8-35B-A3B-Distill  empero-ai IQ4_XS         ~19.6 GB  3.6 base, 3.8 traces
 #
 # Optional (not in the default set):
-#   dflash   DFlash2 block-diffusion drafter for the 27B (z-lab, Q4_K_M, ~1.1 GB)
 #   bonsai2  Ternary-Bonsai-2-27B PTQ1_0 (PrismML, ~5.95 GB + 0.63 GB vision) — Qwen3.8-27B
 #            in ternary weights; needs the PrismML llama.cpp fork (docs/models/bonsai2-27b.md)
 #   qwen3vl  Qwen3-VL-8B-Instruct Q4_K_M (Qwen, ~5.0 GB + 0.75 GB vision Q8_0) — dense 8B
@@ -60,7 +58,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh qwen38       # just one (qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)
+#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -78,7 +76,6 @@ FOLLOW_MAIN="${FOLLOW_MAIN:-0}"
 # name | HF repo | pinned revision | local dir (under models/) | file:sha256 ...
 MODELS=(
   "qwen36|unsloth/Qwen3.6-35B-A3B-GGUF|a483e9e6cbd595906af30beda3187c2663a1118c|qwen36-35b-a3b|Qwen3.6-35B-A3B-UD-IQ4_XS.gguf:649d7508507b84638732c4f52c24c8b15843c6dca2f3ff793ae07c14a67ebbb3 mmproj-F16.gguf:8971ee4f331ff0a4c609374f32984b3d4e6dc086c0aa35f1d637fad1829e887f"
-  "qwen38|ISTA-DASLab/Qwen3.8-27B-GSQ-RCO-GGUF|d562806dbafae37109975e970aae91b43e73b440|qwen38-27b-gsq|Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp.gguf:63f29a2189a6b4cc31f81e093d3856ad293a5583114439f41ae1ed7af4093262 mmproj-Qwen3.8-27B-BF16.gguf:13cb7bebccbd04afc8f4090cb949ecf8937cdf7377c5799b1a0c594e7c0d3e16"
   "distill|empero-ai/Qwen3.8-35B-A3B-Distill-GGUF|b1f9d1dcc3de8aa867669b0ab919384aeeb9b8d5|qwen38-35b-a3b-distill|Qwen3.8-35B-A3B-IQ4_XS.gguf:b645af45431ef9b41f43cae51c9323b2d0ca84f23031d483d2105c643ae58d65 mmproj-Qwen3.8-35B-A3B-F16.gguf:4381cb5110074396c2c7b39221fffae0c31886aa95b674de8e103d97edf58b94"
   "bonsai2|prism-ml/Ternary-Bonsai-2-27B-gguf|b072e1d3b35a0a630cece372c2127528e0994386|bonsai2-27b|Ternary-Bonsai-2-27B-PTQ1_0.gguf:53107f530aa52eb00912263ab1ee29bd199261c87cd7b4ad4ca1318c1fe33ee3 Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf:6807ede61d570bb86ba34b756a0fa109edc33668604de867c6ea6d8f1d631903"
   "qwen3vl|Qwen/Qwen3-VL-8B-Instruct-GGUF|f982a07559d4a2f6c8744d840bf6fccab30eea96|qwen3vl-8b|Qwen3VL-8B-Instruct-Q4_K_M.gguf:67d1659bfe71b89d50b45a4ad1a9e5b997e5bb16ce5da66a6a6167abd569e9e2 mmproj-Qwen3VL-8B-Instruct-Q8_0.gguf:c6ba85508d82f42590e6eb77d5340369ab6fecf107a7561d809523d8aa5f3bfd"
@@ -99,7 +96,6 @@ MODELS=(
   "lfm25vl|LiquidAI/LFM2.5-VL-450M-GGUF|1abed04b6fe71314d8c446a1371c03d7c332266d|lfm2.5-vl-450m|LFM2.5-VL-450M-F16.gguf:f7d130500beadcbe66b78fb7b1222142ccdf4edcb2596026a7ee30b4bafe6989 mmproj-LFM2.5-VL-450m-F16.gguf:51b458cfdbc736982145a35f798ce37611af0aab639e58b33473ba0c7815fd99"
   "locate|yuuko-eth/LocateAnything-3B-GGUF|c3260717380c24cd2fc11f66c43e2feeec3e32fe|locateanything-3b|LocateAnything-3B-Q8_0.gguf:3d039dea2f121006d5dffe2a0371b4979c67dc17ac9d50a557834a064c9e107f mmproj-LocateAnything-3B-BF16.gguf:0216a6647317bc7d5bd152b66bd8b9248472ad090893f75d2f4a689d1789ee80"
   "d1|LiquidAI/d1-2B-GGUF|63be75e6586882defeb706ed4bda812d90256a6d|d1-2b|d1-2B-Q8_0.gguf:073313d92b53b0ac8193db6e906cb3c78a98183d244b15b7b8f5426115c6738c"
-  "dflash|z-lab/Qwen3.8-27B-DFlash2-GGUF|2d9571f8ce46e151f61c6499c99dee6079e1d610|qwen38-27b-gsq|Qwen3.8-27B-DFlash2-Q4_K_M.gguf:1a25c56858e1ebe93f2718ac1d49d1151f9323325c1bbfd6209370f4db131ebd"
   "klein|leejet/FLUX.2-klein-4B-GGUF|3b1f5a9dc3abb32238b053aeb3d823c30afdacbd|image-gen/flux2-klein|flux-2-klein-4b-Q4_0.gguf:d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4"
   "kleinte|unsloth/Qwen3-4B-GGUF|22c9fc8a8c7700b76a1789366280a6a5a1ad1120|image-gen/flux2-klein|Qwen3-4B-Q4_K_M.gguf:f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a"
   "kleinvae|Comfy-Org/flux2-klein-4B|5b3abca5c0dc1ecd4eaf3340868d09063fc1c965|image-gen/flux2-klein|split_files/vae/flux2-vae.safetensors:868fe7b343cc8f3a19dbcfcafbc3d5f888802be3f89bd81b65b3621a066ce8f3"
@@ -110,7 +106,7 @@ MODELS=(
 )
 
 WANT=("$@")
-[ ${#WANT[@]} -eq 0 ] && WANT=(qwen36 qwen38 distill)
+[ ${#WANT[@]} -eq 0 ] && WANT=(qwen36 distill)
 
 command -v mamba >/dev/null 2>&1 || { echo "ERROR: 'mamba' not found on PATH (install Miniforge)."; exit 1; }
 
@@ -168,7 +164,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | qwen38 | distill | dflash | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
 done
 
 exit "$FAIL"

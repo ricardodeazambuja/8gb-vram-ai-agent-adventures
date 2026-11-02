@@ -6,7 +6,6 @@
 #
 # Pick the model with QMODEL (download first: scripts/download-models.sh):
 #   qwen36   Qwen3.6-35B-A3B UD-IQ4_XS        MoE, 3B active -> experts in RAM (--cpu-moe)
-#   qwen38   Qwen3.8-27B GSQ-RCO IQ3_XXS      DENSE          -> split by layers (-ngl)
 #   distill  Qwen3.8-35B-A3B-Distill IQ4_XS   MoE, 3B active -> experts in RAM (--cpu-moe)
 #   bonsai2  Ternary-Bonsai-2-27B PTQ1_0      DENSE, 5.95 GB -> all on GPU (-ngl 99), PrismML fork
 #   qwen3vl  Qwen3-VL-8B-Instruct Q4_K_M      DENSE, 5.0 GB  -> all on GPU (-ngl 99), vision model
@@ -36,20 +35,19 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash  (default: qwen36)
+#   QMODEL     qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
 #              projector fits next to the model, and on the CPU a 4K photo takes minutes)
 #   IMAGE_MAX_TOKENS  cap on tokens per image (dynamic-resolution models)  (default: model's own;
 #              qwen3vl 1024 — uncapped, a 4K photo is 4096 tokens and OOMs the GPU encoder)
-#   CTX        context window                          (default: 131072 MoE / 110592 spark / 65536 dory / 32768 qwen38 / 16384 bonsai2, qwen3vl)
+#   CTX        context window                          (default: 131072 MoE / 110592 spark / 65536 dory / 16384 bonsai2, qwen3vl)
 #   NCMOE      MoE only: keep only the first N layers' experts on CPU, rest on GPU
 #              (faster, more VRAM). NCMOE= (empty) = all experts on CPU.
 #              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 25, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
-#   NGL        dense only: transformer layers on GPU   (default: qwen38 30 of 64 — 36 OOMs
-#              on the first request at 32K ctx, see docs/models/qwen3.6-35b-a3b.md; bonsai2, qwen3vl 99 = all;
+#   NGL        dense only: transformer layers on GPU   (default: bonsai2, qwen3vl 99 = all;
 #              dory 999 — its layer count includes every loop, so 99 leaves layers on the CPU)
 #   KVQUANT    KV-cache type, both K and V             (default: q8_0; bonsai2 f16 — the fork's
 #              q8_0 flash-attention kernel has no Turing code)
@@ -62,7 +60,7 @@
 #   MTP        dense only: 1 = speculative decoding with the GGUF's embedded MTP head
 #              (measured SLOWER here: 2.0 vs 2.5 tok/s)  (default: 0)
 #   TEMP / TOP_P / TOP_K / MIN_P / PRESENCE_PENALTY / REPEAT_PENALTY  sampling  (default: per QMODEL, from the
-#              model cards: qwen38 1.0/0.95/20/0, qwen36 + distill 0.6/0.95/20/0, the
+#              model cards: qwen36 + distill 0.6/0.95/20/0, the
 #              "precise coding" thinking preset; bonsai2 1.0/0.95/20, min-p 0.05 per its card;
 #              qwen3vl 0.7/0.8/20/1.5, the card's VL preset; dory, spark 1.0/0.95/0 (off)/0;
 #              lfm25 0.1/1.0/50/0 + repeat-penalty 1.05)
@@ -80,8 +78,6 @@
 #   bash scripts/run-qwen.sh                           # Qwen3.6-35B-A3B, 128K ctx
 #   QMODEL=distill bash scripts/run-qwen.sh            # the 3.8-distilled 35B-A3B
 #   NCMOE= bash scripts/run-qwen.sh                    # all experts on CPU (least VRAM)
-#   QMODEL=qwen38 NGL=40 CTX=16384 bash scripts/run-qwen.sh
-#   QMODEL=qwen38 MTP=1 bash scripts/run-qwen.sh       # try the MTP head
 #
 set -euo pipefail
 
@@ -106,15 +102,6 @@ case "$QMODEL" in
     _ngl=30; _ctx=; _minp=0; _bin=
     _ncmoe=32
     _temp=0.6 ;;
-  qwen38)
-    KIND=dense
-    _dir="$REPO_ROOT/models/qwen38-27b-gsq"
-    _model="$_dir/Qwen3.8-27B-GSQ-RCO-IQ3_XXS-mtp.gguf"
-    _mmproj="$_dir/mmproj-Qwen3.8-27B-BF16.gguf"
-    ALIAS=qwen3.8-27b
-    _ngl=30; _ctx=; _minp=0; _bin=
-    _ncmoe=
-    _temp=1.0 ;;
   distill)
     KIND=moe
     _dir="$REPO_ROOT/models/qwen38-35b-a3b-distill"
@@ -403,7 +390,7 @@ case "$QMODEL" in
     _ncmoe=
     _temp=0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"
@@ -473,7 +460,7 @@ if [ "$MTP" = 1 ]; then
     SPEC_ARGS=(--spec-type draft-mtp --spec-draft-p-min 0)
     echo ">> MTP: speculative decoding with the embedded MTP head (p_min forced to 0)"
   else
-    echo ">> MTP: ignored — only the qwen38 build ships an MTP head"
+    echo ">> MTP: ignored — dense models only"
   fi
 fi
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # start-qwen.sh — one command to bring up any model served by scripts/run-qwen.sh
-# (QMODEL=qwen36 | distill | flint | groot | ornith | lfm25 | bolt | e4b | bonsai2 | qwen3vl | dory | spark | qwen38) and drop
+# (QMODEL=qwen36 | distill | flint | groot | ornith | lfm25 | bolt | e4b | bonsai2 | qwen3vl | dory | spark) and drop
 # you into pi, then offer to stop the server when pi exits. Download the models first
 # with scripts/download-models.sh.
 #
@@ -11,12 +11,10 @@
 # invoked this is always left alone).
 #
 # Server knobs (forwarded via env to run-qwen.sh — see its -h for all of them):
-#   QMODEL   qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25   (default qwen36)
-#   CTX      context window, in tokens    (default: 131072 MoE / 110592 spark / 65536 dory / 32768 qwen38 / 16384 bonsai2, qwen3vl)
+#   QMODEL   qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25   (default qwen36)
+#   CTX      context window, in tokens    (default: 131072 MoE / 110592 spark / 65536 dory / 16384 bonsai2, qwen3vl)
 #   NCMOE    MoE: first N layers' experts on CPU, rest on GPU  (default: qwen36 32, distill 34, flint 42)
-#   NGL      dense qwen38: layers on GPU  (default 30 of 64; 36 OOMs at 32K)
 #   KVQUANT  KV type both sides           (default q8_0)
-#   MTP      qwen38 only: 1 = MTP speculative decoding (default 0)
 #   TEMP / TOP_P / TOP_K / PRESENCE_PENALTY  sampling (defaults per model card)
 #   NP / BATCH / UBATCH  slots / batch sizes  (defaults 1 / 512 / 512)
 #   PORT / HOST                                (defaults 8080 / 127.0.0.1)
@@ -34,8 +32,6 @@
 # Examples:
 #   bash scripts/start-qwen.sh                          # Qwen3.6-35B-A3B, 128K ctx
 #   QMODEL=distill bash scripts/start-qwen.sh           # the Qwen3.8-distilled 35B-A3B
-#   QMODEL=qwen38 NGL=40 bash scripts/start-qwen.sh     # dense 27B, more layers on GPU
-#   QMODEL=qwen38 bash scripts/start-qwen.sh -p "explain @README.md"   # one-shot, leaves server up
 #
 set -euo pipefail
 
@@ -51,7 +47,7 @@ PORT="${PORT:-8080}"
 QMODEL="${QMODEL:-qwen36}"
 # Effective context, mirroring run-qwen.sh's defaults so pi gets synced to the same value.
 if [ -z "${CTX:-}" ]; then
-  case "$QMODEL" in qwen38) CTX=32768 ;; spark) CTX=110592 ;; dory|e4b) CTX=65536 ;; bonsai2|qwen3vl) CTX=16384 ;; *) CTX=131072 ;; esac
+  case "$QMODEL" in spark) CTX=110592 ;; dory|e4b) CTX=65536 ;; bonsai2|qwen3vl) CTX=16384 ;; *) CTX=131072 ;; esac
 fi
 export CTX QMODEL
 SERVER_LOG="${SERVER_LOG:-/tmp/qwen-bakeoff-server.log}"
@@ -71,7 +67,7 @@ done
 
 server_start_hints() {
   echo ">> Common causes & fixes:"
-  echo "   • out of GPU memory — lower CTX, lower NGL (qwen38), raise NCMOE (MoE),"
+  echo "   • out of GPU memory — lower CTX, raise NCMOE (MoE),"
   echo "     or shrink the batch (BATCH=256 UBATCH=256)."
   echo "   • 'Killed' after a clean load = host RAM OOM killer (check journalctl -k), not VRAM."
   echo "   • model file missing — bash scripts/download-models.sh $QMODEL"

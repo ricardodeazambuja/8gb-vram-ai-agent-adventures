@@ -10,6 +10,9 @@ mind first: on this rig the *same* configuration, run again, scatters by about *
 
 ---
 
+The weights for Qwen3.8-27B, DiffusionGemma and Nemotron-Labs-Diffusion-8B were deleted on 2026-11-01, and
+their launcher and download entries are gone. These notes are what remains of them.
+
 ## Qwen3.8-27B, dense, in i-quants: 2.5 tok/s
 
 **Tried:** Qwen's dense 27B as ISTA-DASLab's GSQ-RCO `IQ3_XXS-mtp` file (10.4 GB), split by whole
