@@ -136,6 +136,17 @@ identical CPU/GPU split. Pure CPU is ~1.9.
 on this Turing laptop its MoE path is the bottleneck. Build CUDA (see
 [getting started](getting-started.md)).
 
+## Written up elsewhere
+
+These failed too, and the full story is on their own pages:
+
+- **Giving LFM3-1.7B eyes:** grafting LFM3-VL's vision on left it blind, and so did training a new
+  projector.
+- **Making LFM3-VL an agent:** a LoRA from solved runs solved 0/6, and `TEMP=0.7` ended the loops but
+  still solved 0/6.
+
+Both are in [Can LFM3-VL do more than look?](fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01)
+
 ## The ones we never let in the door
 
 Checked and skipped on paper, so you don't have to:
