@@ -58,4 +58,4 @@ Queue:
 - [x] VibeThinker added: launcher, pinned download, page, shim. Verify agent mode after recheck
 - [ ] Bonsai 2 on the fork, no port needed: prism-ml/Ternary-Bonsai-2-27B-gguf rev 94dd51cdbbec5309ed8b76a12f3268bc4fdceb93 ships Ternary-Bonsai-2-27B-Q2_0.gguf (7.63 GB, sha256 4f99aed01b8a877e153f9aa6569a4440fe17c59701cc0953e36d7f460549e70e) for stock llama.cpp >= b11556; the fork is b11946. Older builds give garbage silently. Download ONLY after recheck ends (no big load during a download), audit, add it to run-qwen and download-models, compare with PTQ1_0, update page.
 - [ ] Fix stale items from the audit report; final report
-Not possible tonight: pibench (firewall may need root), pushing.
+Not possible tonight: pibench (firewall may need root), pushing, and running VibeThinker as an agent on the host (blocked, correctly: first shell belongs in pibench).
