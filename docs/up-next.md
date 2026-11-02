@@ -315,7 +315,8 @@ The agent stays a model we've already measured on [pibench](pibench.md); speech 
 
 **First test of LFM3-Audio-2B (2026-10-28, Q8_0 + F16 projector, `vendor/llama.cpp-lfm3`
 @`8ca4060`, all on the GPU in 3.3 GB).** Audited clean first ([security.md](security.md)). Test
-audio was made by the model itself (`llama-tts`), so the text is known and scoring is automatic:
+audio was made by the model itself (`llama-tts`), so the text is known and scoring is automatic.
+Scripts, clips and raw output: [`bench/voice/`](../bench/voice/).
 
 | Test | Result |
 |---|---|
@@ -338,9 +339,8 @@ more experts in RAM (Groot at a higher `NCMOE`), or a server swaps models per ta
 
 ### First experiments (when the GPU is free)
 
-1. **LFM3-Audio-2B alone**, through `/v1/realtime`: response time from end of speech to the
-   first audio, speech-to-text accuracy on clips we generate with a TTS model (known text, so
-   it's scored automatically), and whether a spoken request produces a correct tool call.
+1. **LFM3-Audio-2B, the open parts:** tools over `/v1/realtime`, then recorded human speech. Speed,
+   generated speech and tool calls over the chat API are done (above).
 2. **Pipecat + Silero VAD + whisper.cpp + Kokoro around Groot**: the same clips and the same
    measurements, plus the cost to Groot's speed of whatever the speech parts take from it.
 3. Write it up as an "audio probe", the way the [vision probe](vision-probe.md) works.

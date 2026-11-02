@@ -179,6 +179,7 @@ Write `--tag=-3k` with the `=`: on its own, argparse reads `-3k` as a flag.
 | Visual control | [Run it yourself](visual-control.md#run-it-yourself) |
 | Decision models and the command guard | Weights: `download-models.sh d1 clefflash`. `bench/grading/run_guard.py` runs from its own prompts; `run_judge.py` also needs the raw pibench transcripts. Each script's header has its usage, and [`bench/grading/results/`](../bench/grading/results/) the scores |
 | Retrieval | Weights: `download-models.sh eg2`. `bench/retrieval/run_retrieval.py bm25` needs no server; `embed KEY` needs an embedding server on port 8080. Scores: [`bench/retrieval/results/`](../bench/retrieval/results/) |
+| Voice (LFM3-Audio-2B) | Weights: `download-models.sh lfm3audio`. Build `llama-tts` in the fork (`cmake --build build --target llama-tts`), then `bash bench/voice/run.sh`, which writes to `bench/voice/rerun/`. The saved [results](../bench/voice/results/) came from an older build, `8ca4060`; these scripts haven't been rerun since they moved here |
 | Relaxed acceptance | Build the fork's `relaxed-accept` branch into `../llama.cpp-relaxed` (`LLAMA_REPO`, `LLAMA_REF`, `SRC_DIR`, as in [getting started](getting-started.md#3-build-llamacpp-once-per-flavour)), then `bench/relaxed/run_relaxed.py` |
 
 ## What isn't in git, and why
