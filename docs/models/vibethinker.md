@@ -56,6 +56,8 @@ of running the command.
 
 ## Gotchas
 
+- **The shim runs what the model writes.** It turns text into tool calls, so treat the agent mode like any
+  untested agent: only on work you'd let it run, and in [pibench](../pibench.md) for anything that matters.
 - Keep agent sessions short, and check any shell work yourself.
 - It's a weak self-debugger: given a failing case, it revises the code but doesn't reliably find the fault.
 - The 3B mangles dotted filenames (`secret.txt` became `secretxt`).

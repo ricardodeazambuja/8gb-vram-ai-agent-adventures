@@ -30,7 +30,7 @@ for m in "$@"; do
   f="$OUT/$m.txt"; : > "$f"
   echo "launch: $(launch "$m")" >> "$f"
   # shellcheck disable=SC2046
-  systemd-run --user --scope --unit=llama-recheck -p MemoryMax=26G -p OOMPolicy=stop $(launch "$m") > "$OUT/.server-$m.log" 2>&1 &
+  systemd-run --user --scope --unit=llama-recheck -p MemoryMax=26G $(launch "$m") > "$OUT/.server-$m.log" 2>&1 &
   pid=$!
   up=0
   for _ in $(seq 240); do
@@ -39,15 +39,15 @@ for m in "$@"; do
     sleep 2
   done
   if [ "$up" = 0 ]; then
-    { echo "FAILED to start"; grep -iE 'error|invalid|failed' "$OUT/.server-$m.log" | tail -4 | cut -c1-200; } >> "$f"
+    { echo "FAILED to start"; tail -4 "$OUT/.server-$m.log" | cut -c1-200; } >> "$f"
     printf '%-10s FAILED\n' "$m" | tee -a "$OUT/summary.txt"; continue
   fi
   { echo "VRAM: $(nvidia-smi --query-gpu=memory.used --format=csv,noheader)"
     echo "pressure: $(head -1 /proc/pressure/memory)"
     timeout 600 python3 scripts/qwen-bench.py
     echo "--- code check"
-    timeout 900 python3 scripts/qwen-codecheck.py --out "$OUT/.merge-$m.py"
+    timeout 1200 python3 scripts/qwen-codecheck.py --max-tokens 16000 --out "$OUT/.merge-$m.py"
   } >> "$f" 2>&1
-  printf '%-10s %s | %s | %s\n' "$m" "$(grep -m1 '^VRAM' "$f")" "$(grep -m1 '== speed' "$f" | cut -c4-40)" "$(grep -E 'wrong|passed|FAIL' "$f" | tail -1 | cut -c1-50)" | tee -a "$OUT/summary.txt"
+  printf '%-10s %s | %s | %s\n' "$m" "$(grep -m1 '^VRAM' "$f")" "$(grep -m1 '== speed' "$f" | cut -c4-40)" "$(tail -1 "$f" | cut -c1-60)" | tee -a "$OUT/summary.txt"
 done
 rm -f "$OUT"/.server-*.log "$OUT"/.merge-*.py

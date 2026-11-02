@@ -151,7 +151,11 @@ def recover_tool_call(content, specs):
                 a = obj["arguments"]
                 return name, a if isinstance(a, str) else json.dumps(a)
             if "arguments" not in obj and "name" not in obj and "function" not in obj:
+                # A bare {"command": ...} in prose may be an example, so never guess a shell call.
+                # Real captures do need the guess for write and edit (see the fixtures).
                 inferred = tag_name or infer_tool(obj, specs)             # (b)/(c)
+                if not tag_name and inferred == "bash":
+                    inferred = None
                 if inferred:
                     return inferred, json.dumps(obj)
         i = j + 1

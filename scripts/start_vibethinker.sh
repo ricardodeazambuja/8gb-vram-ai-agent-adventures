@@ -24,15 +24,17 @@ SHIM_PORT="${SHIM_PORT:-8088}"
 export PORT QMODEL="$QM" EXTRA_ARGS="${EXTRA_ARGS:---reasoning-budget 600}"
 
 SERVER_PID="" SHIM_PID=""
+LOG_DIR="$(mktemp -d)"   # private, mode 0700: the shim logs model output
 cleanup() {
   [ -n "$SHIM_PID" ] && kill "$SHIM_PID" 2>/dev/null
   [ -n "$SERVER_PID" ] && bash "$REPO_ROOT/scripts/stop-server.sh" >/dev/null 2>&1
+  rm -rf "$LOG_DIR"
   return 0
 }
 trap cleanup EXIT
 
 if ! curl -sf "localhost:$PORT/health" >/dev/null; then
-  bash "$REPO_ROOT/scripts/run-qwen.sh" > "${SERVER_LOG:-/tmp/vibethinker-server.log}" 2>&1 &
+  bash "$REPO_ROOT/scripts/run-qwen.sh" > "$LOG_DIR/server.log" 2>&1 &
   SERVER_PID=$!
   for _ in $(seq 120); do curl -sf "localhost:$PORT/health" >/dev/null && break; sleep 1; done
   curl -sf "localhost:$PORT/health" >/dev/null || { echo "ERROR: the server did not start"; exit 1; }
@@ -52,7 +54,7 @@ os.makedirs(os.path.dirname(path), exist_ok=True)
 json.dump(d, open(path, "w"), indent=2)
 PY
 
-UPSTREAM="http://127.0.0.1:$PORT" PORT="$SHIM_PORT" python3 "$REPO_ROOT/scripts/vibethinker-toolshim.py" 2>"${SHIM_LOG:-/tmp/vibethinker-shim.log}" &
+UPSTREAM="http://127.0.0.1:$PORT" PORT="$SHIM_PORT" python3 "$REPO_ROOT/scripts/vibethinker-toolshim.py" 2>"$LOG_DIR/shim.log" &
 SHIM_PID=$!
 sleep 1
 
