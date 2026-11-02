@@ -22,7 +22,12 @@ Usage:
     UPSTREAM=http://127.0.0.1:8080 PORT=8088 python scripts/vibethinker-toolshim.py
 Then point pi's provider baseUrl at http://127.0.0.1:8088/v1.
 """
-import json, os, re, sys, textwrap, urllib.request
+import json
+import os
+import re
+import sys
+import textwrap
+import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 UPSTREAM = os.environ.get("UPSTREAM", "http://127.0.0.1:8080").rstrip("/")
@@ -91,7 +96,7 @@ def _coerce(raw):
     t = raw.strip()
     try:
         return json.loads(t)
-    except Exception:
+    except ValueError:
         return t
 
 
@@ -113,7 +118,7 @@ def recover_xml(content, specs):
         args = {}
         for prop in spec["props"]:
             # tolerant close: a truncated/mismatched body still yields the value
-            pm = re.search(r"<%s>(.*?)(?:</%s>|$)" % (re.escape(prop), re.escape(prop)),
+            pm = re.search(rf"<{re.escape(prop)}>(.*?)(?:</{re.escape(prop)}>|$)",
                            inner, re.DOTALL)
             if pm and pm.group(1).strip():
                 args[prop] = _coerce(pm.group(1))
@@ -252,13 +257,13 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self.send_error(502, str(e))
 
     def _chat(self, body):
         try:
             req_obj = json.loads(body)
-        except Exception as e:
+        except ValueError as e:
             self.send_error(400, f"bad json: {e}")
             return
         want_stream = bool(req_obj.get("stream"))
@@ -272,7 +277,7 @@ class Handler(BaseHTTPRequestHandler):
                 data=json.dumps(upstream_req).encode(),
                 headers={"Content-Type": "application/json"}), timeout=900)
             resp = json.loads(r.read())
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self.send_error(502, str(e))
             return
         maybe_recover(resp, specs)

@@ -11,7 +11,10 @@ Each fixture records what the model actually emitted and which tool a correct
 recovery must yield. `xfail` fixtures are documented limitations (e.g. an `edit`
 call the model wrote as malformed JSON) — recovery is allowed to return None.
 """
-import importlib.util, json, os, sys
+import importlib.util
+import json
+import os
+import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("ts", os.path.join(HERE, "vibethinker-toolshim.py"))
@@ -41,7 +44,8 @@ SYNTHETIC = [
 
 def main():
     passed = failed = 0
-    fixtures = json.load(open(os.path.join(HERE, "vibethinker-toolshim-fixtures.json")))
+    with open(os.path.join(HERE, "vibethinker-toolshim-fixtures.json")) as f:
+        fixtures = json.load(f)
     print("== real-capture fixtures ==")
     for i, fx in enumerate(fixtures):
         rec = ts.recover_tool_call(fx["text"], SPECS)
