@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # First LFM3-Audio-2B tests: speech out and in, spoken tool calls, live /v1/realtime.
 #   bash bench/voice/run.sh              # writes to bench/voice/rerun/
-# The committed results ran on vendor/llama.cpp-lfm3 @ 8ca4060. LLAMA_BIN picks the build; it needs
-# llama-server and llama-tts. realtime_probe.py needs numpy and websockets.
+# See README.md. LLAMA_BIN picks the build (default ../llama.cpp/build/bin); it needs llama-server
+# and llama-tts. realtime_probe.py needs numpy and websockets.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
@@ -19,3 +19,4 @@ echo "VRAM with server: $(nvidia-smi --query-gpu=memory.used --format=csv,nohead
 python3 "$HERE/audio_probe.py" tts-asr >> "$VOICE_OUT/audio-tts-asr.txt"
 python3 "$HERE/audio_probe.py" tools > "$VOICE_OUT/audio-tools.txt"
 timeout 600 python3 "$HERE/realtime_probe.py" > "$VOICE_OUT/audio-realtime.txt"
+python3 "$HERE/audio_probe.py" replies >> "$VOICE_OUT/audio-realtime.txt"

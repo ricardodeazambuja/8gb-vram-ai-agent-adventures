@@ -316,14 +316,14 @@ The agent stays a model we've already measured on [pibench](pibench.md); speech 
 **First test of LFM3-Audio-2B (2026-10-28, Q8_0 + F16 projector, `vendor/llama.cpp-lfm3`
 @`8ca4060`, all on the GPU in 3.3 GB).** Audited clean first ([security.md](security.md)). Test
 audio was made by the model itself (`llama-tts`), so the text is known and scoring is automatic.
-Scripts, clips and raw output: [`bench/voice/`](../bench/voice/).
+Scripts, clips and raw output: [`bench/voice/`](../bench/voice/README.md). A rerun on our fork (`3cb2992`, 2026-11-01) gave the same scores.
 
 | Test | Result |
 |---|---|
 | Text to speech (`llama-tts`, female and male voices) | 3.4–5.4 s of speech in 2.5–2.9 s, faster than real time |
 | Speech to text (llama-server chat API, "Perform ASR in English.") | 6/6 sentences right word for word; the raw WER is 10% only because it writes numbers as digits ("7.30", "8GB"). 0.2 s a clip |
 | Spoken request → tool call (3 tools offered) | 3/3 right: `get_weather(city="Paris")`, `set_timer(minutes=10)`, `send_message(to="Maria", text="I'll be late")`, 0.2–0.3 s each |
-| Spoken question with tools offered but none fitting | **miss**: it called `get_weather` with an empty city instead of answering; without tools it answers "312 divided by 4 equals 78." Too eager with tools |
+| Spoken question with tools offered but none fitting | **miss**: it called a tool with empty or useless arguments instead of answering (`get_weather` with no city, on the rerun `set_timer(minutes=0)`); without tools it answers "312 divided by 4 equals 78." Too eager with tools |
 | **Live conversation over `/v1/realtime`** (audio streamed at real-time pace, 100 ms chunks) | **first audio back 0.13–0.17 s after the end of the question**; a full spoken reply (3–9 s of speech) generated in 0.7–1.9 s. Its replies, transcribed back, matched what it meant, with two slips ("WhatsApp" for "website", "311" for "312") |
 
 So the speech-native route works on this laptop today, with latency well under a human pause.

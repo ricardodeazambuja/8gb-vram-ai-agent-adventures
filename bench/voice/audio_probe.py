@@ -4,6 +4,7 @@ scored by word error rate; then spoken requests to llama-server with a tool offe
 
     audio_probe.py tts-asr     # needs llama-server with the model + projector on :8080
     audio_probe.py tools       # needs llama-server with the model + projector on :8080
+    audio_probe.py replies     # transcribes the replies saved by realtime_probe.py
 """
 import base64
 import json
@@ -142,6 +143,8 @@ def tools():
         if want is None:
             good = not calls and "78" in (m.get("content") or "")
             got = f"answer {(m.get('content') or '')[:80]!r}"
+            if calls:
+                got += f", but called {[(c['function']['name'], c['function']['arguments']) for c in calls]}"
         else:
             names = [c["function"]["name"] for c in calls]
             args = [json.loads(c["function"]["arguments"] or "{}") for c in calls]
@@ -152,5 +155,12 @@ def tools():
     print(f"== spoken requests: {ok}/{len(REQUESTS)} handled right")
 
 
+def replies():  # what the live test's spoken replies actually said
+    for clip in ("s4.wav", "q0.wav", "q3.wav"):
+        path = os.path.join(OUT, f"reply-{clip}")
+        if os.path.getsize(path) > 100:
+            print(f"  ASR of reply-{clip}: {asr(path)[0]!r}")
+
+
 if __name__ == "__main__":
-    {"tts-asr": tts_asr, "tools": tools}[sys.argv[1]]()
+    {"tts-asr": tts_asr, "tools": tools, "replies": replies}[sys.argv[1]]()
