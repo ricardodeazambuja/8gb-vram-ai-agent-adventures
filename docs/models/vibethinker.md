@@ -6,7 +6,7 @@
 > |---|---|
 > | On disk | 3B: 3.3 GB (`Q8_0`). 1.5B: 1.9 GB (`Q8_0`) |
 > | Where it lives | entirely on the GPU: 3B 5.4 GB, 1.5B 3.7 GB, at 40K context |
-> | Generation | about **100 tok/s** |
+> | Generation | 3B **65 tok/s**, 1.5B **108 tok/s** (on our fork, 2026-11-01) |
 > | Best at | One-shot code (3B) and math (1.5B) |
 > | [pibench](../pibench.md) | not run |
 > | [Security audit](../security.md) | clean |

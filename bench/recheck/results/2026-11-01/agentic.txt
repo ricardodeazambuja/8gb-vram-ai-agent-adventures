@@ -1,0 +1,29 @@
+launch: env BACKEND=cuda bash scripts/run-12b-agentic.sh
+VRAM: 7205 MiB
+pressure: some avg10=0.00 avg60=0.00 avg300=0.00 total=244698183
+== speed: gen 13.4 t/s, 454 tokens in 34s (wall 35s)
+   reasoning chars: 536 | content chars: 1089 | finish: stop
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (7s)
+== prefill: 15999 tokens at 445 t/s (36.0s); wall 37.5s
+   answer: It launches the model server in the background and then starts pi as a foreground client.
+--- code check
+own doctests: ? ^^^^^^^^^^^
+  File "/c/answer.py", line 30
+    assert merge_intervals([[40,72], [21,62],[20,32],[32,5]), [17,90]], sort) ...  -> let's define the 5 cases clearly.
+                                                           ^
+SyntaxError: closing parenthesis ')' does not match opening parenthesis '['
+
+Traceback (most recent call last):
+  File "/c/check.py", line 111, in <module>
+    main()
+  File "/c/check.py", line 86, in main
+    check(a.check)
+  File "/c/check.py", line 54, in check
+    exec(compile(code, path, "exec"), ns)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/c/answer.py", line 30
+    assert merge_intervals([[40,72], [21,62],[20,32],[32,5]), [17,90]], sort) ...  -> let's define the 5 cases clearly.
+                                                           ^
+SyntaxError: closing parenthesis ')' does not match opening parenthesis '['
+finish=stop tokens=1117 gen=13.1 t/s time=85s
+saved: bench/recheck/results/2026-11-01/.merge-agentic.py

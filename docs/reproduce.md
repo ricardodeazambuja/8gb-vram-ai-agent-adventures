@@ -181,6 +181,7 @@ Write `--tag=-3k` with the `=`: on its own, argparse reads `-3k` as a flag.
 | Retrieval | Weights: `download-models.sh eg2`. `bench/retrieval/run_retrieval.py bm25` needs no server; `embed KEY` needs an embedding server on port 8080. Scores: [`bench/retrieval/results/`](../bench/retrieval/results/) |
 | Voice (LFM3-Audio-2B) | [`bench/voice/README.md`](../bench/voice/README.md). Rerun on the fork on 2026-11-01: same scores as the first run |
 | Clef-Flash, d1, EmbeddingGemma and LocateAnything quick checks | `bash bench/smoke/run.sh`. Weights: `download-models.sh clefflash d1 eg2 locate`. Rerun on the fork on 2026-11-01: same scores, [saved here](../bench/smoke/results/) |
+| Every chat model launches, with speed, tool call and code check | `bash bench/recheck/run.sh`, about 1.5 hours. [Results](../bench/recheck/README.md) |
 | Relaxed acceptance | Build the fork's `relaxed-accept` branch into `../llama.cpp-relaxed` (`LLAMA_REPO`, `LLAMA_REF`, `SRC_DIR`, as in [getting started](getting-started.md#3-build-llamacpp-once-per-flavour)), then `bench/relaxed/run_relaxed.py` |
 
 ## What isn't in git, and why
@@ -202,7 +203,7 @@ covers only the beyond-vision, glance and steering numbers.
 | Thinking stays in the prompt ("token counts prove it") | The script isn't committed, and it needs the raw transcripts |
 | Random-walk control, LoRA at scale 0, the green-cast figures | No script or result found |
 | Needle tests, and most of the [graveyard](graveyard.md) | No script or raw output |
-| Speed, VRAM and code-check tables | `scripts/qwen-bench.py` and `qwen-codecheck.py` exist, but their raw output isn't committed |
+| Speed, VRAM and code-check tables | Older figures have no raw output. A full rerun of every chat model is in [`bench/recheck/`](../bench/recheck/README.md) |
 | Retrieval | It reads the live docs and code, so the corpus has grown (269 and 235 chunks, was 236 and 163) and a rerun is a different test |
 | pibench habits and judge scores | They need the raw transcripts, which are only on this disk |
 | Detect-all counts, web-page clicks | No saved output; the page captures aren't committed |
