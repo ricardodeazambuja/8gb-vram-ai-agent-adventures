@@ -126,7 +126,7 @@ if [ "$TURBO" = 1 ]; then
   CUDA_BIN="${CUDA_BIN:-$TURBO_BIN}"
   [ -x "$CUDA_BIN" ] || { echo "ERROR: TURBO=1 needs the turboquant CUDA build at $CUDA_BIN"; echo "  build it: SRC_DIR=\$PWD/vendor/llama-cpp-turboquant LLAMA_REF=feature/turboquant-kv-cache ENV_NAME=llamacpp-cuda bash scripts/build-llama-cuda.sh"; exit 1; }
 else
-  CUDA_BIN="${CUDA_BIN:-$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server}"
+  CUDA_BIN="${CUDA_BIN:-${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server}"
 fi
 BACKEND="${BACKEND:-}"
 if [ -z "$BACKEND" ]; then [ -x "$CUDA_BIN" ] && BACKEND=cuda || BACKEND=vulkan; fi
@@ -161,12 +161,16 @@ echo ">> context: $CTX   KV cache: K=$CTK V=$CTV (flash-attn on)$([ "$TURBO" = 1
 echo ">> sampling: temp=$TEMP top-p=$TOP_P top-k=$TOP_K rep-pen=$REP_PEN   listening: http://$HOST:$PORT/v1"
 echo
 
+# Newer llama.cpp replaced --no-mmap with --load-mode; older builds only know --no-mmap.
+NO_MMAP_ARGS=(--no-mmap)
+"$SERVER_BIN" --help 2>&1 | grep -q -- --load-mode && NO_MMAP_ARGS=(--load-mode none)
+
 exec "${RUN[@]}" "$SERVER_BIN" \
   -m "$MODEL" \
   --alias gemma-4-12b-agentic \
   "${DEVICE_ARGS[@]}" \
   -ngl "$NGL" \
-  --no-mmap \
+  "${NO_MMAP_ARGS[@]}" \
   -c "$CTX" \
   -ctk "$CTK" -ctv "$CTV" -fa on \
   --jinja \

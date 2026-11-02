@@ -47,3 +47,15 @@ Order: replay test, graft, vision fine-tune on graft or LoRA on VL, two-model fa
 - 14:20 projector run: 35/150, but answers are near constant per scene (blind, loss flat at 0.3 from step 30). Base-rate result, not reading. queue15: overfit test after Gemma tells "cannot carry info" from "needs more data". Then docs, report.
 - 14:45 plan done: Gemma glance 30/30 6.2 GB 17 s, overfit loss 0.15 not clear. Written up in docs/fine-tuning.md. Only the report remains.
 - 2026-11-01 repro audit: docs/reproduce.md is now the map; bench/check_numbers.py checks the numbers. Clean-clone replay matched 32/52, 8/52, 0/52 at every point. This file stays a journal; see loop/README.md.
+
+## Night of 2026-11-01 (user asleep, unattended)
+Goal from the user: every model runs on our llama.cpp fork; keep fixing problems and improving; if time, add VibeThinker.
+Rules: no push (repo or fork), no PR, no root prompts, no deletions. Commit each finished piece locally. One GPU job at a time, own scope, MemoryMax=20G, timeouts.
+Queue:
+- [x] Commit fork-by-default change once the fresh build (scratchpad/forkbuild) passes
+- [x] Read audit WARNs for the 12 unaudited models, make audit-gguf read PTQ1_0, record rows in docs/security.md
+- [ ] bench/recheck: launch every chat model on the fork, save qwen-bench and codecheck output, compare with docs
+- [ ] VibeThinker: up-next entry, then QMODEL, pinned download, audit, page, shim (facts: VibeThinkerPi/docs/vibethinker-eval.md)
+- [ ] Port PTQ1_0 (Bonsai 2) to a local fork branch, CPU and CUDA only; no push
+- [ ] Fix stale items from the audit report; final report
+Not possible tonight: pibench (firewall may need root), pushing.

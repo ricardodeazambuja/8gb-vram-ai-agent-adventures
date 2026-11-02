@@ -20,14 +20,14 @@
 #   CUDA_VER   CUDA toolkit version to build against   (default: driver's max)
 #   CUDA_ARCH  CMAKE_CUDA_ARCHITECTURES                (default: detected, e.g. 75)
 #   ENV_NAME   conda env for toolchain + runtime       (default: llamacpp-cuda)
-#   LLAMA_REF  llama.cpp git ref/tag/commit to build   (default: latest b* release)
-#   LLAMA_REPO git URL to build from                    (default: ggml-org/llama.cpp;
+#   LLAMA_REF  llama.cpp git ref/tag/commit to build   (default: our pinned commit; with LLAMA_REPO set, latest b* release)
+#   LLAMA_REPO git URL to build from                    (default: our fork, ricardodeazambuja/llama.cpp;
 #              e.g. a fork such as https://github.com/PrismML-Eng/llama.cpp, or ours,
 #              https://github.com/ricardodeazambuja/llama.cpp — see docs/getting-started.md)
 #   PATCH      a patch file to `git apply` on top of LLAMA_REF before building
 #              (default: none; e.g. patches/llama.cpp-dory-pr30306.patch with its base
 #              commit as LLAMA_REF — see docs/models/dory1.0-4b.md)
-#   SRC_DIR    clone/build location                    (default: ./vendor/llama.cpp)
+#   SRC_DIR    clone/build location                    (default: ../llama.cpp, next to this repo)
 #   MODEL      gguf used for the post-build smoke test  (default: the project model)
 #   JOBS       parallel build jobs                      (default: nproc)
 #
@@ -51,8 +51,12 @@ DET_ARCH="$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null
 CUDA_VER="${CUDA_VER:-$DRIVER_CUDA}"
 CUDA_ARCH="${CUDA_ARCH:-$DET_ARCH}"
 ENV_NAME="${ENV_NAME:-llamacpp-cuda}"
-SRC_DIR="${SRC_DIR:-$REPO_ROOT/vendor/llama.cpp}"
-LLAMA_REPO="${LLAMA_REPO:-https://github.com/ggml-org/llama.cpp}"
+# Default: our fork at the commit everything here was tested on, next to this repo.
+ADV_REPO=https://github.com/ricardodeazambuja/llama.cpp
+ADV_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73
+[ -z "${LLAMA_REPO:-}" ] && LLAMA_REF="${LLAMA_REF:-$ADV_REF}"
+SRC_DIR="${SRC_DIR:-$REPO_ROOT/../llama.cpp}"
+LLAMA_REPO="${LLAMA_REPO:-$ADV_REPO}"
 PATCH="${PATCH:-}"
 if [ -n "$PATCH" ]; then
   PATCH="$(cd "$(dirname "$PATCH")" && pwd)/$(basename "$PATCH")"

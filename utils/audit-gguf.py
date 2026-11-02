@@ -185,7 +185,22 @@ def value(field):
 
 
 def load(path):
-    return gguf.GGUFReader(path, "r")
+    try:
+        return gguf.GGUFReader(path, "r")
+    except ValueError as e:
+        if "GGMLQuantizationType" not in str(e):
+            raise
+        reason = str(e)
+    # A fork's private tensor type (PrismML's PTQ1_0 is 143). The audit is about metadata, so keep
+    # the header and template checks and skip laying out the tensors.
+    print(f"  note  {reason}: tensor layout not checked")
+    cls = gguf.GGUFReader
+
+    class HeaderOnly(cls):
+        def _build_tensors(self, start_offs, fields):
+            self.tensors = []
+
+    return HeaderOnly(path, "r")
 
 
 def templates(r):

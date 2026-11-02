@@ -82,8 +82,24 @@ To put such characters in code on purpose, build them with `chr(0x202E)` so they
 
 ## Audits so far
 
+The first twelve rows were audited on 2026-11-01, after these models had already run. Their output is in
+[`bench/audits/2026-11-01/`](../bench/audits/2026-11-01/). They had no `--ref` comparison, so the template
+column is what the audit flagged, not a match against the source repo.
+
 | Model | File | sha256 | Header | Template | Verdict |
 |---|---|---|---|---|---|
+| [Flint](models/flint.md) | `flint-UD-Q3_K_XL.gguf` | ✓ pinned | ✓ | Its two WARNs are one thing: the template strips `\x00` from text | **clean** |
+| [Gemma 4 26B](models/gemma4-26b-a4b.md) | `gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf` + projector + MTP | pinned in `run-server.sh` | ✓ | The projector's one WARN is its licence link | **clean** |
+| [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | `NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf` + projector | ✓ pinned | ✓ | The stock Qwen "do not tell the user about function calls" line | **clean** |
+| [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | `Qwen3.6-35B-A3B-UD-IQ4_XS.gguf` + projector | ✓ pinned | ✓ | The same stock line | **clean** |
+| [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | `Qwen3.8-35B-A3B-IQ4_XS.gguf` + projector | ✓ pinned | ✓ | The same stock line | **clean** |
+| [Bonsai 2 27B](models/bonsai2-27b.md) | `Ternary-Bonsai-2-27B-PTQ1_0.gguf` + projector | ✓ pinned | header and template only: tensor layout unchecked, its type is PrismML's own | The same stock line | **clean** |
+| [Spark-X2.6-4B](models/spark-x2.6-4b.md) | `Spark-X2.6-4B-Q8_0.gguf` | ✓ pinned | ✓ | nothing flagged | **clean** |
+| [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | `Nemotron-3.5-Bolt-E4B-Q4_K_M.gguf` | ✓ pinned | ✓ | nothing flagged | **clean** |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | `Qwen3VL-8B-Instruct-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | nothing flagged | **clean** |
+| [Dory1.0-4B](models/dory1.0-4b.md) | `NVIDIA-Nemotron-Labs-Dory1.0-4B-Q5_K_M.gguf` | ✓ pinned | ✓ | The same stock line | **clean** |
+| [Gemma 4 12B coder](models/gemma4-12b-coder.md) | `gemma4-coding-Q4_K_M.gguf` and its other quants | not pinned | ✓ | nothing flagged | **clean** |
+| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | `gemma4-v2-Q4_K_M.gguf` | on its page | ✓ | nothing flagged | **clean** |
 | [Groot-19B-A3B](models/groot-19b-a3b.md) | `Groot-19B-A3B-261023-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | Qwen3.6's, minus the "drop old reasoning" branch; matches the source repo | **clean** |
 | [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | `Ornith-1.5-35B-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | Unsloth's patched Qwen3.6 template (as in our Qwen3.6 GGUF), minus the same "drop old reasoning" branch; differs from the source repo's only by those Unsloth fixes | **clean** |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) | `LFM2.5-24B-A2B-QAD-Q4_0.gguf` | ✓ pinned | ✓ | Liquid's own; byte-identical to the source repo's | **clean** |

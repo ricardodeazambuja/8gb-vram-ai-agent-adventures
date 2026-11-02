@@ -68,7 +68,7 @@ fi
 command -v mamba >/dev/null 2>&1 || { echo "ERROR: 'mamba' not found on PATH."; exit 1; }
 
 # Backend: prefer the locally-built CUDA binary, else conda Vulkan.
-CUDA_BIN="${CUDA_BIN:-$REPO_ROOT/vendor/llama.cpp/build/bin/llama-server}"
+CUDA_BIN="${CUDA_BIN:-${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server}"
 BACKEND="${BACKEND:-}"
 if [ -z "$BACKEND" ]; then [ -x "$CUDA_BIN" ] && BACKEND=cuda || BACKEND=vulkan; fi
 case "$BACKEND" in
@@ -92,12 +92,16 @@ echo ">> context: $CTX   KV cache: $KVQUANT (flash-attn on)"
 echo ">> sampling: temp=$TEMP top-p=$TOP_P top-k=$TOP_K   listening: http://$HOST:$PORT/v1"
 echo
 
+# Newer llama.cpp replaced --no-mmap with --load-mode; older builds only know --no-mmap.
+NO_MMAP_ARGS=(--no-mmap)
+"$SERVER_BIN" --help 2>&1 | grep -q -- --load-mode && NO_MMAP_ARGS=(--load-mode none)
+
 exec "${RUN[@]}" "$SERVER_BIN" \
   -m "$MODEL" \
   --alias gemma-4-12b-coder \
   "${DEVICE_ARGS[@]}" \
   -ngl "$NGL" \
-  --no-mmap \
+  "${NO_MMAP_ARGS[@]}" \
   -c "$CTX" \
   -ctk "$KVQUANT" -ctv "$KVQUANT" -fa on \
   --jinja \

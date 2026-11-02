@@ -39,9 +39,9 @@ to RAM gets you 32K. More in [How it fits](../how-it-fits.md).
 
 ## Install & run
 
-You need the standard CUDA build of llama.cpp in `vendor/llama.cpp` (from
-`BACKEND=cuda bash scripts/setup.sh` or `bash scripts/build-llama-cuda.sh`; see
-[Getting started](../getting-started.md)).
+You need our llama.cpp fork in `../llama.cpp` (from `bash scripts/build-llama-cuda.sh`; see
+[Getting started](../getting-started.md)). Tested there on 2026-11-01: 13.0–13.8 tok/s, tool calls work, and
+the old stock build gave the same speed that day (13.4–13.7). The ~17 tok/s above is from earlier runs.
 
 ```bash
 # 1. Download the recommended quant (hf checks the SHA-256 for you)

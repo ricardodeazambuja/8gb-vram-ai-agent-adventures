@@ -46,8 +46,8 @@ driver, pi). Then:
 # 1. The pinned build toolchain (CUDA 12.2, gcc 12) as a conda env
 mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
 
-# 2. Build llama.cpp (release b9606) into vendor/llama.cpp, ~10–20 min
-CUDA_VER=12.2 LLAMA_REF=b9606 bash scripts/build-llama-cuda.sh
+# 2. Build our llama.cpp fork into ../llama.cpp, ~10–20 min
+CUDA_VER=12.2 bash scripts/build-llama-cuda.sh
 
 # 3. A small env with the Hugging Face CLI (the download script insists the `hf` CLI
 #    lives in this env, not just somewhere on your PATH)

@@ -65,7 +65,7 @@ cd 8gb-vram-ai-agent-adventures
 
 # 1. the build toolchain and a llama.cpp build (once, ~20 min)
 mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
-CUDA_VER=12.2 LLAMA_REF=b9606 bash scripts/build-llama-cuda.sh
+CUDA_VER=12.2 bash scripts/build-llama-cuda.sh
 
 # 2. a model (Gemma 4 26B, ~14 GB) and the coding agent
 bash scripts/setup.sh

@@ -37,9 +37,9 @@ fails). The KV cache is identical to the base model: 128K at q8_0 is about 1.42 
 After [getting-started.md](../getting-started.md):
 
 ```bash
-# 1. Build toolchain + llama.cpp b9606 into vendor/llama.cpp (skip if you built it for Qwen3.6)
+# 1. Build toolchain + our llama.cpp fork (skip if you already have it)
 mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
-CUDA_VER=12.2 LLAMA_REF=b9606 bash scripts/build-llama-cuda.sh
+CUDA_VER=12.2 bash scripts/build-llama-cuda.sh
 
 # 2. Hugging Face CLI env for the download script (it wants `hf` inside this env)
 mamba create -y -n llamacpp -c conda-forge huggingface_hub
