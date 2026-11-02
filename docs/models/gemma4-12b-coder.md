@@ -39,6 +39,9 @@ to RAM gets you 32K. More in [How it fits](../how-it-fits.md).
 
 ## Install & run
 
+Our numbers came from a June copy of the file. The repo later fixed the context-length metadata, so a fresh pinned
+download has a different sha256 from ours (`1fe90b72…`, ours `4011bb86…`), at the same size.
+
 You need our llama.cpp fork in `../llama.cpp` (from `bash scripts/build-llama-cuda.sh`; see
 [Getting started](../getting-started.md)). Tested there on 2026-11-01: 13.0–13.8 tok/s, tool calls work, and
 the old stock build gave the same speed that day (13.4–13.7). The ~17 tok/s above is from earlier runs.

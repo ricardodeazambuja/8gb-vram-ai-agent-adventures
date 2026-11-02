@@ -80,7 +80,7 @@ first six (Groot later scored 21 %); Bonsai 2, about a third of its size, used p
 ```bash
 python3 bench/vision/gen_images.py               # regenerate the 12 images
 bash scripts/stop-server.sh                      # it needs the GPU to itself
-python3 bench/vision/run_vision.py               # all six models, ~1.5 hours; resumable
+python3 bench/vision/run_vision.py               # every model in its list; resumable
 python3 bench/vision/run_vision.py qwen3vl       # just one
 ```
 

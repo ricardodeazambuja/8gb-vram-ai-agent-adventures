@@ -21,7 +21,7 @@ truth, magenta = the model's boxes in its best convention) are written to `resul
 ```bash
 python3 bench/vision/gen_images.py               # regenerate the images (fixed seeds, identical every time)
 bash scripts/stop-server.sh                      # needs the GPU to itself
-python3 bench/vision/run_vision.py               # qwen3vl gemma26b qwen36 distill bonsai2; resumable
+python3 bench/vision/run_vision.py               # every model in its MODELS list; resumable
 python3 bench/vision/run_vision.py --score-only  # re-score saved answers -> results/summary.md
 ```
 
