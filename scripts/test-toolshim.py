@@ -34,7 +34,7 @@ SYNTHETIC = [
     ('{"name":"bash","arguments":{"command":"ls"}}', "bash"),          # inline {name,arguments}
     ('{"function":"bash","arguments":{"command":"ls"}}', "bash"),      # pi 'function' key
     ('<function>bash</function> {"command":"ls"}', "bash"),            # <function>NAME</function>+args
-    ('result: {"command":"echo hi"} ok', "bash"),                     # bare args -> infer by shape
+    ('result: {"command":"echo hi"} ok', None),                       # bare shell args: never guessed
     ('write it: {"path":"/x","content":"y"} now', "write"),           # bare args -> write
 ]
 
@@ -60,7 +60,7 @@ def main():
         rec = ts.recover_tool_call(t, SPECS)
         got = rec[0] if rec else None
         ok = (got == exp)
-        print(f"  {'PASS' if ok else 'FAIL'}  expect {exp:5} got {got}")
+        print(f"  {'PASS' if ok else 'FAIL'}  expect {exp!s:5} got {got}")
         passed += ok
         failed += (not ok)
     total = passed + failed
