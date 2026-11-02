@@ -24,10 +24,10 @@ Two health warnings before the numbers:
 | [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | MoE, 3B active | Q4_K_M, 21.7 GB | 128K | ~31 t/s | ~490 t/s | 14/18 | 97% | `QMODEL=ornith scripts/start-qwen.sh` |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | hybrid MoE, 9B active | IQ2 (QAD), 22.0 GB | 128K | 14.0 t/s | 310 t/s | 15/18 | 91% | `scripts/start_bolt.sh` |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | dense 27B, ternary | PTQ1_0, 5.95 GB | 32K | 38.0 t/s | 277 t/s | 14/18 at 16K | 98% | `scripts/start_bonsai2.sh` |
-| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | dense 12B | Q4_K_M + turbo3 KV | 16K | 28.3 t/s | — | not run | not run | `scripts/start-turbo.sh` |
-| [Gemma 4 12B coder](models/gemma4-12b-coder.md) | dense 12B | Q4_K_M | 32K | ~17 t/s | — | not run | not run | `scripts/run-12b-coder.sh` |
-| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | dense 8B + vision | Q4_K_M + projector | 16K | ~38 t/s | 830–900 t/s | not run | 89% | `scripts/start_qwen3vl.sh` |
-| [Dory1.0-4B](models/dory1.0-4b.md) | dense 4B, looped | Q5_K_M | 64K (128K ³) | 29.3 t/s | 852 t/s | not run | text only | `scripts/start_dory.sh` |
+| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | dense 12B | Q4_K_M + turbo3 KV | 16K | 28.3 t/s | — | 0/18 ⁴ | not run | `scripts/start-turbo.sh` |
+| [Gemma 4 12B coder](models/gemma4-12b-coder.md) | dense 12B | Q4_K_M | 32K | ~17 t/s | — | 0/18 | not run | `scripts/run-12b-coder.sh` |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | dense 8B + vision | Q4_K_M + projector | 16K | ~38 t/s | 830–900 t/s | 1/18 | 89% | `scripts/start_qwen3vl.sh` |
+| [Dory1.0-4B](models/dory1.0-4b.md) | dense 4B, looped | Q5_K_M | 64K (128K ³) | 29.3 t/s | 852 t/s | 14/18 | text only | `scripts/start_dory.sh` |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | dense 4B | Q8_0, 4.4 GB | 108K | 48–50 t/s | 1,450–1,620 t/s | 14/18 | text only | `scripts/start_spark.sh` |
 | [LFM3-1.7B](models/lfm3-1.7b.md) | dense 1.7B, conv + attention | Q8_0, 1.85 GB | 128K | **106 t/s** | **4,802 t/s** | 12/18 | text only | `QMODEL=lfm3 scripts/start-qwen.sh` |
 | [LFM3-VL-2B](models/lfm3-vl-2b.md) | dense 2B + vision | Q8_0, 1.85 GB + projector | 32K | 106 t/s | 4,875 t/s | 0/18 | 91% | `QMODEL=lfm3vl scripts/start-qwen.sh --image` |
@@ -37,6 +37,7 @@ Two health warnings before the numbers:
 measured the same way.
 ² 27 t/s at 128K with a q8_0 KV cache ([how it fits](how-it-fits.md)).
 ³ With `CTX=131072 LOOP_KV=last_loop`: 30.1 t/s.
+⁴ Run at 32K on our fork (`scripts/run-12b-agentic.sh`, 13 t/s), not with the 16K TurboQuant launcher.
 
 **pibench** = our six-chore agentic benchmark, solved attempts out of 18
 ([details](pibench.md)). **Vision** = our 12-image probe, overall score
@@ -92,12 +93,14 @@ salt, to taste:
 The Gemma 4 12B base numbers are Google's (SWE-bench Verified 44.2 as reported in XHToken's table).
 
 **On paper:** for agentic coding at 128K it's Flint ≥ Qwen3.6 ≫ Gemma 4 26B. Bonsai 2's base is
-the strongest model here, but at 16K context. The 4B models claim surprisingly high SWE-bench
+the strongest model here, but at 32K context. The 4B models claim surprisingly high SWE-bench
 Verified scores (Spark 62.8, Dory 59.5); Dory's Terminal-Bench (18–22) hints at how they cope
 with long multi-step jobs.
 
 **In practice (pibench):** Gemma 4 26B, the one the paper says is far behind, solved every
-chore we gave it. Benchmarks measure the model; your laptop measures the model plus quantization
+chore we gave it. The two 4B models with the high SWE-bench claims, Spark and Dory, both
+solved 14/18, and the Gemma 12B fine-tunes, sold on coding and agent work, solved none.
+Benchmarks measure the model; your laptop measures the model plus quantization
 plus agent plus your tasks. Both are worth knowing.
 
 ## Everyone vs. Qwen3.6
@@ -148,10 +151,10 @@ The last column says how much we watched each one, so you know how far to trust 
 | [Bonsai 2 27B](models/bonsai2-27b.md) | **cramped** | Sound reasoning; every code chore solved; best at boxes in pixels, as asked | At 16K, cut off mid-thought in two thirds of its attempts (it now gets 32K; pibench not rerun yet) | pibench, vision |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | **busy** | Fast; checks its output in 94 % of attempts | Thinks a lot and still waves through plausible wrong values (five stars for every book, one quote ten times) | pibench |
 | [Nemotron Bolt E4B](models/nemotron-bolt-e4b.md) | **hasty** | Fast (52 tok/s, second only to LFM3); good for short assistant turns | Declares victory on empty output (`{}`, a header-only CSV); skims specs; 5.5 tool errors per attempt | pibench |
-| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | **snappy** | Flawless OCR, 5 seconds per image; boxes right in its own format | Doesn't think, so counting slips (12 dots for 11). 16K context | vision, spot checks |
-| [Dory1.0-4B](models/dory1.0-4b.md) | **tunable** | More loops for more depth, fewer for more speed; tool calls work | No character study yet; its llama.cpp support is an unmerged PR | smoke tests only |
-| [Gemma 4 12B coder](models/gemma4-12b-coder.md) | **neat** | Careful small-scale code (edge cases, sensible data structures); tool calls work | Occasionally drops a line (an LRU `put` lost its last insert); review what it writes | spot checks only |
-| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | **brisk** | 28 tok/s fully on the GPU; native tool calls | Can loop on `0000…` without its repetition penalty; 16K context | spot checks only |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | **snappy** | Flawless OCR, 5 seconds per image; boxes right in its own format | Doesn't think, so counting slips (12 dots for 11). 16K context. As an agent, 1/18: re-sends the same edit that changes nothing | vision, pibench |
+| [Dory1.0-4B](models/dory1.0-4b.md) | **steady** | 14/18 on pibench from 4B, 95% of hidden tests; thinks a lot and runs its tests. More loops for more depth | Slow per job (7.2 min); never solved the books chore (star ratings, character set); its llama.cpp support is an unmerged PR | pibench |
+| [Gemma 4 12B coder](models/gemma4-12b-coder.md) | **neat** | Careful small-scale code (edge cases, sensible data structures); tool calls work | Not an agent: 0/18 on pibench, with the code in its reply and no file ever written. Occasionally drops a line | pibench, spot checks |
+| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | **brisk** | 28 tok/s fully on the GPU; native tool calls | 0/18 on pibench (at 32K on our fork, 13 tok/s): 11 timeouts, 57 tool calls without a file path, one loop writing the same lines. Can loop on `0000…` without its repetition penalty | pibench, spot checks |
 
 What separates the top from the middle isn't how much a model thinks or how often it looks: it's
 whether it *reads* what it looked at. The full story, with examples, is in
@@ -171,4 +174,4 @@ whether it *reads* what it looked at. The full story, with examples, is in
 | The biggest brain that fits | [**Nemotron Bolt 74B**](models/nemotron-bolt-74b.md) | 74B in 2 bits at 14 tok/s, 128K, images and video; 15/18 and 91% vision. Patience required: 5–10 min per agent job. |
 | A snappy local assistant (not a coder) | [**Nemotron Bolt E4B**](models/nemotron-bolt-e4b.md) | 52 tok/s, all on the GPU; 7/18 on pibench, so keep it away from unsupervised coding. |
 | The strongest model on paper | [**Bonsai 2 27B**](models/bonsai2-27b.md) | Its base tops every published column; at 16K its context cut most agent jobs short, and it now gets 32K. |
-| A looped model, for science | [**Dory1.0-4B**](models/dory1.0-4b.md) | Trade speed for depth by changing the loop count. Genuinely fun to poke at. |
+| A small agent with a dial | [**Dory1.0-4B**](models/dory1.0-4b.md) | 14/18 on pibench from 4B, all on the GPU at 64K. Trade speed for depth by changing the loop count. |

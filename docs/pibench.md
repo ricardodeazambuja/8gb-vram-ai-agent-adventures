@@ -1,4 +1,4 @@
-# 🏋️ pibench — six chores, fourteen models, one very warm laptop
+# 🏋️ pibench — six chores, nineteen models, one very warm laptop
 
 Published benchmarks are run by the people who made the model, on big GPUs, at full precision,
 with their own scaffolding. We wanted to know something smaller and more personal: **on this
@@ -25,7 +25,8 @@ ways before any model touched it: a reference solution passes every hidden test,
 untouched starter files fail them.
 
 **The rules:** plain [pi](https://github.com/badlogic/pi-mono) 1.3.0 with no extensions, each
-model at its launcher's defaults unless its page says otherwise (Gemma and LFM3-VL ran at 64K), 20 minutes per attempt, **3 attempts per task**. An attempt
+model at its launcher's defaults unless its page says otherwise (Gemma and LFM3-VL ran at 64K, the Gemma 12B agentic
+at 32K on our fork), 20 minutes per attempt, **3 attempts per task**. An attempt
 counts as **solved only if every hidden test passes**. Close doesn't count; it's that kind of
 gym.
 
@@ -60,17 +61,26 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 | [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 14/18 | 94% | 3/3 | 2/3 | 3/3 | 2/3 | 1/3 | 3/3 | 2.2 min | 0 ³ |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | 14/18 | 96% | 3/3 | 2/3 | 2/3 | 3/3 | 2/3 | 2/3 | 3.3 min | 0 |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | 14/18 | 90% | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 | 2/3 | 4.9 min | 13 of 18 attempts |
+| [Dory1.0-4B](models/dory1.0-4b.md) ⁵ | 14/18 | 95% | 3/3 | 3/3 | 2/3 | 3/3 | 0/3 | 3/3 | 7.2 min | 0 |
 | [LFM3-1.7B](models/lfm3-1.7b.md) ² | 12/18 | 88% | 2/3 | 3/3 | 3/3 | 3/3 | 0/3 | 1/3 | 2.2 min | 0 |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) ² | 10/18 | 86% | 0/3 | 3/3 | 2/3 | 2/3 | 0/3 | 3/3 | 4.2 min | 0 |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) ¹ | 7/18 | 78% | 1/3 | 3/3 | 0/3 | 1/3 | 0/3 | 2/3 | **2.0 min** | 0 |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) ⁵ | 1/18 | 52% | 0/3 | 0/3 | 0/3 | 1/3 | 0/3 | 0/3 | 3.9 min | 0 |
+| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) ⁵ | 0/18 | 48% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 20.0 min | 1 |
 | [LFM3-VL-2B](models/lfm3-vl-2b.md) ² | 0/18 | 47% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 20.0 min | 0 ⁴ |
+| [VibeThinker 3B](models/vibethinker.md) ⁵ | 0/18 | 29% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0.4 min | 0 |
+| [Gemma 4 12B coder](models/gemma4-12b-coder.md) ⁵ | 0/18 | 28% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0.9 min | 0 |
 
 Measured 2026-10-23: 108 attempts, about eight hours of a laptop fan doing its best. ¹ The two
 Nemotrons ran the same night, same harness, another 36 attempts (each had one timeout). ² Groot,
 LFM2.5, Ornith, ThinkingCap Gemma, LFM3 and LFM3-VL ran on 2026-10-27/28, same harness, 108 more attempts (LFM2.5 shared the laptop
 with a llama.cpp build, so its times may be a little high). ³ One timeout: a scraper that paged
-forever. ⁴ 14 of 18 attempts hit the 20-minute timeout, every one in a loop of the same command. Not run: Qwen3-VL (an image model), Dory,
-and the Gemma 12B fine-tunes.
+forever. ⁴ 14 of 18 attempts hit the 20-minute timeout, every one in a loop of the same command. ⁵ Dory, Qwen3-VL,
+both Gemma 12B fine-tunes and VibeThinker 3B ran on 2026-11-02, on our fork after the PrismML merge (`7ff495f`), same
+harness, 90 more attempts. VibeThinker went through its [tool-call proxy](models/vibethinker.md).
+
+"Hidden tests passed" has a floor: the untouched starter files already pass 12 of the bug fix's 27 tests and 3 of
+the feature's 8. The Gemma 12B coder never changed a file, so its 28% is that floor.
 
 **Read with care.** Three attempts per task means a single lucky or unlucky attempt moves a cell
 by a whole point, and these chores take minutes, not hours. This tells you who is dependable
@@ -161,6 +171,25 @@ Bug fix, feature and CLI: 51 of 54 attempts solved across the first six models (
 two Nemotrons, the E4B accounting for most of the misses). The three web chores decided the
 ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
 
+### Five more, and only one of them an agent
+
+The 2026-11-02 batch shows that a tool-calling template doesn't make a model an agent.
+
+- **Dory** (4B) solved 14/18, tied with Spark and Bonsai, and passed 95% of the hidden tests. It thinks
+  hard (31K characters a job; among models that solved at least half their jobs, only LFM3-1.7B thinks more) and
+  takes its time (7.2 min a job). It fell into both of the books site's traps: five stars for every book in two attempts,
+  "Noahâ\x80\x99s" in one, and in the third a curly apostrophe turned into a straight one, so the titles didn't match.
+- **Qwen3-VL** solved one job, the login, with one script in 18 seconds. Elsewhere it got stuck
+  re-sending the same edit: 181 of its 254 `edit` calls changed nothing.
+- **The Gemma 12B agentic** worked hard and finished nothing. It made 31 tool calls a job, and 57 of
+  them were missing a file path. At 13 tok/s on our fork (part of the model in
+  RAM), 11 of its 18 jobs ran out of time. It came within one test of the bug fix (26/27), and in at least one job
+  spent the rest of its time writing the same three lines over and over inside one `write`.
+- **The Gemma 12B coder** never touched a file. It made 6 tool calls in 18 jobs and put its code in
+  the reply instead, so nothing was saved and nothing was tested.
+- **VibeThinker 3B** did the same, as its page predicts: 5 tool calls in 18 jobs, the rest
+  answers in chat, and some of its calls were JSON with broken escaping that even the proxy can't repair.
+
 ## Each model in one breath
 
 - **Flint** — the careful one. Probes, tests, audits beyond the bug report, cleans up its scratch
@@ -201,11 +230,19 @@ ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
   timeout (769 times out of 772 calls, once); LFM3-1.7B never repeated one more than 25 times.
   Its card says as much: not recommended for coding or multi-turn conversations. Use it as an
   eye, not as an agent.
+- **Dory1.0-4B** — the slow, steady small one. 14/18 from 4B parameters, the same as Spark, taking
+  twice as long per job (7.2 min vs 3.3). Thinks a lot, tests its code, and never solved the books chore.
+- **Qwen3-VL-8B** — the eye that edits in circles. One perfect one-shot scraper, then the same
+  no-op edit again and again.
+- **Gemma 4 12B agentic** — all effort, no finish. Busy, slow on this card at 32K, and sloppy with
+  tool arguments.
+- **Gemma 4 12B coder** — a chat coder. Writes the answer, doesn't use the tools.
+- **VibeThinker 3B** — a one-shot solver, as advertised. Not an agent, even through the proxy.
 
 The run-by-run notes, with transcript paths and quotes, are in
 [`bench/results/notes.md`](../bench/results/notes.md).
 
-## Two bugs we found in our own setup
+## Three bugs we found in our own setup
 
 Honesty corner. The first time Spark ran, it scored 0 on everything in 20 seconds flat: pi asks
 for "medium" reasoning effort by default, and Spark's chat template only accepts "high" or "low",
@@ -216,3 +253,8 @@ an attempt where the model never produced a single token.
 And one of Bonsai's attempts wrote an empty CSV that still passed four of five tests, because
 those tests looped over the rows and an empty loop passes. We tightened the tests and re-graded
 all 108 saved attempts. Only that one score changed.
+
+The third was in VibeThinker's tool-call proxy. Its first run crashed the proxy once, on a call
+written OpenAI's way (`{"type": "function", "function": {...}}`), which pi saw as a dropped
+connection; and the proxy sent no token counts, so every attempt showed 0 output tokens. We fixed
+both, added the crashing form to the proxy's tests, and re-ran all 18 attempts. Same score, 0/18.

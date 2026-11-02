@@ -8,7 +8,7 @@
 > | Where it lives | partly on the GPU on our fork; **all 48 layers** with the TurboQuant build |
 > | Context | 16K (25K works only sometimes) |
 > | Generation | **~28.3 tok/s** with TurboQuant · 13.4–16.5 tok/s on our fork |
-> | [pibench](../pibench.md) | not benchmarked yet |
+> | [pibench](../pibench.md) | **0/18** at 32K on our fork (2026-11-02) |
 > | [Vision probe](../vision-probe.md) | not run (no vision projector set up for it) |
 > | Launch | `bash scripts/start-agentic.sh` on our fork; `bash scripts/start-turbo.sh` for the TurboQuant cache |
 
@@ -98,7 +98,18 @@ reversal all came out correct. `q8_0` keys + `turbo3` values were first checked 
 (same architecture, head size 256) to make sure the fork's CUDA kernel works on this Turing GPU. It
 does.
 
-It hasn't been through [pibench](../pibench.md) or the [vision probe](../vision-probe.md) yet.
+**[pibench](../pibench.md): 0/18** (2026-11-02), run with `scripts/run-12b-agentic.sh` on our fork: 32K, 40 layers on
+the GPU, about 13 tok/s. Unlike the [coder](gemma4-12b-coder.md) it does work as an agent, busily: 31 tool calls
+a job, and it runs pytest. But it finished nothing:
+
+- **Time.** 11 of 18 jobs hit the 20-minute limit. At 13 tok/s it can't think and iterate fast enough.
+- **Sloppy tool calls.** 57 calls had no file path (pi rejects them), about 15 tool errors a job.
+- **Close, not done.** 25/27 and 26/27 on the bug fix; one attempt ran past 32K and stopped.
+- **A loop.** In at least one job (cli-wordfreq r1) it wrote the same three lines of Python over and over
+  inside a single `write` call (over 30,000 characters) until time ran out.
+
+The 16K TurboQuant setup runs about twice as fast, but its jobs here used up to 25K tokens of context,
+more than that setup holds; it hasn't been tried in pibench. The vision probe hasn't been run.
 
 ## How it behaves
 

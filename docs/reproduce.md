@@ -175,6 +175,7 @@ Write `--tag=-3k` with the `=`: on its own, argparse reads `-3k` as a flag.
 | Benchmark | How to run it |
 |---|---|
 | pibench | [`bench/README.md`](../bench/README.md#running-it) |
+| pibench, 2026-11-02 batch (Dory, Qwen3-VL, both Gemma 12Bs, VibeThinker 3B) | `MODELS="coder12 agentic12 dory qwen3vl vibe3b" bash bench/run-bench.sh`, about 10 hours, then `python3 bench/summarize.py`. The per-model numbers in the write-up: `python3 bench/batch_stats.py dory qwen3vl agentic12 coder12 vibe3b`, committed as [`stats-2026-11-02.txt`](../bench/results/stats-2026-11-02.txt) (it reads the raw transcripts, which stay on this disk) |
 | Vision probe | [`bench/vision/README.md`](../bench/vision/README.md) |
 | Visual control | [Run it yourself](visual-control.md#run-it-yourself) |
 | Decision models and the command guard | Weights: `download-models.sh d1 clefflash`. `bench/grading/run_guard.py` runs from its own prompts; `run_judge.py` also needs the raw pibench transcripts. Each script's header has its usage, and [`bench/grading/results/`](../bench/grading/results/) the scores |

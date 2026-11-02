@@ -36,6 +36,9 @@ SPECS = [
 SYNTHETIC = [
     ('{"name":"bash","arguments":{"command":"ls"}}', "bash"),          # inline {name,arguments}
     ('{"function":"bash","arguments":{"command":"ls"}}', "bash"),      # pi 'function' key
+    # OpenAI nesting; this crashed the shim (unhashable dict) in pibench 2026-11-02
+    ('{"type":"function","function":{"name":"bash","arguments":{"command":"ls"}}}', "bash"),
+    ('{"function":{"name":"nope","arguments":{}}}', None),
     ('<function>bash</function> {"command":"ls"}', "bash"),            # <function>NAME</function>+args
     ('result: {"command":"echo hi"} ok', None),                       # bare shell args: never guessed
     ('write it: {"path":"/x","content":"y"} now', "write"),           # bare args -> write

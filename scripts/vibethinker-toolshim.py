@@ -151,8 +151,10 @@ def recover_tool_call(content, specs):
             i = j + 1
             continue
         if isinstance(obj, dict):
+            if isinstance(obj.get("function"), dict):   # OpenAI {"type":"function","function":{...}}
+                obj = obj["function"]
             name = obj.get("name") or obj.get("function")
-            if name in names and "arguments" in obj:                      # (a)
+            if isinstance(name, str) and name in names and "arguments" in obj:  # (a)
                 a = obj["arguments"]
                 return name, a if isinstance(a, str) else json.dumps(a)
             if "arguments" not in obj and "name" not in obj and "function" not in obj:
@@ -317,6 +319,8 @@ class Handler(BaseHTTPRequestHandler):
         if msg.get("content"):
             self.wfile.write(chunk({"content": msg["content"]}))
         self.wfile.write(chunk({}, finish=ch.get("finish_reason") or "stop"))
+        if resp.get("usage"):   # token counts, as a final usage chunk (OpenAI include_usage form)
+            self.wfile.write(sse({**base, "choices": [], "usage": resp["usage"]}))
         self.wfile.write(b"data: [DONE]\n\n")
 
 

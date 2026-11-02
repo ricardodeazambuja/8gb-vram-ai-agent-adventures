@@ -9,7 +9,7 @@
 > | Context | 32K (q8_0 KV cache) |
 > | Generation | 13–17 tok/s (13.7 on the [2026-11-01 recheck](../../bench/recheck/README.md)) |
 > | Prompt processing | ~67 tok/s (llama-bench) |
-> | [pibench](../pibench.md) | not benchmarked yet |
+> | [pibench](../pibench.md) | **0/18**: never wrote a file (2026-11-02) |
 > | [Vision probe](../vision-probe.md) | not run (no vision projector set up for it) |
 > | Launch | `bash scripts/run-12b-coder.sh`, then `bash scripts/run-pi.sh` |
 
@@ -94,7 +94,10 @@ All on CUDA, 32K context, q8_0 KV cache, flash attention on, greedy, 200 generat
 "VRAM used" includes ~0.5 GB of desktop. Q4_K_M is the clear winner: only 6 layers spill to RAM.
 Each step up in quality pushes more layers off the GPU, and the speed falls off a cliff.
 
-It hasn't been through [pibench](../pibench.md) or the [vision probe](../vision-probe.md) yet.
+**[pibench](../pibench.md): 0/18** (2026-11-02, our fork, 32K). It isn't an agent. In 18 jobs it made 6 tool calls
+(4 `read`, 2 `bash`) and never a `write` or `edit`: it put its code in the reply, usually within a minute
+(median 0.9 min, 662 tokens), and stopped. Nothing was saved, so its 28% of hidden tests passed is just what
+the untouched starter files score. Use it in chat and paste the code yourself. The vision probe hasn't been run.
 
 ## How it behaves
 

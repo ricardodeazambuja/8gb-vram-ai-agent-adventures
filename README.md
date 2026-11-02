@@ -30,15 +30,15 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md) | 1.7B tri-hybrid | 128K | **106 t/s** | 12/18 | text only | Tiny, as fast as its VL sibling and twice as fast as the rest, and better at chores than models 14× its size. |
 | 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md) | 2B + vision | 32K | 106 t/s | 0/18 | 91% | 2.6 GB, 8 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
 | 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
-| 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | — | 89% | Reads an image in 5 seconds flat. |
-| 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md) | 4B, looped | 64K | 29 t/s | — | text only | Runs its middle layers twice. Just keeps swimming. |
-| 🧑‍💻 | [**Gemma 4 12B coder**](docs/models/gemma4-12b-coder.md) | 12B dense | 32K | 17 t/s | — | — | A community coding fine-tune; Q4 is the sweet spot. |
-| 🤖 | [**Gemma 4 12B agentic**](docs/models/gemma4-12b-agentic.md) | 12B dense | 16K | 28 t/s | — | — | Fully on the GPU thanks to a ~3.5-bit V cache. |
+| 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | 1/18 | 89% | Reads an image in 5 seconds flat. Not an agent. |
+| 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md) | 4B, looped | 64K | 29 t/s | 14/18 | text only | Runs its middle layers twice. Just keeps swimming, and gets there: Spark's score at 4B. |
+| 🧑‍💻 | [**Gemma 4 12B coder**](docs/models/gemma4-12b-coder.md) | 12B dense | 32K | 17 t/s | 0/18 | — | A community coding fine-tune. Answers in chat; never touched a file in pibench. |
+| 🤖 | [**Gemma 4 12B agentic**](docs/models/gemma4-12b-agentic.md) | 12B dense | 16K | 28 t/s | 0/18 ¹ | — | Fully on the GPU thanks to a ~3.5-bit V cache. Busy, but finished nothing in pibench. |
 
 **pibench** = six real chores (fix bugs, build a CLI, scrape websites, log in through a form) done
 alone, in a sandbox, graded by hidden tests; solved attempts out of 18. **Vision** = twelve
 images with known answers: OCR, bounding boxes, charts, counting, engineering drawings. "—" means
-we haven't run it (yet). The full numbers, and what the vendors claim, are on the
+we haven't run it (yet). ¹ Run at 32K on our fork (13 t/s), not at the 16K/28 t/s TurboQuant setup. The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md).
 
 ## The helpers
@@ -52,7 +52,7 @@ Not chat models, so they don't drive pi. Each one's page has a launch command an
 | ⚖️ | [**Clef-Flash**](docs/models/clef-flash.md) | Yes/no and pick-one decisions | 7.1 GB | 86% grading pibench, 4/189 false alarms |
 | ⚡ | [**d1-2B**](docs/models/d1-2b.md) | The same, much smaller | 2.6 GB | 27 ms a decision |
 | 📍 | [**LocateAnything-3B**](docs/models/locateanything-3b.md) | Finds things in pictures | 5 GB | 15/15 shapes, mean IoU 0.94 |
-| 🧠 | [**VibeThinker 3B and 1.5B**](docs/models/vibethinker.md) | One-shot code and math | 5.0 GB, 3.1 GB | 0/500 wrong on the code check, 65 and 108 tok/s |
+| 🧠 | [**VibeThinker 3B and 1.5B**](docs/models/vibethinker.md) | One-shot code and math | 5.0 GB, 3.1 GB | 0/500 wrong on the code check, 65 and 108 tok/s; 0/18 on pibench (3B), not an agent |
 | 🐭 | [**LFM2.5-VL-450M**](docs/models/lfm2.5-vl-450m.md) | Tiny vision model for fine-tuning | 1.5 GB | 0.1 s a decision once tuned |
 | 🖌️ | [**FLUX.2 Klein 4B**](docs/models/flux2-klein-4b.md) | Pictures, the everyday pick | 3.5 GB | 23 s an image |
 | 🔤 | [**Iris-3B Turbo**](docs/models/iris-3b.md) | Pictures with text | 7.3 GB | Cleanest sign text, 33 s |

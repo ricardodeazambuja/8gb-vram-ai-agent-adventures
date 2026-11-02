@@ -9,7 +9,7 @@
 > | Context | **64K** (128K with `LOOP_KV=last_loop`) |
 > | Generation | 29.3 tok/s at 2 loops, 17.7 tok/s at 4 |
 > | Prompt processing | 852 tok/s at 2 loops (15.8K-token prompt) |
-> | [pibench](../pibench.md) | not run |
+> | [pibench](../pibench.md) | **14/18**, 95% of hidden tests (2026-11-02) |
 > | [Vision probe](../vision-probe.md) | not run (text only) |
 > | Launch | `bash scripts/start_dory.sh` |
 
@@ -125,9 +125,13 @@ against the card's own settings:
 Flash attention and q8_0 change its predictions about 13× less than dropping one loop. One text,
 6K tokens: enough to rule out a broken setting, not a benchmark.
 
-**[pibench](../pibench.md) and the [vision probe](../vision-probe.md): not run.** Dory joined
-the lineup before the benchmark existed and wasn't in the final run, so there's no measured
-quality score for it yet beyond the checks above.
+**[pibench](../pibench.md): 14/18** (2026-11-02, our fork, `start_dory.sh` defaults: 2 loops, 64K). The same
+score as [Spark](spark-x2.6-4b.md), the other 4B, and as Bonsai 2 27B and Ornith 35B. It solved every bug fix,
+feature and login job, all three JavaScript scrapes and two of the three CLIs; it never solved the books
+scrape. There it fell for the site's traps: five stars for every book (twice), the undeclared character set
+(`Noahâ\x80\x99s`) and a curly apostrophe turned straight. It thinks a lot (31K characters a job), runs its
+tests (1.5 pytest runs a job), never ran out of context (35K at most of 64K), and takes 7.2 min a job,
+about twice Spark's time. The vision probe doesn't apply (text only).
 
 ## How it behaves
 

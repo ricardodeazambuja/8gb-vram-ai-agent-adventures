@@ -9,7 +9,7 @@
 > | Context | 16K |
 > | Generation | ~38 tok/s (26 tok/s with the context full) |
 > | Prompt processing | ~830–900 tok/s |
-> | [pibench](../pibench.md) | not run (an image model without a thinking mode) |
+> | [pibench](../pibench.md) | 1/18 (2026-11-02) |
 > | [Vision probe](../vision-probe.md) | **89%**, perfect OCR, ~5 s per image |
 > | Launch | `bash scripts/start_qwen3vl.sh` |
 
@@ -105,8 +105,10 @@ big thinking models, which encode on the CPU and reason first):
 |---:|---:|---:|---:|---:|
 | 100% | 100% | 7% | 61% | 96% |
 
-**[pibench](../pibench.md): not run.** The coding benchmark is for the agentic models; Qwen3-VL
-is here for its eyes.
+**[pibench](../pibench.md): 1/18** (2026-11-02, our fork, 16K). Qwen3-VL is here for its eyes, and it shows. Its one
+solve was the login job: one script, run once, 18 seconds. Elsewhere it kept sending the same `edit` again:
+181 of its 254 edits changed nothing ("the replacement produced identical content"), so it went in circles.
+It got close on the feature (7/8 in all three attempts) and never wrote a working CLI.
 
 **[Visual control](../visual-control.md): 51/60** one-picture tool decisions at 1 s each (124/150
 on 30 scenes per kind). Clicks, picks and traffic lights near perfect; it refills tanks that

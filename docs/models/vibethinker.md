@@ -8,7 +8,7 @@
 > | Where it lives | entirely on the GPU: 3B 5.4 GB, 1.5B 3.7 GB, at 40K context |
 > | Generation | 3B **65 tok/s**, 1.5B **108 tok/s** (on our fork, 2026-11-01) |
 > | Best at | One-shot code (3B) and math (1.5B) |
-> | [pibench](../pibench.md) | not run |
+> | [pibench](../pibench.md) | 3B: **0/18** through the shim (2026-11-02) |
 > | [Security audit](../security.md) | clean |
 > | Launch | `bash scripts/start_vibethinker.sh`, or `QMODEL=vibe3b bash scripts/run-qwen.sh` for the server alone |
 
@@ -57,6 +57,16 @@ of running the command.
 On 2026-11-01 both models ran on our fork, and the [recheck](../../bench/recheck/README.md) passed: 0/500 wrong on
 `merge_intervals` for each. The agent mode has **not** been rerun on the fork, because its first shell access
 belongs in pibench. Everything on tool calls above is from June.
+
+**[pibench](../pibench.md): 0/18** for the 3B (2026-11-02, our fork, 40K, reasoning budget 600, through the shim).
+It behaved like the one-shot solver it is: 5 tool calls in 18 jobs, the rest of the time it answered in chat
+in under a minute (median 0.4 min), often with a tool call written as text. Some of those were JSON with broken
+escaping (unescaped quotes inside the code), which the shim can't repair. Its 29% of hidden tests passed is
+about what the untouched starter files score.
+
+The first pibench run found two shim bugs: a call written OpenAI's way (`{"type": "function", "function": {...}}`)
+crashed it, and it sent pi no token counts. Both are fixed and covered by `scripts/test-toolshim.py`, and the
+18 jobs were rerun; the score didn't change.
 
 ## Gotchas
 
