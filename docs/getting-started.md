@@ -40,13 +40,12 @@ mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
 Every model runs on one build of our llama.cpp fork, cloned next to this repo. The
 fork carries the model PRs we use on top of a pinned upstream commit, and the launch scripts find
 it there, or set `ADV_LLAMA=/path`. `build-llama-cuda.sh` builds it by default at the commit
-everything here was tested on. The other forks get their own folder under `vendor/`, so builds never step on each other. Build only what you need
+everything here was tested on. The one optional extra, the TurboQuant fork, gets its own folder under `vendor/`, so builds never step on each other. Build only what you need
 (~10–20 min each; free the GPU first, the build ends with a quick smoke test).
 
 | Build | For | Command |
 |---|---|---|
-| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306) | Gemma 4 26B, both Gemma 12B models, Qwen3.6, the Qwen3.8 distill, Qwen3-VL, Dory, Spark, Flint, Nemotron Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL, LocateAnything, Clef-Flash | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
-| `vendor/prism-llama.cpp` (PrismML fork) | optional: Bonsai 2 27B at full speed, `PTQ1_0` file | `CUDA_VER=12.2 LLAMA_REPO=https://github.com/PrismML-Eng/llama.cpp LLAMA_REF=prism-b10777-e3de715 SRC_DIR=$PWD/vendor/prism-llama.cpp bash scripts/build-llama-cuda.sh` |
+| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306 + [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) for `PTQ1_0`) | Bonsai 2 27B, Gemma 4 26B, both Gemma 12B models, Qwen3.6, the Qwen3.8 distill, Qwen3-VL, Dory, Spark, Flint, Nemotron Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL, LocateAnything, Clef-Flash | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
 | `vendor/llama-cpp-turboquant` (TurboQuant fork) | optional: Gemma 12B agentic with `TURBO=1`, fully on the GPU | `SRC_DIR=$PWD/vendor/llama-cpp-turboquant LLAMA_REF=feature/turboquant-kv-cache ENV_NAME=llamacpp-cuda bash scripts/build-llama-cuda.sh` |
 
 `CUDA_VER=12.2` matters: without it the script picks your driver's CUDA version for the

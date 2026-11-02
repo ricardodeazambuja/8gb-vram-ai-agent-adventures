@@ -53,7 +53,7 @@ CUDA_ARCH="${CUDA_ARCH:-$DET_ARCH}"
 ENV_NAME="${ENV_NAME:-llamacpp-cuda}"
 # Default: our fork at the commit everything here was tested on, next to this repo.
 ADV_REPO=https://github.com/ricardodeazambuja/llama.cpp
-ADV_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73
+ADV_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961
 [ -z "${LLAMA_REPO:-}" ] && LLAMA_REF="${LLAMA_REF:-$ADV_REF}"
 SRC_DIR="${SRC_DIR:-$REPO_ROOT/../llama.cpp}"
 LLAMA_REPO="${LLAMA_REPO:-$ADV_REPO}"

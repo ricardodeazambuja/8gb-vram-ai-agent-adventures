@@ -365,7 +365,7 @@ What it needs before it runs here:
 - **Our llama.cpp (done 2026-10-30).** A fork,
   [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch
   [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (pinned at
-  `3cb2992`): upstream `8ca4060` (2026-10-28) + LocateAnything PR #24749 (ported) + Dory PR #30306
+  `3cb2992`, then `7ff495f` with PrismML's fork merged on 2026-11-02): upstream `8ca4060` (2026-10-28) + LocateAnything PR #24749 (ported) + Dory PR #30306
   (at `43e865ec`) + our LFM2.5-VL template detection fix. Cloned next to this repo (`../llama.cpp`; `ADV_LLAMA` overrides), built in
   place. Dory, Spark, Flint, Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL,
   Clef-Flash and LocateAnything run on it, rechecked against their documented speeds: all within
@@ -375,8 +375,11 @@ What it needs before it runs here:
   23.3 / 23.1, the distill 32.9 / 33.2 / 33.3, Qwen3-VL 41.7 / 39.9 / 41.4, Gemma 21.4 / 19.9-21.1
   / 19.4, prefill within 3%, every tool-call check passed. The distill uses 0.8 GB less VRAM on
   the fork (5.98 vs 6.82 GB, repeated twice; cause not traced). Newer llama.cpp has no `--no-mmap`
-  (it's `--load-mode none`), which `run-server.sh` now handles. Only the Gemma 12B coder and
-  agentic scripts stay on older builds: they weren't tested.
+  (it's `--load-mode none`), which `run-server.sh` now handles. The Gemma 12B coder and agentic
+  followed on 2026-11-01, and Bonsai 2's `PTQ1_0` on 2026-11-02, when PrismML's fork was merged in
+  (38 tok/s against 28.5 on PrismML's own build, and a q8_0 KV gives it 32K instead of 16K). A full
+  recheck after the merge found every other model within run-to-run noise
+  ([`bench/recheck/`](../bench/recheck/README.md)).
   Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
   builds there serve both.
 

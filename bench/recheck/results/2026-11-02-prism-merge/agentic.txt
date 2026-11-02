@@ -1,0 +1,24 @@
+launch: env BACKEND=cuda bash scripts/run-12b-agentic.sh
+VRAM: 7201 MiB
+pressure: some avg10=0.18 avg60=0.03 avg300=0.00 total=253011214
+== speed: gen 13.4 t/s, 638 tokens in 48s (wall 48s)
+   reasoning chars: 626 | content chars: 1480 | finish: stop
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qqen.sh\"}"}] (6s)
+== prefill: 15999 tokens at 406 t/s (39.4s); wall 42.9s
+   answer: It starts the llama-server in the background (with optional auto-tuning and KV quantization), waits for it to become healthy, then launches pi as an OpenAI-compatible frontend over the model.
+--- code check
+own doctests: ***Test Failed*** 4 failures. 
+Traceback (most recent call last):
+  File "/c/check.py", line 111, in <module>
+    main()
+  File "/c/check.py", line 86, in main
+    check(a.check)
+  File "/c/check.py", line 60, in check
+    got = ns["merge_intervals"]([x[:] for x in iv])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/c/answer.py", line 18, in merge_intervals
+    sorted = sorted(intervals)
+             ^^^^^^
+UnboundLocalError: cannot access local variable 'sorted' where it is not associated with a value
+finish=stop tokens=441 gen=13.4 t/s time=33s
+saved: bench/recheck/results/2026-11-02-prism-merge/.merge-agentic.py

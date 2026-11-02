@@ -51,3 +51,4 @@ for m in "$@"; do
   printf '%-10s %s | %s | %s\n' "$m" "$(grep -m1 '^VRAM' "$f")" "$(grep -m1 '== speed' "$f" | cut -c4-40)" "$(grep -E 'vs reference|NO CODE' "$f" | tail -1 | cut -c1-60)" | tee -a "$OUT/summary.txt"
 done
 rm -f "$OUT"/.server-*.log "$OUT"/.merge-*.py
+sed -i "s#$REPO/##g" "$OUT"/*.txt   # keep local paths out of the saved results

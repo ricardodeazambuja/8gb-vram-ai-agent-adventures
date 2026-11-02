@@ -31,7 +31,7 @@ nothing waits on the CPU.
 ```bash
 # once: our llama.cpp (fork, adventures branch; the same one Flint and Bolt use; see getting-started)
 CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73 SRC_DIR=$PWD/../llama.cpp \
+  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
   bash scripts/build-llama-cuda.sh
 
 # once: 6.2 GB, pinned and sha256-checked

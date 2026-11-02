@@ -93,6 +93,18 @@ start_server() {  # start_server KEY — launch on the bridge address, wait unti
       (cd "$REPO_ROOT" && BACKEND=cuda CTX=65536 NCMOE=23 KVQUANT=q8_0 HOST=$GW \
         MODEL="$REPO_ROOT/models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf" \
         ALIAS=thinkingcap-gemma-4-26b-a4b setsid bash scripts/run-server.sh >>"$SERVER_LOG" 2>&1 &) ;;
+    coder12)
+      (cd "$REPO_ROOT" && HOST=$GW setsid bash scripts/run-12b-coder.sh >>"$SERVER_LOG" 2>&1 &) ;;
+    agentic12)
+      (cd "$REPO_ROOT" && HOST=$GW setsid bash scripts/run-12b-agentic.sh >>"$SERVER_LOG" 2>&1 &) ;;
+    vibe3b)
+      # VibeThinker never learned OpenAI tool calls, so it runs as scripts/start_vibethinker.sh
+      # sets it up: the server on 127.0.0.1:8081 with a reasoning budget, and the tool shim facing
+      # the sandbox on 8080, the only host port its firewall allows. docs/models/vibethinker.md
+      (cd "$REPO_ROOT" && QMODEL=vibe3b PORT=8081 EXTRA_ARGS="--reasoning-budget 600" \
+        setsid bash scripts/run-qwen.sh >>"$SERVER_LOG" 2>&1 &)
+      (cd "$REPO_ROOT" && UPSTREAM=http://127.0.0.1:8081 HOST=$GW PORT=8080 \
+        setsid python3 scripts/vibethinker-toolshim.py >>"$SERVER_LOG" 2>&1 &) ;;
     *)
       (cd "$REPO_ROOT" && QMODEL="$key" HOST=$GW setsid bash scripts/run-qwen.sh >>"$SERVER_LOG" 2>&1 &) ;;
   esac
@@ -109,12 +121,13 @@ stop_server() {  # stops only a server this script started
   [ "$STARTED" = 1 ] || return 0
   STARTED=0
   local pids
-  pids="$(ss -ltnpH "sport = :8080" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true)"
+  # 8081: the server behind the VibeThinker shim
+  pids="$(ss -ltnpH "( sport = :8080 or sport = :8081 )" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true)"
   [ -n "$pids" ] || return 0
   # shellcheck disable=SC2086
   kill $pids 2>/dev/null || true
   for _ in $(seq 30); do
-    ss -ltnH "sport = :8080" | grep -q . || return 0
+    ss -ltnH "( sport = :8080 or sport = :8081 )" | grep -q . || return 0
     sleep 1
   done
   # shellcheck disable=SC2086

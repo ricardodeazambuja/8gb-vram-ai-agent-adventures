@@ -7,9 +7,9 @@
 #   bash scripts/start_bonsai2.sh -p "explain @README.md" --no-session   # one-shot
 #
 # A thin wrapper over scripts/start-qwen.sh with QMODEL=bonsai2 and pi's "medium" thinking
-# level (at the template's default it thinks for minutes per turn at 27 tok/s). The server
-# settings come from run-qwen.sh's bonsai2 defaults: all layers on the GPU, 16K context,
-# f16 KV (q8_0 crashes on Turing), PrismML fork in vendor/prism-llama.cpp. Details and
+# level (at the template's default it thinks for minutes per turn). The server settings come
+# from run-qwen.sh's bonsai2 defaults: all layers on the GPU, 16K context, f16 KV, our llama.cpp
+# fork (its `adventures` branch carries PrismML's PTQ1_0 support). Details and
 # measurements: docs/models/bonsai2-27b.md. Every start-qwen.sh knob (CTX, PORT, STOP_ON_EXIT,
 # ...) still works if you set it; you never have to.
 #
@@ -18,7 +18,7 @@
 # scripts/stop-server.sh.
 #
 # First time on a new machine: build the fork and download the model (docs/models/bonsai2-27b.md,
-# "Run it"); this script checks both and says what is missing.
+# "Install & run"); this script checks both and says what is missing.
 #
 set -euo pipefail
 
@@ -31,15 +31,15 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
 
 MODEL_FILE="$REPO_ROOT/models/bonsai2-27b/Ternary-Bonsai-2-27B-PTQ1_0.gguf"
-SERVER_BIN="$REPO_ROOT/vendor/prism-llama.cpp/build/bin/llama-server"
+SERVER_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
 if [ ! -f "$MODEL_FILE" ]; then
   echo "ERROR: model not found: $MODEL_FILE"
   echo "       download it: bash scripts/download-models.sh bonsai2"
   exit 1
 fi
 if [ ! -x "$SERVER_BIN" ]; then
-  echo "ERROR: the PrismML llama.cpp fork is not built: $SERVER_BIN"
-  echo "       build it as in docs/models/bonsai2-27b.md, \"Run it\""
+  echo "ERROR: our llama.cpp fork is not built: $SERVER_BIN"
+  echo "       build it: bash scripts/build-llama-cuda.sh"
   exit 1
 fi
 

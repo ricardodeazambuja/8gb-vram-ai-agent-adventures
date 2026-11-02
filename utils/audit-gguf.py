@@ -44,11 +44,12 @@ import unicodedata
 
 
 def _import_gguf():
-    # Prefer the newest vendored gguf-py (it knows the newest quant types), then
-    # an installed one.
+    # Prefer our fork's gguf-py (it knows the newest quant types, PrismML's PTQ1_0 included),
+    # then the old vendored copies, then an installed one.
     here = os.path.dirname(os.path.abspath(__file__))
-    for sub in ("flint-llama.cpp", "llama.cpp"):
-        p = os.path.join(here, "..", "vendor", sub, "gguf-py")
+    fork = os.environ.get("ADV_LLAMA", os.path.join(here, "..", "..", "llama.cpp"))
+    for p in [os.path.join(fork, "gguf-py")] + [
+            os.path.join(here, "..", "vendor", sub, "gguf-py") for sub in ("flint-llama.cpp", "llama.cpp")]:
         if os.path.isdir(p):
             sys.path.insert(0, p)
             break

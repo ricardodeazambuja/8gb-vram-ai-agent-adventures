@@ -5,13 +5,13 @@
 > | | |
 > |---|---|
 > | Size on disk | 5.95 GB (`PTQ1_0`) + 0.63 GB vision projector |
-> | Where it lives | everything on the GPU (7.45 GB used) |
-> | Context | **16K** (and that is the catch) |
-> | Generation | ~27 tok/s on the PrismML build; 14 tok/s on our fork |
-> | Prompt processing | 269 tok/s (15.6K-token prompt) |
-> | [pibench](../pibench.md) | 14/18 solved, 13 of 18 runs ran out of context |
+> | Where it lives | everything on the GPU (7.14 GB used) |
+> | Context | **32K** (48K if you can spare the last 0.3 GB of VRAM) |
+> | Generation | 38 tok/s (short prompt); 22 tok/s with 28K in context |
+> | Prompt processing | 277 tok/s (15K-token prompt) |
+> | [pibench](../pibench.md) | 14/18 solved at 16K, where 13 of 18 runs ran out of context |
 > | [Vision probe](../vision-probe.md) | **98%**, the best at boxes in pixels (as asked) |
-> | Launch | `bash scripts/start_bonsai2.sh` (PrismML build), or `QMODEL=bonsai2q2 bash scripts/start-qwen.sh` (our fork) |
+> | Launch | `bash scripts/start_bonsai2.sh` |
 
 ## What is it?
 
@@ -29,36 +29,25 @@ numbers keeps 98.2% of the FP16 score doing it.
 ## How does it fit in 8 GB?
 
 It's dense, so there's no MoE trick of parking experts in RAM: weights, KV cache and compute
-buffers all have to fit on the card. The ternary weights make that possible. The price is
-context: the KV cache has to be **f16** (see Gotchas), which is ~1.14 GB at 16K and ~2.3 GB at
-32K, and 32K doesn't fit. So you get 16K, with 7.45 GB of VRAM in use.
+buffers all have to fit on the card. The ternary weights make that possible, and a **q8_0** KV
+cache leaves room for 32K of context: 7.14 GB in use. 48K also runs (7.70 GB), and 64K doesn't
+start. PrismML's own build can't use a q8_0 cache on this card (see Gotchas), and with f16 it
+stopped at 16K.
 
 Before Bonsai, the only way to run Qwen3.8-27B here was a 10.4 GB `IQ3_XXS` with half its
-layers in system RAM: **2.5 tok/s**. Bonsai does **27 tok/s**, about 11× faster. More on the
+layers in system RAM: **2.5 tok/s**. Bonsai does **38 tok/s**, about 15× faster. More on the
 general tricks in [How it fits](../how-it-fits.md).
 
 ## Install & run
 
-**On our fork, with no extra build:** PrismML also publishes a plain `Q2_0` file (7.63 GB) that runs on llama.cpp
-from `b11556`. Older builds load it and give garbage, without warning. It doesn't fully fit, so 60 of 64 layers go
-on the GPU. On 2026-11-01 it did 14.3 tok/s at 7.6 GB, with a working tool call and 0/500 wrong on the code check.
+`PTQ1_0` is PrismML's own type, so stock llama.cpp rejects the file. We merged
+[PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) (at `5628c733`) into
+[ours](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures), so the one build every other model uses
+runs it too:
 
 ```bash
-bash scripts/download-models.sh bonsai2q2
-QMODEL=bonsai2q2 bash scripts/start-qwen.sh
-```
-
-**For full speed,** the PrismML build runs the smaller `PTQ1_0` file entirely on the GPU, at about twice the speed:
-
-It needs **PrismML's llama.cpp fork**: stock llama.cpp doesn't know the `PTQ1_0` type. Build it
-once (about 15 minutes) with the repo's CUDA toolchain, into its own folder so it never
-touches your other builds:
-
-```bash
-# 1. Build the PrismML fork into vendor/prism-llama.cpp
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/PrismML-Eng/llama.cpp \
-  LLAMA_REF=prism-b10777-e3de715 SRC_DIR=$PWD/vendor/prism-llama.cpp \
-  bash scripts/build-llama-cuda.sh
+# 1. Our fork, if you haven't built it yet (~15 min)
+CUDA_VER=12.2 bash scripts/build-llama-cuda.sh
 
 # 2. Download the model + vision projector (~6.6 GB), pinned revision, sha256-checked
 bash scripts/download-models.sh bonsai2
@@ -77,6 +66,12 @@ The download script needs the `hf` CLI inside the conda env it uses (`ENV_NAME`,
 `llamacpp`); see [Getting started](../getting-started.md). Free the GPU before building:
 the build's smoke test fails with a misleading "failed to load model" if another server is
 holding the VRAM.
+
+**The plain `Q2_0` file** (7.63 GB, `bash scripts/download-models.sh bonsai2q2`, then
+`QMODEL=bonsai2q2 bash scripts/start-qwen.sh`) runs on any llama.cpp from `b11556`. Older builds
+load it and give garbage, without warning. It doesn't fully fit, so 60 of 64 layers go on the GPU:
+14.3 tok/s, with a working tool call and 0/500 wrong on the code check. Use it only on a build
+without PrismML's code.
 
 ## Official numbers
 
@@ -99,15 +94,19 @@ the [scoreboard](../scoreboard.md).
 
 ## Our numbers
 
+On our fork (`7ff495f`), 2026-11-02:
+
 | Test | Result |
 |---|---|
-| `llama-bench` | pp512 322.3 tok/s, tg64 28.47 tok/s |
-| Server, f16 KV, 16K | **27.0 tok/s**, 15.6K-token prompt at 269 tok/s, 7.45 GB VRAM |
-| Server, q8_0 KV | aborts on the first request (Turing, see Gotchas) |
+| Server, q8_0 KV, 32K (the default) | **38.0 tok/s**, 15K-token prompt at 277 tok/s, 7.14 GB VRAM ([recheck](../../bench/recheck/results/2026-11-02/bonsai2.txt)) |
+| Filling the context ([context fit](../../bench/bonsai-ctx/)) | 28K tokens: prefill 241 tok/s, then 22.4 tok/s; 48K: 7.70 GB, 207 and 17.9 tok/s, still answers right; 64K: doesn't start |
 | Tool call | ✓ |
-| Code check (`merge_intervals`, 500 random tests) | correct, 0/500 wrong, 1,597 tokens, 60 s |
+| Code check (`merge_intervals`, 500 random tests) | correct, 0/500 wrong |
+| Same test, back to back, f16 KV, 16K ([raw](../../bench/recheck/results/2026-11-02-prism-ab/)) | PrismML's own build (`e3de715`) 28.5 tok/s, our fork 38.5: it carries PrismML's newer CUDA kernels |
 
-**[pibench](../pibench.md): 14/18 solved, 90% of hidden tests passed, median 4.9 min per run.**
+Earlier, on PrismML's build at 16K: `llama-bench` pp512 322.3, tg64 28.47 tok/s; the server at 27.0 tok/s.
+
+**[pibench](../pibench.md), on PrismML's build at 16K: 14/18 solved, 90% of hidden tests passed, median 4.9 min per run.**
 All code tasks 3/3, login 3/3, the JavaScript page 2/3, and the big-page book scraper 0/3.
 
 **[Vision probe](../vision-probe.md): 98% overall.** OCR 100%, boxes 100% (and 67% in pixels
@@ -117,7 +116,7 @@ on the CPU).
 
 ## How it behaves
 
-- **Smart, and constantly out of room.** In pibench, 12 of its 18 runs ended because the
+- **Smart, and constantly out of room (at 16K).** In pibench, 12 of its 18 runs ended because the
   conversation filled the 16K context, and one more was rejected outright when a page dump
   pushed a request to 22,482 tokens. Only 5 runs finished on their own.
 - **It often finishes the job just before the lights go out.** Nine of those cut-off runs
@@ -134,16 +133,17 @@ on the CPU).
 
 ## Gotchas
 
-- **Use f16 KV, not q8_0.** The fork's flash-attention kernel for a q8_0 cache has no code for
-  Turing (sm_75), and the server aborts on the first request: `CUDA kernel flash_attn_ext_f16
-  has no device code compatible with CUDA arch 750`. f16 is the default for this model.
+- **On PrismML's own build, use f16 KV, not q8_0.** Its flash-attention kernel for a q8_0 cache
+  has no code for Turing (sm_75), and the server aborts on the first request: `CUDA kernel
+  flash_attn_ext_f16 has no device code compatible with CUDA arch 750`. On our fork q8_0 works,
+  and it's the default.
 - **pi's thinking levels need translating.** The template only accepts `reasoning_effort`
   `xhigh`, `medium` or `low` (and the card says `low` behaves like `xhigh`). pi's `high` gets
   an HTTP 500. The pi model entry in `config/pi-provider.json` maps minimal/low/medium →
   `medium` and high/xhigh → `xhigh`.
 - **Stick to `medium` thinking** (the launcher's default). At `xhigh` it thinks for minutes per
-  turn at 27 tok/s.
-- **16K fills fast.** One fetched JSON page once came back as ~146K tokens. A session that
+  turn.
+- **Even 32K fills fast.** One fetched JSON page once came back as ~146K tokens. A session that
   overflowed stays broken (every request resends the oversized turn): start a new one with
   `/new`.
 - **Hangs that aren't hangs.** If a client gives up on a request, llama-server keeps generating
@@ -156,8 +156,8 @@ All optional; set them in front of the launcher (`CTX=… bash scripts/start_bon
 
 | Variable | Default | What it does |
 |---|---|---|
-| `CTX` | 16384 | Context window. 32K doesn't fit with f16 KV. |
-| `KVQUANT` | `f16` | KV-cache type. Don't use `q8_0` on a Turing card. |
+| `CTX` | 32768 | Context window. 49152 also fits, with ~0.3 GB to spare; 65536 doesn't. |
+| `KVQUANT` | `q8_0` | KV-cache type. `f16` halves the context that fits. |
 | `NGL` | 99 | Layers on the GPU (all of them). |
 | `TEMP` / `TOP_P` / `TOP_K` / `MIN_P` | 1.0 / 0.95 / 20 / 0.05 | Sampling, from the card. |
 | `--thinking` (pi flag) | `medium` | pi's thinking level; `high` maps to the slow `xhigh`. |

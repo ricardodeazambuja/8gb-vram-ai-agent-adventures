@@ -182,6 +182,7 @@ Write `--tag=-3k` with the `=`: on its own, argparse reads `-3k` as a flag.
 | Voice (LFM3-Audio-2B) | [`bench/voice/README.md`](../bench/voice/README.md). Rerun on the fork on 2026-11-01: same scores as the first run |
 | Clef-Flash, d1, EmbeddingGemma and LocateAnything quick checks | `bash bench/smoke/run.sh`. Weights: `download-models.sh clefflash d1 eg2 locate`. Rerun on the fork on 2026-11-01: same scores, [saved here](../bench/smoke/results/) |
 | Every chat model launches, with speed, tool call and code check | `bash bench/recheck/run.sh`, about 1.5 hours. [Results](../bench/recheck/README.md) |
+| Bonsai 2's context fit: 32K default, 48K max, q8_0 KV | `bash bench/bonsai-ctx/run.sh`, about 10 minutes. [Results](../bench/bonsai-ctx/README.md) |
 | Relaxed acceptance | Build the fork's `relaxed-accept` branch into `../llama.cpp-relaxed` (`LLAMA_REPO`, `LLAMA_REF`, `SRC_DIR`, as in [getting started](getting-started.md#3-build-llamacpp-once-per-flavour)), then `bench/relaxed/run_relaxed.py` |
 
 ## What isn't in git, and why

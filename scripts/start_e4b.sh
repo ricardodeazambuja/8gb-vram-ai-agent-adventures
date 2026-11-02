@@ -37,7 +37,7 @@ if [ ! -x "$SERVER_BIN" ]; then
   echo "ERROR: our llama.cpp build not found: $SERVER_BIN"
   echo "       build it (see docs/getting-started.md), next to this repo:"
   echo "       CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \\"
-  echo "         LLAMA_REF=3cb2992b39cbcc7a6fd90002a39f694f4bc03a73 SRC_DIR=\$PWD/../llama.cpp \\"
+  echo "         LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=\$PWD/../llama.cpp \\"
   echo "         bash scripts/build-llama-cuda.sh"
   exit 1
 fi

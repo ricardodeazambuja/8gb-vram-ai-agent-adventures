@@ -23,7 +23,7 @@ Two health warnings before the numbers:
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) | conv/attention MoE, 2B active | Q4_0 (QAD), 13.6 GB | 128K | 31.5 t/s | ~940 t/s | 10/18 | text only | `QMODEL=lfm25 scripts/start-qwen.sh` |
 | [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | MoE, 3B active | Q4_K_M, 21.7 GB | 128K | ~31 t/s | ~490 t/s | 14/18 | 97% | `QMODEL=ornith scripts/start-qwen.sh` |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | hybrid MoE, 9B active | IQ2 (QAD), 22.0 GB | 128K | 14.0 t/s | 310 t/s | 15/18 | 91% | `scripts/start_bolt.sh` |
-| [Bonsai 2 27B](models/bonsai2-27b.md) | dense 27B, ternary | PTQ1_0, 5.95 GB | 16K | 27.0 t/s | 269 t/s | 14/18 | 98% | `scripts/start_bonsai2.sh` |
+| [Bonsai 2 27B](models/bonsai2-27b.md) | dense 27B, ternary | PTQ1_0, 5.95 GB | 32K | 38.0 t/s | 277 t/s | 14/18 at 16K | 98% | `scripts/start_bonsai2.sh` |
 | [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | dense 12B | Q4_K_M + turbo3 KV | 16K | 28.3 t/s | — | not run | not run | `scripts/start-turbo.sh` |
 | [Gemma 4 12B coder](models/gemma4-12b-coder.md) | dense 12B | Q4_K_M | 32K | ~17 t/s | — | not run | not run | `scripts/run-12b-coder.sh` |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | dense 8B + vision | Q4_K_M + projector | 16K | ~38 t/s | 830–900 t/s | not run | 89% | `scripts/start_qwen3vl.sh` |
@@ -145,7 +145,7 @@ The last column says how much we watched each one, so you know how far to trust 
 | [Nemotron Bolt 74B](models/nemotron-bolt-74b.md) | **deliberate** | Very few tool calls and tool errors; tests edge cases nobody asked for; perfect OCR, charts and drawings | Slow (5–10 min a job). Chased a symptom until it timed out; draws boxes about twice as tall as they are | pibench, vision |
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | **direct** | Read, edit, test, done; little thinking for a big model; perfect vision | Shallow checks (30 quotes with empty authors, "done"); fixes what you report, not always what's hiding; once overwrote a provided file | pibench, vision |
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | **quick** | Among the quickest big models per job; test-driven on code; the tersest thinker on the code check (under 800 tokens) | Writes scrapers from memory without looking (0.1 probes per attempt), so it's wrong in the ways memory is wrong | pibench, vision |
-| [Bonsai 2 27B](models/bonsai2-27b.md) | **cramped** | Sound reasoning; every code chore solved; best at boxes in pixels, as asked | 16K context: cut off mid-thought in two thirds of its attempts | pibench, vision |
+| [Bonsai 2 27B](models/bonsai2-27b.md) | **cramped** | Sound reasoning; every code chore solved; best at boxes in pixels, as asked | At 16K, cut off mid-thought in two thirds of its attempts (it now gets 32K; pibench not rerun yet) | pibench, vision |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | **busy** | Fast; checks its output in 94 % of attempts | Thinks a lot and still waves through plausible wrong values (five stars for every book, one quote ten times) | pibench |
 | [Nemotron Bolt E4B](models/nemotron-bolt-e4b.md) | **hasty** | Fast (52 tok/s, second only to LFM3); good for short assistant turns | Declares victory on empty output (`{}`, a header-only CSV); skims specs; 5.5 tool errors per attempt | pibench |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | **snappy** | Flawless OCR, 5 seconds per image; boxes right in its own format | Doesn't think, so counting slips (12 dots for 11). 16K context | vision, spot checks |
@@ -170,5 +170,5 @@ whether it *reads* what it looked at. The full story, with examples, is in
 | Raw speed on small jobs | [**Spark-X2.6-4B**](models/spark-x2.6-4b.md) | 48–50 tok/s, 108K, 14/18; careless with details, but twice the E4B's score at nearly its speed. |
 | The biggest brain that fits | [**Nemotron Bolt 74B**](models/nemotron-bolt-74b.md) | 74B in 2 bits at 14 tok/s, 128K, images and video; 15/18 and 91% vision. Patience required: 5–10 min per agent job. |
 | A snappy local assistant (not a coder) | [**Nemotron Bolt E4B**](models/nemotron-bolt-e4b.md) | 52 tok/s, all on the GPU; 7/18 on pibench, so keep it away from unsupervised coding. |
-| The strongest model on paper | [**Bonsai 2 27B**](models/bonsai2-27b.md) | Its base tops every published column; its 16K context cuts most agent jobs short. |
+| The strongest model on paper | [**Bonsai 2 27B**](models/bonsai2-27b.md) | Its base tops every published column; at 16K its context cut most agent jobs short, and it now gets 32K. |
 | A looped model, for science | [**Dory1.0-4B**](models/dory1.0-4b.md) | Trade speed for depth by changing the loop count. Genuinely fun to poke at. |

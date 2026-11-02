@@ -86,7 +86,8 @@ size.
   on a CPU**. That killed the dense Qwen3.8-27B here (see [the graveyard](graveyard.md)).
 - **Ternary (PTQ1_0):** every weight is −1, 0 or +1, with one FP16 scale per 128 weights, about
   1.72 bits per weight. Bonsai 2 squeezes the whole Qwen3.8-27B into **5.95 GB** this way, small
-  enough for the entire model to sit on the GPU. It needs PrismML's llama.cpp fork.
+  enough for the entire model to sit on the GPU. The type comes from PrismML's llama.cpp fork,
+  which we merged into ours.
 
 Rule of thumb from our scars: **the most aggressive quant of a model can simply break it.** The
 Gemma 12B coder's Q2_K fits on the GPU and runs at ~19 tok/s, and produces nonsense.
@@ -148,10 +149,10 @@ Two catches:
 
 - **It needs flash attention.** llama.cpp won't quantize the V cache without it, so any `KVQUANT`
   turns `-fa` on.
-- **It's not always allowed.** PrismML's fork (Bonsai 2) has no Turing (sm_75) code for its q8_0
-  flash-attention kernel: the server loads fine, then aborts on the first request with *"no device
-  code compatible with CUDA arch 750"*. Bonsai 2 therefore runs an **f16** cache, which is exactly
-  why it's stuck at 16K (32K doesn't fit).
+- **It's not always allowed.** PrismML's own build (Bonsai 2) had no Turing (sm_75) code for its
+  q8_0 flash-attention kernel: the server loaded fine, then aborted on the first request with *"no
+  device code compatible with CUDA arch 750"*, so Bonsai ran an **f16** cache and stopped at 16K.
+  With PrismML's code merged into our fork, q8_0 works, and Bonsai gets 32K in 7.1 GB.
 
 ## 5. The hidden tax: flash attention's f16 copy
 
@@ -210,7 +211,7 @@ The happiest models here don't split at all:
 | Spark-X2.6-4B | Q8_0, 4.4 GB | all on GPU, 108K | ~50 tok/s |
 | Qwen3-VL-8B | Q4_K_M 5.03 GB + 0.75 GB projector | all on GPU, 16K | ~38 tok/s |
 | Dory1.0-4B | Q5_K_M, 3.67 GB | all on GPU, 64K | 29 tok/s (2 loops) |
-| Bonsai 2 27B | ternary, 5.95 GB | all on GPU, 16K | ~27 tok/s |
+| Bonsai 2 27B | ternary, 5.95 GB | all on GPU, 32K | ~38 tok/s |
 
 No RAM traffic, no CPU math: fast, as long as you can live with the context.
 

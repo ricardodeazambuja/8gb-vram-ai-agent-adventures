@@ -145,11 +145,11 @@ K and V in the compute buffer, which grows with context. Spark-X2.6-4B's q8_0 ca
 
 ### Bonsai 2: server aborts on the first request, `no device code compatible with CUDA arch 750`
 
-**What's going on:** PrismML's llama.cpp fork has no Turing (sm_75) code for its flash-attention
-kernel with a **q8_0** KV cache.
+**What's going on:** PrismML's own llama.cpp build has no Turing (sm_75) code for its
+flash-attention kernel with a **q8_0** KV cache.
 
-**Fix:** use an **f16** KV cache. It's the default for `QMODEL=bonsai2` (and the reason Bonsai
-stops at 16K context on 8 GB).
+**Fix:** run Bonsai on our fork (the default since 2026-11-02), where q8_0 works and gives 32K
+context. On PrismML's build, use an **f16** KV cache and 16K.
 
 ### Dory: slow, and VRAM goes *down* as you add loops
 
@@ -174,7 +174,7 @@ hands it to the chat template, and Spark's template accepts only `high` or `low`
 values than pi's levels.
 
 **Fix:** already handled: `config/pi-provider.json` maps pi's levels onto ones Bonsai accepts,
-and `start_bonsai2.sh` defaults to `medium` (higher levels think for minutes at 27 tok/s). Register
+and `start_bonsai2.sh` defaults to `medium` (higher levels think for minutes per turn). Register
 the provider with `bash scripts/configure-pi.sh`.
 
 ### Qwen3-VL: a big photo takes minutes, or kills the server

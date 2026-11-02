@@ -7,7 +7,7 @@
 # Pick the model with QMODEL (download first: scripts/download-models.sh):
 #   qwen36   Qwen3.6-35B-A3B UD-IQ4_XS        MoE, 3B active -> experts in RAM (--cpu-moe)
 #   distill  Qwen3.8-35B-A3B-Distill IQ4_XS   MoE, 3B active -> experts in RAM (--cpu-moe)
-#   bonsai2  Ternary-Bonsai-2-27B PTQ1_0      DENSE, 5.95 GB -> all on GPU (-ngl 99), PrismML fork
+#   bonsai2  Ternary-Bonsai-2-27B PTQ1_0      DENSE, 5.95 GB -> all on GPU (-ngl 99), 32K context
 #   bonsai2q2 The same in Q2_0                DENSE, 7.63 GB -> 60 of 64 layers, our fork
 #   qwen3vl  Qwen3-VL-8B-Instruct Q4_K_M      DENSE, 5.0 GB  -> all on GPU (-ngl 99), vision model
 #   dory     Nemotron-Labs-Dory1.0-4B Q5_K_M  LOOPED, 3.7 GB -> all on GPU (-ngl 999), Dory PR build
@@ -51,8 +51,7 @@
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
 #   NGL        dense only: transformer layers on GPU   (default: bonsai2, qwen3vl 99 = all;
 #              dory 999 — its layer count includes every loop, so 99 leaves layers on the CPU)
-#   KVQUANT    KV-cache type, both K and V             (default: q8_0; bonsai2 f16 — the fork's
-#              q8_0 flash-attention kernel has no Turing code)
+#   KVQUANT    KV-cache type, both K and V             (default: q8_0)
 #   LOOPS      dory only: passes through the shared recurrent block, 1-4  (default: 2, the card's
 #              recommendation; measured 43 / 31 / 22 / 19 tok/s for 1-4)
 #   LOOP_KV    dory only: per_loop (one KV cache per loop) | last_loop (one cache, the last
@@ -69,9 +68,8 @@
 #   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot 1 / 2048 / 2048)
 #   EXTRA_ARGS any extra llama-server flags
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
-#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: per QMODEL, usually our fork —
-#              bonsai2: vendor/prism-llama.cpp; everything else: our fork's adventures branch
-#              in ../llama.cpp (ADV_LLAMA) — and env llamacpp-cuda)
+#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: our fork's adventures branch
+#              in ../llama.cpp (ADV_LLAMA), for every model, and env llamacpp-cuda)
 #
 # Flags (CLI args, not env vars):
 #   --image    load the vision projector ($MMPROJ) (CPU unless MMPROJ_GPU=1). Other args pass through.
@@ -90,7 +88,8 @@ esac; done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Our llama.cpp: our fork, branch `adventures` (upstream 2026-10-28 + LocateAnything PR
-# #24749 + Dory PR #30306), cloned next to this repo. Override with ADV_LLAMA=/path/to/clone.
+# #24749 + Dory PR #30306 + PrismML's fork for Bonsai's PTQ1_0), cloned next to this repo.
+# Override with ADV_LLAMA=/path/to/clone.
 ADV_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
 
 QMODEL="${QMODEL:-qwen36}"
@@ -114,18 +113,19 @@ case "$QMODEL" in
     _ncmoe=34
     _temp=0.6 ;;
   bonsai2)
-    # Qwen3.8-27B in ternary weights (5.95 GB) — fits fully on an 8 GB GPU. Needs the
-    # PrismML llama.cpp fork (stock llama.cpp rejects PTQ1_0). See docs/models/bonsai2-27b.md.
+    # Qwen3.8-27B in ternary weights (5.95 GB) — fits fully on an 8 GB GPU. PTQ1_0 and the
+    # Hadamard transforms it needs come from PrismML's fork, merged into ours (stock llama.cpp
+    # rejects PTQ1_0). See docs/models/bonsai2-27b.md.
     KIND=dense
     _dir="$REPO_ROOT/models/bonsai2-27b"
     _model="$_dir/Ternary-Bonsai-2-27B-PTQ1_0.gguf"
     _mmproj="$_dir/Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf"
     ALIAS=bonsai2-27b
-    _ngl=99; _ctx=16384; _minp=0.05
-    # f16 KV: the fork's flash-attention kernel for a q8_0 KV has no sm_75 (Turing) code and
-    # aborts on the first request ("no device code compatible with CUDA arch 750").
-    _kv=f16
-    _bin="$REPO_ROOT/vendor/prism-llama.cpp/build/bin/llama-server"
+    # 32K with a q8_0 KV: 7.1 GB in use. 48K also runs (7.7 GB, too tight to be the default); 64K
+    # doesn't load. Prism's own build had no Turing code for a q8_0 KV and stopped at 16K f16.
+    _ngl=99; _ctx=32768; _minp=0.05
+    _kv=q8_0
+    _bin="$ADV_BIN"
     _ncmoe=
     _temp=1.0 ;;
   bonsai2q2)
