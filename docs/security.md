@@ -82,7 +82,7 @@ To put such characters in code on purpose, build them with `chr(0x202E)` so they
 
 ## Audits so far
 
-The first twelve rows were audited on 2026-11-01, after these models had already run. Their output is in
+The first thirteen rows were audited on 2026-11-01, after these models had already run. Their output is in
 [`bench/audits/2026-11-01/`](../bench/audits/2026-11-01/). They had no `--ref` comparison, so the template
 column is what the audit flagged, not a match against the source repo.
 
@@ -94,6 +94,7 @@ column is what the audit flagged, not a match against the source repo.
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | `Qwen3.6-35B-A3B-UD-IQ4_XS.gguf` + projector | ✓ pinned | ✓ | The same stock line | **clean** |
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | `Qwen3.8-35B-A3B-IQ4_XS.gguf` + projector | ✓ pinned | ✓ | The same stock line | **clean** |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | `Ternary-Bonsai-2-27B-PTQ1_0.gguf` + projector | ✓ pinned | header and template only: tensor layout unchecked, its type is PrismML's own | The same stock line | **clean** |
+| [Bonsai 2 27B](models/bonsai2-27b.md) | `Ternary-Bonsai-2-27B-Q2_0.gguf` | ✓ pinned | ✓ | The same stock line | **clean** |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | `Spark-X2.6-4B-Q8_0.gguf` | ✓ pinned | ✓ | nothing flagged | **clean** |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | `Nemotron-3.5-Bolt-E4B-Q4_K_M.gguf` | ✓ pinned | ✓ | nothing flagged | **clean** |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | `Qwen3VL-8B-Instruct-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | nothing flagged | **clean** |

@@ -7,11 +7,11 @@
 > | Size on disk | 5.95 GB (`PTQ1_0`) + 0.63 GB vision projector |
 > | Where it lives | everything on the GPU (7.45 GB used) |
 > | Context | **16K** (and that is the catch) |
-> | Generation | ~27 tok/s |
+> | Generation | ~27 tok/s on the PrismML build; 14 tok/s on our fork |
 > | Prompt processing | 269 tok/s (15.6K-token prompt) |
 > | [pibench](../pibench.md) | 14/18 solved, 13 of 18 runs ran out of context |
 > | [Vision probe](../vision-probe.md) | **98%**, the best at boxes in pixels (as asked) |
-> | Launch | `bash scripts/start_bonsai2.sh` |
+> | Launch | `bash scripts/start_bonsai2.sh` (PrismML build), or `QMODEL=bonsai2q2 bash scripts/start-qwen.sh` (our fork) |
 
 ## What is it?
 
@@ -38,6 +38,17 @@ layers in system RAM: **2.5 tok/s**. Bonsai does **27 tok/s**, about 11× faster
 general tricks in [How it fits](../how-it-fits.md).
 
 ## Install & run
+
+**On our fork, with no extra build:** PrismML also publishes a plain `Q2_0` file (7.63 GB) that runs on llama.cpp
+from `b11556`. Older builds load it and give garbage, without warning. It doesn't fully fit, so 60 of 64 layers go
+on the GPU. On 2026-11-01 it did 14.3 tok/s at 7.6 GB, with a working tool call and 0/500 wrong on the code check.
+
+```bash
+bash scripts/download-models.sh bonsai2q2
+QMODEL=bonsai2q2 bash scripts/start-qwen.sh
+```
+
+**For full speed,** the PrismML build runs the smaller `PTQ1_0` file entirely on the GPU, at about twice the speed:
 
 It needs **PrismML's llama.cpp fork**: stock llama.cpp doesn't know the `PTQ1_0` type. Build it
 once (about 15 minutes) with the repo's CUDA toolchain, into its own folder so it never

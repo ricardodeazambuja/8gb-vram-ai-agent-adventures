@@ -22,6 +22,7 @@ Run on 2026-11-01 (results in [`results/2026-11-01/`](results/2026-11-01/)):
 | LFM2.5-24B | 31.8 | 948 | ✓ | ✓ |
 | Ornith-1.5-35B | 31.4 | 500 | ✓ | ✓ |
 | Bonsai 2 27B (PrismML build) | 28.4 | 287 | ✓ | ✓ |
+| Bonsai 2 27B `Q2_0` (our fork) | 14.3 | 297 | ✓ | ✓ |
 | Spark-X2.6-4B | 49.1 | 1,626 | ✓ | ✗ thought past 16,000 tokens, no code |
 | LFM3-1.7B | 105.4 | 4,654 | ✓ | ✓ |
 | LFM3-VL-2B | 105.6 | 4,663 | ✓ | ✓ |
@@ -33,4 +34,4 @@ Run on 2026-11-01 (results in [`results/2026-11-01/`](results/2026-11-01/)):
 | VibeThinker 3B | 65.3 | 2,097 | ✗ expected, see its page | ✓ 0/500, though its own example test failed |
 | VibeThinker 1.5B | 108.1 | 3,614 | ✗ expected | ✓ |
 
-All on our fork except Bonsai 2.
+All on our fork except the `PTQ1_0` Bonsai row.

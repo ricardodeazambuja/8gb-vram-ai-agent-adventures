@@ -10,7 +10,7 @@ REPO="$(cd "$HERE/../.." && pwd)"
 OUT="${RECHECK_OUT:-$HERE/results/$(date +%F)}"
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
-ALL=(flint gemma26b tcgemma bolt qwen36 distill groot lfm25 ornith bonsai2 spark lfm3 lfm3vl e4b qwen3vl dory coder agentic vibe3b vibe15)
+ALL=(flint gemma26b tcgemma bolt qwen36 distill groot lfm25 ornith bonsai2 bonsai2q2 spark lfm3 lfm3vl e4b qwen3vl dory coder agentic vibe3b vibe15)
 [ $# -gt 0 ] || set -- "${ALL[@]}"
 
 launch() {

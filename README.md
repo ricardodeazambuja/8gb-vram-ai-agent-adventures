@@ -25,7 +25,7 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md) | 19B MoE, 3B active | 128K | **39.5 t/s** | **18/18** | 74% | Qwen3.6 with half the experts. Fastest big model here. |
 | 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md) | 24B conv/attention MoE, 2B active | 128K | 31.5 t/s | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
 | 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md) | 35B MoE, 3B active | 128K | 31 t/s | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
-| 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 16K | 27 t/s | 14/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
+| 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 16K | 27 t/s, 14 on our fork | 14/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
 | ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md) | 4B dense | 108K | 48–50 t/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
 | 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md) | 1.7B tri-hybrid | 128K | **106 t/s** | 12/18 | text only | Tiny, as fast as its VL sibling and twice as fast as the rest, and better at chores than models 14× its size. |
 | 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md) | 2B + vision | 32K | 106 t/s | 0/18 | 91% | 2.6 GB, 8 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
@@ -52,6 +52,7 @@ Not chat models, so they don't drive pi. Each one's page has a launch command an
 | ⚖️ | [**Clef-Flash**](docs/models/clef-flash.md) | Yes/no and pick-one decisions | 7.1 GB | 86% grading pibench, 4/189 false alarms |
 | ⚡ | [**d1-2B**](docs/models/d1-2b.md) | The same, much smaller | 2.6 GB | 27 ms a decision |
 | 📍 | [**LocateAnything-3B**](docs/models/locateanything-3b.md) | Finds things in pictures | 5 GB | 15/15 shapes, mean IoU 0.94 |
+| 🧠 | [**VibeThinker 3B and 1.5B**](docs/models/vibethinker.md) | One-shot code and math | 5.0 GB, 3.1 GB | 0/500 wrong on the code check, 65 and 108 tok/s |
 | 🐭 | [**LFM2.5-VL-450M**](docs/models/lfm2.5-vl-450m.md) | Tiny vision model for fine-tuning | 1.5 GB | 0.1 s a decision once tuned |
 | 🖌️ | [**FLUX.2 Klein 4B**](docs/models/flux2-klein-4b.md) | Pictures, the everyday pick | 3.5 GB | 23 s an image |
 | 🔤 | [**Iris-3B Turbo**](docs/models/iris-3b.md) | Pictures with text | 7.3 GB | Cleanest sign text, 33 s |

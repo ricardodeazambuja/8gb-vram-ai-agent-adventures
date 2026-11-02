@@ -8,6 +8,7 @@
 #   qwen36   Qwen3.6-35B-A3B UD-IQ4_XS        MoE, 3B active -> experts in RAM (--cpu-moe)
 #   distill  Qwen3.8-35B-A3B-Distill IQ4_XS   MoE, 3B active -> experts in RAM (--cpu-moe)
 #   bonsai2  Ternary-Bonsai-2-27B PTQ1_0      DENSE, 5.95 GB -> all on GPU (-ngl 99), PrismML fork
+#   bonsai2q2 The same in Q2_0                DENSE, 7.63 GB -> 60 of 64 layers, our fork
 #   qwen3vl  Qwen3-VL-8B-Instruct Q4_K_M      DENSE, 5.0 GB  -> all on GPU (-ngl 99), vision model
 #   dory     Nemotron-Labs-Dory1.0-4B Q5_K_M  LOOPED, 3.7 GB -> all on GPU (-ngl 999), Dory PR build
 #   spark    XHToken Spark-X2.6-4B Q8_0       DENSE, 4.4 GB -> all on GPU (-ngl 99), upstream llama.cpp
@@ -36,7 +37,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash  (default: qwen36)
+#   QMODEL     qwen36 | distill | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -125,6 +126,19 @@ case "$QMODEL" in
     # aborts on the first request ("no device code compatible with CUDA arch 750").
     _kv=f16
     _bin="$REPO_ROOT/vendor/prism-llama.cpp/build/bin/llama-server"
+    _ncmoe=
+    _temp=1.0 ;;
+  bonsai2q2)
+    # The same model in plain Q2_0 (7.63 GB), on our fork. It needs llama.cpp >= b11556: older builds
+    # load it and produce garbage. It doesn't fit fully, so 60 of 64 layers; 62 fails to start.
+    KIND=dense
+    _dir="$REPO_ROOT/models/bonsai2-27b"
+    _model="$_dir/Ternary-Bonsai-2-27B-Q2_0.gguf"
+    _mmproj="$_dir/Ternary-Bonsai-2-27B-mmproj-Q8_0.gguf"
+    ALIAS=bonsai2-27b
+    _ngl=60; _ctx=16384; _minp=0.05
+    _kv=q8_0
+    _bin="$ADV_BIN"
     _ncmoe=
     _temp=1.0 ;;
   qwen3vl)
@@ -409,7 +423,7 @@ case "$QMODEL" in
     _ncmoe=
     _temp=0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | distill | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"
