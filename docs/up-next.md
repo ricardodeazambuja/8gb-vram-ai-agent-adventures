@@ -87,6 +87,11 @@ One rebuild covers this and the RPATH chore below.
 
 Measured: see its [model page](models/locateanything-3b.md).
 
+### 🧠 VibeThinker 3B as a helper
+
+Brought in from [`vibethinker_tests`](https://github.com/ricardodeazambuja/vibethinker_tests): see its
+[model page](models/vibethinker.md). To try: a bigger model plans and checks, and the 3B writes the code in one shot.
+
 ## 🗣️ Voice agents: agents that talk to people
 
 Goal: a local agent you can talk to, which answers out loud and can still use tools. Two ways

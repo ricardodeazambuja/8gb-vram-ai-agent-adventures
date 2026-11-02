@@ -21,6 +21,7 @@
 #   lfm3vl   LFM3-VL-2B Q8_0                  DENSE, all on GPU, vision (--image)
 #   lfm25vl  LFM2.5-VL-450M F16               DENSE, all on GPU, vision (--image)
 #   locate   LocateAnything-3B Q8_0           boxes and points only, vision (--image)
+#   vibe3b / vibe15  VibeThinker 3B, 1.5B Q8_0  one-shot reasoners, no native tool calls
 #
 # Not chat models, so they have no start-qwen.sh or pi: start the server, then call its API.
 #   lfm3audio  LFM3-Audio-2B Q8_0             speech in and out, projector always on (/v1/realtime)
@@ -35,7 +36,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash  (default: qwen36)
+#   QMODEL     qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -355,6 +356,24 @@ case "$QMODEL" in
     _bin="$ADV_BIN"
     _ncmoe=
     _temp=0 ;;
+  vibe3b|vibe15)
+    # WeiboAI VibeThinker: reasoners with no native tool calls. The patched template splits out
+    # <think>. Sampling is the card's: temp 0.6, top-k off, never 0. For pi use
+    # start_vibethinker.sh. See docs/models/vibethinker.md.
+    KIND=dense
+    if [ "$QMODEL" = vibe3b ]; then _v=3B; else _v=1.5B; fi
+    _vl="${_v,,}"
+    _dir="$REPO_ROOT/models/vibethinker-$_vl"
+    _model="$_dir/VibeThinker-$_v.Q8_0.gguf"
+    _mmproj=
+    ALIAS="vibethinker-$_vl"
+    _ngl=99; _ctx=40960; _minp=0
+    _topp=0.95; _topk=0; _rpen=1.0
+    _kv=f16
+    _extra2="--chat-template-file $REPO_ROOT/config/vibethinker-$_vl-think.jinja"
+    _bin="$ADV_BIN"
+    _ncmoe=
+    _temp=0.6 ;;
   lfm3audio)
     # LiquidAI LFM3-Audio-2B: speech in and out, tools on the chat API. llama.cpp's own default
     # sampling, as in bench/voice/. See docs/models/lfm3-audio-2b.md.
@@ -390,7 +409,7 @@ case "$QMODEL" in
     _ncmoe=
     _temp=0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"
@@ -508,6 +527,8 @@ fi
 SAMPLER_ARGS=(--temp "$TEMP" --top-p "$TOP_P" --top-k "$TOP_K" --min-p "$MIN_P" --presence-penalty "$PRESENCE_PENALTY" --repeat-penalty "$REPEAT_PENALTY")
 # shellcheck disable=SC2206  # intentional word-splitting for passthrough flags
 [ -n "$EXTRA_ARGS" ] && SAMPLER_ARGS+=($EXTRA_ARGS)
+# shellcheck disable=SC2206  # a per-model flag that EXTRA_ARGS must not replace
+[ -n "${_extra2:-}" ] && SAMPLER_ARGS+=($_extra2)
 
 echo ">> sampling: temp=$TEMP top-p=$TOP_P top-k=$TOP_K min-p=$MIN_P presence-penalty=$PRESENCE_PENALTY repeat-penalty=$REPEAT_PENALTY ${EXTRA_ARGS:+(+ $EXTRA_ARGS)}"
 echo ">> context: $CTX   listening: http://$HOST:$PORT/v1"

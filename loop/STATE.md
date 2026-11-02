@@ -55,7 +55,7 @@ Queue:
 - [x] Commit fork-by-default change once the fresh build (scratchpad/forkbuild) passes
 - [x] Read audit WARNs for the 12 unaudited models, make audit-gguf read PTQ1_0, record rows in docs/security.md
 - [ ] bench/recheck: launch every chat model on the fork, save qwen-bench and codecheck output, compare with docs
-- [ ] VibeThinker: up-next entry, then QMODEL, pinned download, audit, page, shim (facts: VibeThinkerPi/docs/vibethinker-eval.md)
+- [x] VibeThinker added: launcher, pinned download, page, shim. Verify agent mode after recheck
 - [ ] Port PTQ1_0 (Bonsai 2) to a local fork branch, CPU and CUDA only; no push
 - [ ] Fix stale items from the audit report; final report
 Not possible tonight: pibench (firewall may need root), pushing.

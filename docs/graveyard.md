@@ -163,8 +163,8 @@ Checked and skipped on paper, so you don't have to:
   estimate was ~1–3 tok/s (not measured). For this card the realistic upgrade is a
   higher-precision quant of the 26B MoE, not a bigger model.
 
-## Moved out (not dead!) 🏠
+## Moved back in 🏠
 
-**VibeThinker 1.5B / 3B**, small math-and-coding reasoners (the 1.5B runs at ~100 tok/s fully on
-the GPU at Q8_0), grew up and got its own place:
-[vibethinker_tests](https://github.com/ricardodeazambuja/vibethinker_tests).
+**VibeThinker 1.5B / 3B** had their own repo for a while,
+[vibethinker_tests](https://github.com/ricardodeazambuja/vibethinker_tests), and are now a
+[model page](models/vibethinker.md) here again.

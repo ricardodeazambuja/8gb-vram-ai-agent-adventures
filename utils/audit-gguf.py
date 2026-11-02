@@ -184,19 +184,23 @@ def value(field):
         return f"<undecodable: {e}>"
 
 
+# Tensor types we know come from a fork, and only those: PrismML's PTQ1_0.
+KNOWN_PRIVATE_TYPES = {143}
+
+
 def load(path):
+    """Read a GGUF. A known private tensor type keeps the metadata and template checks but loses
+    the tensor layout check, and check_structure reports that. Anything else unknown still fails."""
     try:
         return gguf.GGUFReader(path, "r")
     except ValueError as e:
-        if "GGMLQuantizationType" not in str(e):
+        m = re.fullmatch(r"(?:np\.uint32\()?(\d+)\)? is not a valid GGMLQuantizationType", str(e))
+        if not m or int(m.group(1)) not in KNOWN_PRIVATE_TYPES:
             raise
-        reason = str(e)
-    # A fork's private tensor type (PrismML's PTQ1_0 is 143). The audit is about metadata, so keep
-    # the header and template checks and skip laying out the tensors.
-    print(f"  note  {reason}: tensor layout not checked")
-    cls = gguf.GGUFReader
 
-    class HeaderOnly(cls):
+    class HeaderOnly(gguf.GGUFReader):
+        tensors_skipped = True
+
         def _build_tensors(self, start_offs, fields):
             self.tensors = []
 
@@ -243,6 +247,9 @@ def check_structure(r, path, rep):
     rep.ok(f"header parsed: {len(r.fields)} metadata keys, {len(r.tensors)} tensors, alignment {align}")
     if r.data_offset > size:
         rep.fail(f"data section starts at {r.data_offset}, past end of file ({size})")
+        return
+    if getattr(r, "tensors_skipped", False):
+        rep.warn("tensor layout NOT checked: known private tensor type (PrismML PTQ1_0)")
         return
     spans, bad = [], 0
     for t in r.tensors:

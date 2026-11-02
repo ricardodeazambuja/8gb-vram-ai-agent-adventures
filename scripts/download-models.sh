@@ -58,7 +58,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)
+#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | vibe3b | vibe15 | d1 | eg2 | clefflash | locate | lfm25vl)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -95,6 +95,8 @@ MODELS=(
   "lfm3audio|LiquidAI/LFM3-Audio-2B-GGUF|fcfae9027c00a6f3f872c48a841cfeb77e2b5a1c|lfm3-audio-2b|LFM3-Audio-2B-Q8_0.gguf:d4e36902ba8f0ee7b333596030a59d650f88ac76660b4d9ba5ff77c3c2258fc0 mmproj-LFM3-Audio-2B-F16.gguf:bd0fce0670c96e405a753f996701dee6568bc6a1318a80091d74fb58f7510d79"
   "lfm25vl|LiquidAI/LFM2.5-VL-450M-GGUF|1abed04b6fe71314d8c446a1371c03d7c332266d|lfm2.5-vl-450m|LFM2.5-VL-450M-F16.gguf:f7d130500beadcbe66b78fb7b1222142ccdf4edcb2596026a7ee30b4bafe6989 mmproj-LFM2.5-VL-450m-F16.gguf:51b458cfdbc736982145a35f798ce37611af0aab639e58b33473ba0c7815fd99"
   "locate|yuuko-eth/LocateAnything-3B-GGUF|c3260717380c24cd2fc11f66c43e2feeec3e32fe|locateanything-3b|LocateAnything-3B-Q8_0.gguf:3d039dea2f121006d5dffe2a0371b4979c67dc17ac9d50a557834a064c9e107f mmproj-LocateAnything-3B-BF16.gguf:0216a6647317bc7d5bd152b66bd8b9248472ad090893f75d2f4a689d1789ee80"
+  "vibe3b|mradermacher/VibeThinker-3B-GGUF|d888b8fe5e48f860687f37d17bac083d9082dc9f|vibethinker-3b|VibeThinker-3B.Q8_0.gguf:4f392d489f5c6d1980fa2dbe5af5c169a4111336f1ce8c6d72650561e7390f02"
+  "vibe15|mradermacher/VibeThinker-1.5B-GGUF|d0d66139a78030a92a582f966b0f7cbbb3b19406|vibethinker-1.5b|VibeThinker-1.5B.Q8_0.gguf:4243d9c5de7ba3d682403c8f25708de5efb4eb6f6878898f4c771afe098a3bba"
   "d1|LiquidAI/d1-2B-GGUF|63be75e6586882defeb706ed4bda812d90256a6d|d1-2b|d1-2B-Q8_0.gguf:073313d92b53b0ac8193db6e906cb3c78a98183d244b15b7b8f5426115c6738c"
   "klein|leejet/FLUX.2-klein-4B-GGUF|3b1f5a9dc3abb32238b053aeb3d823c30afdacbd|image-gen/flux2-klein|flux-2-klein-4b-Q4_0.gguf:d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4"
   "kleinte|unsloth/Qwen3-4B-GGUF|22c9fc8a8c7700b76a1789366280a6a5a1ad1120|image-gen/flux2-klein|Qwen3-4B-Q4_K_M.gguf:f6f851777709861056efcdad3af01da38b31223a3ba26e61a4f8bf3a2195813a"
@@ -164,7 +166,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | vibe3b | vibe15 | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
 done
 
 exit "$FAIL"
