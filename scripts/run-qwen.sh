@@ -18,6 +18,16 @@
 #   groot    Groot-19B-A3B-261023 Q4_K_M      MoE, 3B active, 11.7 GB -> experts partly in RAM, upstream
 #   ornith   Ornith-1.5-35B-A3B Q4_K_M        MoE, 3B active, 21.7 GB -> experts in RAM, upstream
 #   lfm25    LFM2.5-24B-A2B QAD Q4_0          MoE, 2B active, 13.6 GB -> experts partly in RAM, upstream
+#   lfm3     LFM3-1.7B Q8_0                   DENSE, all on GPU, agent model
+#   lfm3vl   LFM3-VL-2B Q8_0                  DENSE, all on GPU, vision (--image)
+#   lfm25vl  LFM2.5-VL-450M F16               DENSE, all on GPU, vision (--image)
+#   locate   LocateAnything-3B Q8_0           boxes and points only, vision (--image)
+#
+# Not chat models, so they have no start-qwen.sh or pi: start the server, then call its API.
+#   lfm3audio  LFM3-Audio-2B Q8_0             speech in and out, projector always on (/v1/realtime)
+#   eg2        EmbeddingGemma 2 Q8_0          embeddings (/v1/embeddings)
+#   d1         d1-2B Q8_0                     decisions (/v1/systemone)
+#   clefflash  Clef-Flash Q4_K_M              decisions (/v1/systemone), 7 GB
 #
 # Both MoE candidates are Qwen3.6-class hybrids (30 Gated DeltaNet + 10 full-attention
 # layers), so the KV cache is small: 128K ctx at q8_0 is ~1.4 GB. Qwen recommends at
@@ -26,7 +36,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate  (default: qwen36)
+#   QMODEL     qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -358,8 +368,42 @@ case "$QMODEL" in
     _bin="$ADV_BIN"
     _ncmoe=
     _temp=0 ;;
+  lfm3audio)
+    # LiquidAI LFM3-Audio-2B: speech in and out, tools on the chat API. llama.cpp's own default
+    # sampling, as in bench/voice/. See docs/models/lfm3-audio-2b.md.
+    KIND=dense
+    _dir="$REPO_ROOT/models/lfm3-audio-2b"
+    _model="$_dir/LFM3-Audio-2B-Q8_0.gguf"
+    _mmproj="$_dir/mmproj-LFM3-Audio-2B-F16.gguf"
+    ALIAS=lfm3-audio-2b
+    _ngl=99; _ctx=16384; _minp=0.05
+    _topp=0.95; _topk=40; _rpen=1.0
+    _kv=f16; _mmgpu=1; _image=1
+    _bin="$ADV_BIN"
+    _ncmoe=
+    _temp=0.8 ;;
+  eg2|d1|clefflash)
+    # Embedding and decision models: one pass, no sampling. /v1/systemone needs the whole input in
+    # one physical batch, so -ub must be at least the longest input in tokens. Clef-Flash at
+    # -ub 8192 doesn't fit in 8 GB. See docs/models/embeddinggemma-2.md, d1-2b.md, clef-flash.md.
+    KIND=dense
+    case "$QMODEL" in
+      eg2)       _dir="$REPO_ROOT/models/embeddinggemma-2"; _model="$_dir/embeddinggemma-2-Q8_0.gguf"
+                 ALIAS=embeddinggemma-2; _batch=8192; _np=4; _extra="--embedding" ;;
+      d1)        _dir="$REPO_ROOT/models/d1-2b"; _model="$_dir/d1-2B-Q8_0.gguf"
+                 ALIAS=d1-2b; _batch=4096 ;;
+      clefflash) _dir="$REPO_ROOT/models/clef-flash"; _model="$_dir/Clef-Flash-Q4_K_M.gguf"
+                 ALIAS=clef-flash; _batch=4096 ;;
+    esac
+    _mmproj=
+    _ngl=99; _ctx=8192; _minp=0
+    _topp=1.0; _topk=1; _rpen=1.0
+    _kv=f16
+    _bin="$ADV_BIN"
+    _ncmoe=
+    _temp=0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | qwen38 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | eg2 | d1 | clefflash)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"
@@ -381,7 +425,7 @@ TOP_K="${TOP_K:-${_topk:-20}}"
 MIN_P="${MIN_P:-$_minp}"
 PRESENCE_PENALTY="${PRESENCE_PENALTY:-${_pp:-0}}"
 REPEAT_PENALTY="${REPEAT_PENALTY:-${_rpen:-1.0}}"
-NP="${NP:-1}"
+NP="${NP:-${_np:-1}}"
 BATCH="${BATCH:-${_batch:-512}}"
 UBATCH="${UBATCH:-${_batch:-512}}"
 EXTRA_ARGS="${EXTRA_ARGS:-${_extra:-}}"
@@ -390,7 +434,7 @@ PORT="${PORT:-8080}"
 CUDA_BIN="${CUDA_BIN:-${_bin:-$ADV_BIN}}"
 CUDA_ENV="${CUDA_ENV:-llamacpp-cuda}"
 
-USE_IMAGE=0
+USE_IMAGE="${_image:-0}"
 PASS_ARGS=()
 while [ $# -gt 0 ]; do
   case "$1" in

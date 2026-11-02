@@ -37,7 +37,7 @@ new clips in the output folder, so their audio differs from run to run.
 | Word error rate | 10.1%, all from numbers written as digits | 10.1%, the same |
 | Tool calls that fit | 3/3 | 3/3 |
 | No tool fits | miss | miss, `set_timer(minutes=0)` |
-| First audio back | 0.13–0.17 s | 0.14–0.16 s |
+| First audio back | 0.13–0.17 s | 0.10–0.12 s |
 
 The October raw output doesn't show which tool the miss called, because the script printed only the
 empty answer. It prints the call now.

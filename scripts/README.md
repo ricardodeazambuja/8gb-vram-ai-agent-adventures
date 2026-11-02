@@ -13,7 +13,7 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 |---|---|
 | `build-llama-cuda.sh` | Builds llama.cpp from source against CUDA into `vendor/` (or `SRC_DIR=`). Picks a ref (`LLAMA_REF`), a repo (`LLAMA_REPO`, for forks) and an optional `PATCH`; auto-detects the GPU arch and smoke-tests the result. The per-model commands are in [getting started](../docs/getting-started.md#3-build-llamacpp-once-per-flavour). |
 | `setup.sh` | Creates the `llamacpp` conda env (llama.cpp + huggingface_hub) and downloads Gemma 4 26B into `models/`. `BACKEND=cuda` also builds the CUDA backend. Idempotent. |
-| `download-models.sh` | Downloads any of `qwen36 distill flint bolt e4b bonsai2 qwen3vl dory spark qwen38 dflash`, pinned to a repo revision and sha256-checked. Needs the `hf` CLI in the `ENV_NAME` env (default `llamacpp`). |
+| `download-models.sh` | Downloads any model in its list, such as `qwen36 flint groot lfm3 lfm3audio eg2 d1 clefflash locate klein`, pinned to a repo revision and sha256-checked. Needs the `hf` CLI in the `ENV_NAME` env (default `llamacpp`). |
 | `configure-pi.sh` | Adds the `llamacpp` provider (every model in `../config/pi-provider.json`) to `~/.pi/agent/models.json`. |
 
 ## Every day
@@ -26,6 +26,7 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 | `start_flint.sh`, `start_bolt.sh`, `start_e4b.sh`, `start_bonsai2.sh`, `start_spark.sh`, `start_dory.sh`, `start_qwen3vl.sh` | One-word launchers for those models: `start-qwen.sh` with the right `QMODEL` and pi flags, refusing to start if another model already holds the port. |
 | `run-12b-coder.sh` | Gemma 4 12B coder (dense, partial GPU offload). |
 | `run-12b-agentic.sh`, `start-agentic.sh`, `start-turbo.sh` | Gemma 4 12B agentic; `start-turbo.sh` is the zero-config TurboQuant setup. |
+| `run-qwen.sh` with `QMODEL=lfm3audio \| eg2 \| d1 \| clefflash` | **The helpers**, server only: speech, embeddings and decision models. Their [pages](../docs/models/) show how to call them. |
 | `run-pi.sh` | Opens pi against whatever is serving on port 8080. |
 | `stop-server.sh` | Stops the server listening on the port (default 8080). |
 

@@ -4,7 +4,7 @@
 (Plenty. It's all written down.)
 
 This repo started with one question: *can a 26-billion-parameter model run on a laptop with an
-8 GB graphics card?* It could. Then we got curious, and seventeen models later we have install
+8 GB graphics card?* It could. Then we got curious, and more than twenty models later we have install
 scripts, measured speeds, a sandboxed agent benchmark, a vision probe, and a graveyard.
 
 Everything here runs on one machine: an **RTX 2070 Max-Q with 8 GB of VRAM and 32 GB of RAM**,
@@ -40,6 +40,22 @@ alone, in a sandbox, graded by hidden tests; solved attempts out of 18. **Vision
 images with known answers: OCR, bounding boxes, charts, counting, engineering drawings. "—" means
 we haven't run it (yet). The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md).
+
+## The helpers
+
+Not chat models, so they don't drive pi. Each one's page has a launch command and an example call.
+
+| | Model | What it does | Memory | Best result here |
+|---|---|---|---:|---|
+| 🗣️ | [**LFM3-Audio-2B**](docs/models/lfm3-audio-2b.md) | Hears and speaks | 3.3 GB | First audio in under 0.2 s, 3/3 spoken tool calls |
+| 🧲 | [**EmbeddingGemma 2**](docs/models/embeddinggemma-2.md) | Search over code and docs | 1.5 GB | 93% top hit on code, with BM25 |
+| ⚖️ | [**Clef-Flash**](docs/models/clef-flash.md) | Yes/no and pick-one decisions | 7.1 GB | 86% grading pibench, 4/189 false alarms |
+| ⚡ | [**d1-2B**](docs/models/d1-2b.md) | The same, much smaller | 2.6 GB | 27 ms a decision |
+| 📍 | [**LocateAnything-3B**](docs/models/locateanything-3b.md) | Finds things in pictures | 5 GB | 15/15 shapes, mean IoU 0.94 |
+| 🐭 | [**LFM2.5-VL-450M**](docs/models/lfm2.5-vl-450m.md) | Tiny vision model for fine-tuning | 1.5 GB | 0.1 s a decision once tuned |
+| 🖌️ | [**FLUX.2 Klein 4B**](docs/models/flux2-klein-4b.md) | Pictures, the everyday pick | 3.5 GB | 23 s an image |
+| 🔤 | [**Iris-3B Turbo**](docs/models/iris-3b.md) | Pictures with text | 7.3 GB | Cleanest sign text, 33 s |
+| 🎨 | [**SDXL**](docs/models/sdxl.md) | Pictures, trainable | 5.8 GB | Learned our styles and a person |
 
 ## Quick start
 
