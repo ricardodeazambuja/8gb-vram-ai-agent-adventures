@@ -48,6 +48,6 @@ for m in "$@"; do
     echo "--- code check"
     timeout 1200 python3 scripts/qwen-codecheck.py --max-tokens 16000 --out "$OUT/.merge-$m.py"
   } >> "$f" 2>&1
-  printf '%-10s %s | %s | %s\n' "$m" "$(grep -m1 '^VRAM' "$f")" "$(grep -m1 '== speed' "$f" | cut -c4-40)" "$(tail -1 "$f" | cut -c1-60)" | tee -a "$OUT/summary.txt"
+  printf '%-10s %s | %s | %s\n' "$m" "$(grep -m1 '^VRAM' "$f")" "$(grep -m1 '== speed' "$f" | cut -c4-40)" "$(grep -E 'vs reference|NO CODE' "$f" | tail -1 | cut -c1-60)" | tee -a "$OUT/summary.txt"
 done
 rm -f "$OUT"/.server-*.log "$OUT"/.merge-*.py
