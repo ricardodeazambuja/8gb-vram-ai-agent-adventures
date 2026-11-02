@@ -5,12 +5,12 @@
 > | | |
 > |---|---|
 > | File | `gemma4-v2-Q4_K_M.gguf`, 6.87 GB |
-> | Where it lives | **all 48 layers on the GPU** (with the TurboQuant build) |
+> | Where it lives | partly on the GPU on our fork; **all 48 layers** with the TurboQuant build |
 > | Context | 16K (25K works only sometimes) |
-> | Generation | **~28.3 tok/s** with TurboQuant · ~16.5 tok/s on the stock build |
+> | Generation | **~28.3 tok/s** with TurboQuant · 13.4–16.5 tok/s on our fork |
 > | [pibench](../pibench.md) | not benchmarked yet |
 > | [Vision probe](../vision-probe.md) | not run (no vision projector set up for it) |
-> | Launch | `bash scripts/start-turbo.sh` |
+> | Launch | `bash scripts/start-agentic.sh` on our fork; `bash scripts/start-turbo.sh` for the TurboQuant cache |
 
 ## What is it?
 
@@ -43,19 +43,18 @@ is the model author's own (~30 tok/s on their RTX 4060). More on the general tri
 ## Install & run
 
 ```bash
-# 1. Build the TurboQuant fork into its own folder (CUDA; leaves vendor/llama.cpp alone)
+# 1. Download the recommended quant, pinned and checked
+bash scripts/download-models.sh agentic12
+
+# 2. Server + pi on our llama.cpp fork
+bash scripts/start-agentic.sh
+
+# 3. Optional, for the full-GPU speed below: build the TurboQuant fork and use its cache
 git clone --depth 1 --branch feature/turboquant-kv-cache \
   https://github.com/TheTom/llama-cpp-turboquant vendor/llama-cpp-turboquant
-SRC_DIR=$PWD/vendor/llama-cpp-turboquant LLAMA_REF=feature/turboquant-kv-cache \
-  ENV_NAME=llamacpp-cuda bash scripts/build-llama-cuda.sh
-
-# 2. Download the recommended quant
-mamba run -n llamacpp hf download yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF \
-    gemma4-v2-Q4_K_M.gguf --local-dir models/gemma4-12b-agentic
-
-# 3. Server + pi, with the TurboQuant recipe baked in
+SRC_DIR=$PWD/vendor/llama-cpp-turboquant LLAMA_REPO=https://github.com/TheTom/llama-cpp-turboquant \
+  LLAMA_REF=feature/turboquant-kv-cache ENV_NAME=llamacpp-cuda bash scripts/build-llama-cuda.sh
 bash scripts/start-turbo.sh
-bash scripts/start-turbo.sh -p "explain @README.md"   # one-shot (leaves the server up)
 
 # 4. Stop the server when you're done
 bash scripts/stop-server.sh

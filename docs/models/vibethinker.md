@@ -54,6 +54,10 @@ As an agent, the 3B's `write`, `edit` and `read` calls are reliable. `bash` is n
 a fresh session, falling to about 1 in 3 as the session grows, and on a miss the model makes up the output instead
 of running the command.
 
+On 2026-11-01 both models ran on our fork, and the [recheck](../../bench/recheck/README.md) passed: 0/500 wrong on
+`merge_intervals` for each. The agent mode has **not** been rerun on the fork, because its first shell access
+belongs in pibench. Everything on tool calls above is from June.
+
 ## Gotchas
 
 - **The shim runs what the model writes.** It turns text into tool calls, so treat the agent mode like any

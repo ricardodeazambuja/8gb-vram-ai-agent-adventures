@@ -98,8 +98,8 @@ column is what the audit flagged, not a match against the source repo.
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | `Nemotron-3.5-Bolt-E4B-Q4_K_M.gguf` | ✓ pinned | ✓ | nothing flagged | **clean** |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | `Qwen3VL-8B-Instruct-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | nothing flagged | **clean** |
 | [Dory1.0-4B](models/dory1.0-4b.md) | `NVIDIA-Nemotron-Labs-Dory1.0-4B-Q5_K_M.gguf` | ✓ pinned | ✓ | The same stock line | **clean** |
-| [Gemma 4 12B coder](models/gemma4-12b-coder.md) | `gemma4-coding-Q4_K_M.gguf` and its other quants | not pinned | ✓ | nothing flagged | **clean** |
-| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | `gemma4-v2-Q4_K_M.gguf` | on its page | ✓ | nothing flagged | **clean** |
+| [Gemma 4 12B coder](models/gemma4-12b-coder.md) | `gemma4-coding-Q4_K_M.gguf` and its other quants | Q4 ✓ pinned | ✓ | nothing flagged | **clean** |
+| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) | `gemma4-v2-Q4_K_M.gguf` | ✓ pinned | ✓ | nothing flagged | **clean** |
 | [Groot-19B-A3B](models/groot-19b-a3b.md) | `Groot-19B-A3B-261023-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | Qwen3.6's, minus the "drop old reasoning" branch; matches the source repo | **clean** |
 | [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | `Ornith-1.5-35B-Q4_K_M.gguf` + projector | ✓ pinned | ✓ | Unsloth's patched Qwen3.6 template (as in our Qwen3.6 GGUF), minus the same "drop old reasoning" branch; differs from the source repo's only by those Unsloth fixes | **clean** |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) | `LFM2.5-24B-A2B-QAD-Q4_0.gguf` | ✓ pinned | ✓ | Liquid's own; byte-identical to the source repo's | **clean** |

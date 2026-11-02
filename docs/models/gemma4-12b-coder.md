@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | File | `gemma4-coding-Q4_K_M.gguf`, 7.38 GB |
-> | Where it lives | 42 of 48 layers on the GPU, the last 6 in system RAM |
+> | Where it lives | 40 of 48 layers on the GPU, the last 8 in system RAM |
 > | Context | 32K (q8_0 KV cache) |
-> | Generation | **~17 tok/s** |
+> | Generation | 13–17 tok/s (13.7 on the [2026-11-01 recheck](../../bench/recheck/README.md)) |
 > | Prompt processing | ~67 tok/s (llama-bench) |
 > | [pibench](../pibench.md) | not benchmarked yet |
 > | [Vision probe](../vision-probe.md) | not run (no vision projector set up for it) |
@@ -44,9 +44,8 @@ You need our llama.cpp fork in `../llama.cpp` (from `bash scripts/build-llama-cu
 the old stock build gave the same speed that day (13.4–13.7). The ~17 tok/s above is from earlier runs.
 
 ```bash
-# 1. Download the recommended quant (hf checks the SHA-256 for you)
-mamba run -n llamacpp hf download yuxinlu1/gemma-4-12B-coder-fable5-composer2.5-v1-GGUF \
-    gemma4-coding-Q4_K_M.gguf --local-dir models/gemma4-12b-coder
+# 1. Download the recommended quant, pinned and checked
+bash scripts/download-models.sh coder12
 
 # 2. Start the server (Q4_K_M, 40 layers on the GPU, 32K, q8_0 KV, port 8080)
 bash scripts/run-12b-coder.sh
