@@ -1,7 +1,7 @@
 # 🔁 Reproducing our results
 
-Every result in these docs maps to a command and a saved file. This page is that map: what to build,
-which command makes which number, and how close a rerun should land.
+This page maps results to commands and saved files: what to build, which command makes which
+number, and how close a rerun should land. **Not every result has that yet:** see [Known gaps](#known-gaps).
 
 You can start with no GPU at all. This recomputes the headline numbers, and their p-values, from the
 committed result files, and it reports any that disagree with the docs:
@@ -188,7 +188,25 @@ Write `--tag=-3k` with the `=`: on its own, argparse reads `-3k` as a flag.
 |---|---|---|
 | Model weights, adapters, pictures | 133 GB | Downloads are pinned, and the commands above rebuild the rest |
 | Raw pibench transcripts in `bench/results/` | 850 MB | Scores and per-run stats are committed. Later analysis of the raw text, like a new replay, needs a new run |
-| The server logs in `loop/logs/` | small | The ones behind a result were copied to `bench/beyond-vision/results/logs/` |
+| The server logs in `loop/logs/` | small | The beyond-vision ones were copied to `bench/beyond-vision/results/logs/`; the others weren't |
+
+## Known gaps
+
+An audit on 2026-11-01 found results these commands can't reproduce yet. `bench/check_numbers.py`
+covers only the beyond-vision, glance and steering numbers.
+
+| Result | What's missing |
+|---|---|
+| EmbeddingGemma, Clef-Flash and d1 smoke tests; LocateAnything's first test; the fork speed rechecks | Scripts and raw output aren't committed |
+| Thinking stays in the prompt ("token counts prove it") | The script isn't committed, and it needs the raw transcripts |
+| Random-walk control, LoRA at scale 0, the green-cast figures | No script or result found |
+| Needle tests, and most of the [graveyard](graveyard.md) | No script or raw output |
+| Speed, VRAM and code-check tables | `scripts/qwen-bench.py` and `qwen-codecheck.py` exist, but their raw output isn't committed |
+| Retrieval | It reads the live docs and code, so the corpus has grown (269 and 235 chunks, was 236 and 163) and a rerun is a different test |
+| pibench habits and judge scores | They need the raw transcripts, which are only on this disk |
+| Detect-all counts, web-page clicks | No saved output; the page captures aren't committed |
+| Training time and VRAM, image verdicts | The evidence is in ignored `models/` and `loop/logs/` |
+| Results from `vendor/llama.cpp-lfm3` and `vendor/locate-llama.cpp` | Those builds are gone. Only voice has been rerun on the fork |
 
 [`loop/`](../loop/README.md) keeps the night-by-night commands and journal. It's a record of what
 happened, so use this page to repeat anything.
