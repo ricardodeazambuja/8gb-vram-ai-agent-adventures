@@ -57,10 +57,11 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 | [ThinkingCap Gemma 4 26B](models/thinkingcap-gemma4-26b-a4b.md) ² | 17/18 | 98% | 3/3 | 3/3 | 3/3 | 3/3 | 2/3 | 3/3 | 5.5 min | 0 |
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | 16/18 | 98% | 3/3 | 3/3 | 3/3 | 2/3 | 2/3 | 3/3 | 2.5 min | 0 |
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | 16/18 | 96% | 2/3 | 3/3 | 3/3 | 3/3 | 3/3 | 2/3 | 3.4 min | 0 |
+| [Bonsai 2 27B](models/bonsai2-27b.md) at 32K ⁶ | 16/18 | 97% | 3/3 | 3/3 | 2/3 | 3/3 | 2/3 | 3/3 | 6.0 min | 2 of 18 ⁷ |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) ¹ | 15/18 | 93% | 2/3 | 3/3 | 3/3 | 3/3 | 1/3 | 3/3 | 6.4 min | 0 |
 | [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 14/18 | 94% | 3/3 | 2/3 | 3/3 | 2/3 | 1/3 | 3/3 | 2.2 min | 0 ³ |
 | [Spark-X2.6-4B](models/spark-x2.6-4b.md) | 14/18 | 96% | 3/3 | 2/3 | 2/3 | 3/3 | 2/3 | 2/3 | 3.3 min | 0 |
-| [Bonsai 2 27B](models/bonsai2-27b.md) | 14/18 | 90% | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 | 2/3 | 4.9 min | 13 of 18 attempts |
+| [Bonsai 2 27B](models/bonsai2-27b.md) at 16K | 14/18 | 90% | 3/3 | 3/3 | 3/3 | 3/3 | 0/3 | 2/3 | 4.9 min | 13 of 18 attempts |
 | [Dory1.0-4B](models/dory1.0-4b.md) ⁵ | 14/18 | 95% | 3/3 | 3/3 | 2/3 | 3/3 | 0/3 | 3/3 | 7.2 min | 0 |
 | [LFM3-1.7B](models/lfm3-1.7b.md) ² | 12/18 | 88% | 2/3 | 3/3 | 3/3 | 3/3 | 0/3 | 1/3 | 2.2 min | 0 |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) ² | 10/18 | 86% | 0/3 | 3/3 | 2/3 | 2/3 | 0/3 | 3/3 | 4.2 min | 0 |
@@ -77,7 +78,9 @@ LFM2.5, Ornith, ThinkingCap Gemma, LFM3 and LFM3-VL ran on 2026-10-27/28, same h
 with a llama.cpp build, so its times may be a little high). ³ One timeout: a scraper that paged
 forever. ⁴ 14 of 18 attempts hit the 20-minute timeout, every one in a loop of the same command. ⁵ Dory, Qwen3-VL,
 both Gemma 12B fine-tunes and VibeThinker 3B ran on 2026-11-02, on our fork after the PrismML merge (`7ff495f`), same
-harness, 90 more attempts. VibeThinker went through its [tool-call proxy](models/vibethinker.md).
+harness, 90 more attempts. VibeThinker went through its [tool-call proxy](models/vibethinker.md). ⁶ The same day,
+same fork: Bonsai with the q8_0 KV cache that lets it [fit 32K](../bench/bonsai-ctx/README.md); the 16K row ran on
+PrismML's own build. ⁷ Both had already passed every test.
 
 "Hidden tests passed" has a floor: the untouched starter files already pass 12 of the bug fix's 27 tests and 3 of
 the feature's 8. The Gemma 12B coder never changed a file, so its 28% is that floor.
@@ -163,7 +166,9 @@ breadth (text, images and video, 128K), at a price: 6.4 minutes per attempt, the
 No model with 64K or more of context ran out of it. Some attempts ran out of *time* (one each for
 Bolt, E4B and Ornith, 14 for looping LFM3-VL), which is a different story. Bonsai 2, at 16K,
 got cut off mid-thought in two thirds of its attempts; nine of those still passed because the
-files were already written. On a longer job, that's a job half done.
+files were already written. On a longer job, that's a job half done. Given 32K on the merged fork, it solved
+16/18: the books chore went from 0/3 to 2/3 and the JavaScript page from 2/3 to 3/3, and only 2 attempts filled
+the context, both after they had passed.
 
 ### The code chores barely separate them
 
@@ -210,8 +215,8 @@ The 2026-11-02 batch shows that a tool-calling template doesn't make a model an 
 - **Nemotron Bolt E4B** — the speedster who doesn't check. 52 tok/s, two minutes a job, and the
   only model to announce "task complete" over an empty `{}`. NVIDIA built it for voice assistants;
   it shows.
-- **Bonsai 2** — big brain, small desk. Strong reasoning, all code chores solved, but the 16K
-  context cuts it off before it can finish thinking.
+- **Bonsai 2** — big brain, small desk. At 16K the context cut it off before it could finish
+  thinking (14/18); at 32K it solved 16/18, level with Qwen3.6 and the distill.
 - **Groot** — the third perfect score, and the quickest of the three (3.1 min a job). Qwen3.6
   with half its experts pruned, and on these chores it lost nothing.
 - **LFM2.5** — the literalist. Fixed exactly the two reported bugs and stopped (0/3), and read

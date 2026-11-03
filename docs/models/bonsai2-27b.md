@@ -9,7 +9,7 @@
 > | Context | **32K** (48K if you can spare the last 0.3 GB of VRAM) |
 > | Generation | 38 tok/s (short prompt); 22 tok/s with 28K in context |
 > | Prompt processing | 277 tok/s (15K-token prompt) |
-> | [pibench](../pibench.md) | 14/18 solved at 16K, where 13 of 18 runs ran out of context |
+> | [pibench](../pibench.md) | **16/18** at 32K (14/18 at 16K, where 13 of 18 runs ran out of context) |
 > | [Vision probe](../vision-probe.md) | **98%**, the best at boxes in pixels (as asked) |
 > | Launch | `bash scripts/start_bonsai2.sh` |
 
@@ -106,8 +106,17 @@ On our fork (`7ff495f`), 2026-11-02:
 
 Earlier, on PrismML's build at 16K: `llama-bench` pp512 322.3, tg64 28.47 tok/s; the server at 27.0 tok/s.
 
-**[pibench](../pibench.md), on PrismML's build at 16K: 14/18 solved, 90% of hidden tests passed, median 4.9 min per run.**
+**[pibench](../pibench.md) at 32K, on our fork (2026-11-02): 16/18 solved, 97% of hidden tests passed, median 6.0 min per
+run.** Bug fix, feature, login and JavaScript page 3/3, CLI 2/3 (one run at 5/6), books 2/3. Only 2 runs reached the
+32K limit (28.7K tokens at most), and both had already passed. One books run took the full 20 minutes and still
+passed; the other ran out of time just after finding its bug (relative links resolved against the site root), with
+no CSV written. Details: [`stats-bonsai2-32k.txt`](../../bench/results/stats-bonsai2-32k.txt).
+
+On PrismML's build at 16K (2026-10-23): 14/18 solved, 90% of hidden tests passed, median 4.9 min per run.
 All code tasks 3/3, login 3/3, the JavaScript page 2/3, and the big-page book scraper 0/3.
+
+With twice the room it ran more tools (18.8 calls a run against 12.2), thought more (20K characters against 14K)
+and took a little longer, and the two chores that context had cost it, books and the JavaScript page, came back.
 
 **[Vision probe](../vision-probe.md): 98% overall.** OCR 100%, boxes 100% (and 67% in pixels
 exactly as asked, the best of any model), understanding 100%, CAD 93%. On one drawing it read
@@ -116,14 +125,14 @@ on the CPU).
 
 ## How it behaves
 
-- **Smart, and constantly out of room (at 16K).** In pibench, 12 of its 18 runs ended because the
+- **Smart, and constantly out of room (at 16K; 32K fixes most of this).** In pibench, 12 of its 18 runs ended because the
   conversation filled the 16K context, and one more was rejected outright when a page dump
   pushed a request to 22,482 tokens. Only 5 runs finished on their own.
 - **It often finishes the job just before the lights go out.** Nine of those cut-off runs
   still passed, because it had already written the files. One run thought for 22,000
   characters in a single block, wrote the class and its tests, ran pytest, saw a failure, and
   was cut off before it could react. On a longer job, that's an unfinished job.
-- **Big web pages are its kryptonite.** All three book-scraping runs failed: one context
+- **Big web pages were its kryptonite at 16K.** All three book-scraping runs failed: one context
   overflow, one garbled "Noah’s" plus a cut-off before it could notice, and one crashed
   script with an empty CSV.
 - **It rarely runs tests** (0.3 pytest calls per run, the fewest), probably because there's no
