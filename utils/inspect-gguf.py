@@ -13,8 +13,8 @@ Usage:
 `--tensors` also dumps every tensor name (otherwise just counts + samples).
 
 It needs the `gguf` python module. If it isn't installed it falls back to the
-copy vendored at vendor/llama.cpp/gguf-py, so no extra install is required as
-long as the llama.cpp source is checked out.
+copy in our llama.cpp fork (../llama.cpp/gguf-py, or $ADV_LLAMA/gguf-py), so no extra install is
+required once the fork is checked out.
 """
 import argparse
 import os
@@ -23,20 +23,20 @@ import sys
 
 def _import_gguf():
     try:
-        import gguf  # noqa: F401
+        import gguf
         return gguf
     except ModuleNotFoundError:
         here = os.path.dirname(os.path.abspath(__file__))
-        vendored = os.path.join(here, "..", "vendor", "llama.cpp", "gguf-py")
+        vendored = os.path.join(os.environ.get("ADV_LLAMA", os.path.join(here, "..", "..", "llama.cpp")), "gguf-py")
         sys.path.insert(0, vendored)
         try:
-            import gguf  # noqa: F811
+            import gguf
             return gguf
         except ModuleNotFoundError:
             sys.exit(
                 "ERROR: the 'gguf' module is not available.\n"
                 "  Install it:  pip install gguf\n"
-                f"  Or check out llama.cpp source at: {vendored}"
+                f"  Or check out our llama.cpp fork so this exists: {vendored}"
             )
 
 

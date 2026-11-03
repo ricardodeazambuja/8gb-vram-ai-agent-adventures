@@ -11,7 +11,7 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 
 | Script | What it does |
 |---|---|
-| `build-llama-cuda.sh` | Builds llama.cpp from source against CUDA into `vendor/` (or `SRC_DIR=`). Picks a ref (`LLAMA_REF`), a repo (`LLAMA_REPO`, for forks) and an optional `PATCH`; auto-detects the GPU arch and smoke-tests the result. The per-model commands are in [getting started](../docs/getting-started.md#3-build-llamacpp-once-per-flavour). |
+| `build-llama-cuda.sh` | Builds our llama.cpp fork from source against CUDA in `../llama.cpp` (or `SRC_DIR=`). Picks a ref (`LLAMA_REF`), a repo (`LLAMA_REPO`, for forks) and an optional `PATCH`; auto-detects the GPU arch and smoke-tests the result. The per-model commands are in [getting started](../docs/getting-started.md#3-build-llamacpp-once-per-flavour). |
 | `setup.sh` | Creates the `llamacpp` conda env (llama.cpp + huggingface_hub) and downloads Gemma 4 26B into `models/`. `BACKEND=cuda` also builds the CUDA backend. Idempotent. |
 | `download-models.sh` | Downloads any model in its list, such as `qwen36 flint groot lfm3 lfm3audio eg2 d1 clefflash locate klein`, pinned to a repo revision and sha256-checked. Needs the `hf` CLI in the `ENV_NAME` env (default `llamacpp`). |
 | `configure-pi.sh` | Adds the `llamacpp` provider (every model in `../config/pi-provider.json`) to `~/.pi/agent/models.json`. |

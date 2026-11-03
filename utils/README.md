@@ -33,9 +33,9 @@ verdict      : projector (mmproj) — vision
 - The `.sh` wrapper runs the `.py` inside the `llamacpp` conda env (`mamba run`)
   so `numpy` + `gguf` are available; it falls back to plain `python3` if mamba
   isn't on PATH. You can also call the `.py` directly in any env that has `gguf`.
-- The `gguf` module is auto-resolved: it uses an installed copy, otherwise the
-  one vendored at `vendor/llama.cpp/gguf-py` — no extra install needed when the
-  llama.cpp source is checked out.
+- The `gguf` module is auto-resolved from our llama.cpp fork (`../llama.cpp/gguf-py`,
+  or `$ADV_LLAMA/gguf-py`), otherwise an installed copy — no extra install needed
+  once the fork is checked out.
 
 ## `audit-gguf.{sh,py}` — is this GGUF safe to load?
 

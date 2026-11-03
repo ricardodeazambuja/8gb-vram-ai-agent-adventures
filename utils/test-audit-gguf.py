@@ -11,8 +11,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 AUDIT = os.path.join(HERE, "audit-gguf.py")
-sys.path.insert(0, os.path.join(HERE, "..", "vendor", "flint-llama.cpp", "gguf-py"))
-sys.path.insert(1, os.path.join(HERE, "..", "vendor", "llama.cpp", "gguf-py"))
+sys.path.insert(0, os.path.join(os.environ.get("ADV_LLAMA", os.path.join(HERE, "..", "..", "llama.cpp")), "gguf-py"))
 import gguf
 import numpy as np
 

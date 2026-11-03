@@ -132,13 +132,12 @@ copy-paste commands.
 scripts/     launchers, downloads (pinned + sha256-checked), builds, quick benchmarks
 config/      the pi provider definition (all models, context sizes, thinking levels)
 envs/        the pinned CUDA build toolchain and the Python packages for training
-patches/     the llama.cpp patch for Dory
+patches/     the llama.cpp patch for Dory, and the unfinished FlashMap drafter
 bench/       pibench (sandboxed agent benchmark), the vision and visual control probes, fine-tuning, steering, image generation
 docs/        everything you read above
 utils/       a GGUF inspector and a GGUF security auditor
 loop/        the raw overnight commands and journal
 models/      where downloads go (not in git)
-vendor/      where llama.cpp builds go (not in git)
 ```
 
 ## Fine print
