@@ -232,12 +232,9 @@ option, not a model format. With `-ctk q8_0 -ctv turbo3` (keys are touchy, value
 aggression), **all 48 layers fit on the GPU**: 7.76 of 8 GB at 16K, ~28.3 tok/s, about 1.7× the
 partial-offload speed.
 
-```bash
-bash scripts/start-turbo.sh    # = TURBO=1 QUANT=Q4_K_M CTX=16384, then pi
-```
-
-It needs `--parallel 1 -b 512` (the run script's default with `TURBO=1`); the default
-`n_parallel=4` + `n_batch=2048` OOMs.
+It needed `--parallel 1 -b 512`; the default `n_parallel=4` + `n_batch=2048` OOMs. Both 12B fine-tunes were
+[retired](models/gemma4-12b-agentic.md) on 2026-11-02 (0/18 on pibench), and their launchers and the TurboQuant
+build with them; the numbers stay here because the trick works on any Gemma 4 GGUF.
 
 ## 10. Pick the right backend: CUDA, not Vulkan
 

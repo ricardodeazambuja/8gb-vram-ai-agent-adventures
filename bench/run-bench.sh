@@ -20,6 +20,7 @@
 #   RAW      folder for this batch        (default: bench/results/raw; use another for an experiment)
 #   TEMP, EXTRA_ARGS  passed to the server, for sampling and adapter tests
 #   PREFLIGHT_ONLY=1  only check the sandbox, then exit
+#   PROXY_LOG=DIR     save every request and response between pi and the server in DIR
 #
 set -euo pipefail
 
@@ -82,6 +83,10 @@ start_server() {  # start_server KEY — launch on the bridge address, wait unti
     echo "ERROR: something is already serving on port 8080; stop it first (scripts/stop-server.sh)"; exit 1
   fi
   log "starting $key"
+  # PROXY_LOG=DIR: the server listens on 127.0.0.1:8081 and bench/gemma12-probe/logproxy.py on the bridge's 8080
+  # saves every request and response in DIR (supported for the run-qwen.sh models).
+  local shost=$GW sport=8080
+  if [ -n "${PROXY_LOG:-}" ]; then shost=127.0.0.1; sport=8081; fi
   case "$key" in
     gemma26b)
       # The best measured 64K setting (30.5 tok/s; docs/how-it-fits.md).
@@ -93,10 +98,6 @@ start_server() {  # start_server KEY — launch on the bridge address, wait unti
       (cd "$REPO_ROOT" && BACKEND=cuda CTX=65536 NCMOE=23 KVQUANT=q8_0 HOST=$GW \
         MODEL="$REPO_ROOT/models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf" \
         ALIAS=thinkingcap-gemma-4-26b-a4b setsid bash scripts/run-server.sh >>"$SERVER_LOG" 2>&1 &) ;;
-    coder12)
-      (cd "$REPO_ROOT" && HOST=$GW setsid bash scripts/run-12b-coder.sh >>"$SERVER_LOG" 2>&1 &) ;;
-    agentic12)
-      (cd "$REPO_ROOT" && HOST=$GW setsid bash scripts/run-12b-agentic.sh >>"$SERVER_LOG" 2>&1 &) ;;
     vibe3b)
       # VibeThinker never learned OpenAI tool calls, so it runs as scripts/start_vibethinker.sh
       # sets it up: the server on 127.0.0.1:8081 with a reasoning budget, and the tool shim facing
@@ -106,8 +107,13 @@ start_server() {  # start_server KEY — launch on the bridge address, wait unti
       (cd "$REPO_ROOT" && UPSTREAM=http://127.0.0.1:8081 HOST=$GW PORT=8080 \
         setsid python3 scripts/vibethinker-toolshim.py >>"$SERVER_LOG" 2>&1 &) ;;
     *)
-      (cd "$REPO_ROOT" && QMODEL="$key" HOST=$GW setsid bash scripts/run-qwen.sh >>"$SERVER_LOG" 2>&1 &) ;;
+      (cd "$REPO_ROOT" && QMODEL="$key" HOST=$shost PORT=$sport setsid bash scripts/run-qwen.sh >>"$SERVER_LOG" 2>&1 &) ;;
   esac
+  if [ -n "${PROXY_LOG:-}" ]; then
+    mkdir -p "$PROXY_LOG"
+    (cd "$REPO_ROOT" && UPSTREAM=http://127.0.0.1:8081 HOST=$GW PORT=8080 LOG_DIR="$(realpath -m "$PROXY_LOG")" \
+      setsid python3 bench/gemma12-probe/logproxy.py >>"$SERVER_LOG" 2>&1 &)
+  fi
   STARTED=1
   for _ in $(seq 300); do
     curl -fsS -m 2 "http://$GW:8080/health" >/dev/null 2>&1 && return 0

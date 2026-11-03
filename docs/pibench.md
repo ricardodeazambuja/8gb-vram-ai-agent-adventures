@@ -67,10 +67,10 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) ² | 10/18 | 86% | 0/3 | 3/3 | 2/3 | 2/3 | 0/3 | 3/3 | 4.2 min | 0 |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) ¹ | 7/18 | 78% | 1/3 | 3/3 | 0/3 | 1/3 | 0/3 | 2/3 | **2.0 min** | 0 |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) ⁵ | 1/18 | 52% | 0/3 | 0/3 | 0/3 | 1/3 | 0/3 | 0/3 | 3.9 min | 0 |
-| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) ⁵ | 0/18 | 48% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 20.0 min | 1 |
+| [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) ⁵ (retired) | 0/18 | 48% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 20.0 min | 1 |
 | [LFM3-VL-2B](models/lfm3-vl-2b.md) ² | 0/18 | 47% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 20.0 min | 0 ⁴ |
 | [VibeThinker 3B](models/vibethinker.md) ⁵ | 0/18 | 29% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0.4 min | 0 |
-| [Gemma 4 12B coder](models/gemma4-12b-coder.md) ⁵ | 0/18 | 28% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0.9 min | 0 |
+| [Gemma 4 12B coder](models/gemma4-12b-coder.md) ⁵ (retired) | 0/18 | 28% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0.9 min | 0 |
 
 Measured 2026-10-23: 108 attempts, about eight hours of a laptop fan doing its best. ¹ The two
 Nemotrons ran the same night, same harness, another 36 attempts (each had one timeout). ² Groot,

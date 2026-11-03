@@ -13,6 +13,22 @@ mind first: on this rig the *same* configuration, run again, scatters by about *
 The weights for Qwen3.8-27B, DiffusionGemma and Nemotron-Labs-Diffusion-8B were deleted on 2026-11-01, and
 their launcher and download entries are gone. These notes are what remains of them.
 
+## The Gemma 4 12B fine-tunes: tool-calling template, no agent
+
+**Tried:** two community fine-tunes of `gemma-4-12B-it` by the same hobbyist, the
+[coder (v1)](models/gemma4-12b-coder.md) and the [agentic model (v2)](models/gemma4-12b-agentic.md), dense, 40 of
+48 layers on the GPU at 32K (13 tok/s), or all 48 with the TurboQuant fork's `turbo3` V cache at 16K (28 tok/s).
+
+**Numbers:** 0/18 on [pibench](pibench.md) for both (2026-11-02). The coder made 6 tool calls in 18 jobs and never
+wrote a file. The agentic model made 31 a job, ran out of the 20 minutes in 11 of 18, and sent 57 calls with no file
+path.
+
+**Cause of death:** the models, not the harness. Replaying pi's captured requests with no grammar or parser
+([probe](../bench/gemma12-probe/README.md)) showed the coder narrating its steps as text instead of calling tools,
+and the agentic model writing clean calls most of the time and broken ones now and then. The coder was trained on
+single-function coding problems only; the agentic model's one supporting number is a 20-task benchmark its author
+ran. Both retired on 2026-11-02, with their launchers, download entries and the TurboQuant build.
+
 ## Qwen3.8-27B, dense, in i-quants: 2.5 tok/s
 
 **Tried:** Qwen's dense 27B as ISTA-DASLab's GSQ-RCO `IQ3_XXS-mtp` file (10.4 GB), split by whole

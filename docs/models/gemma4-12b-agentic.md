@@ -1,157 +1,58 @@
-# 🚀 Gemma 4 12B "Agentic" (fable5 v2) — fully on the GPU, thanks to a squeezed cache
+# 🚀 Gemma 4 12B "Agentic" (fable5 v2) — retired
 
-> **TL;DR**
+> **Retired on 2026-11-02.** 0/18 on [pibench](../pibench.md), and the only evidence that it should do better is
+> a 20-task benchmark its author ran. Its launchers, its download entry and the TurboQuant build that existed only
+> for it are gone. This page records what we measured.
 >
 > | | |
 > |---|---|
-> | File | `gemma4-v2-Q4_K_M.gguf`, 6.87 GB |
-> | Where it lives | partly on the GPU on our fork; **all 48 layers** with the TurboQuant build |
-> | Context | 16K (25K works only sometimes) |
-> | Generation | **~28.3 tok/s** with TurboQuant · 13.4–16.5 tok/s on our fork |
+> | File | `gemma4-v2-Q4_K_M.gguf`, 6.87 GB (dense 12B) |
+> | Where it lived | 40 of 48 layers on the GPU on our fork (32K, ~13 tok/s); all 48 with the TurboQuant fork's `turbo3` V cache (16K, ~28 tok/s) |
 > | [pibench](../pibench.md) | **0/18** at 32K on our fork (2026-11-02) |
-> | [Vision probe](../vision-probe.md) | not run (no vision projector set up for it) |
-> | Launch | `bash scripts/start-agentic.sh` on our fork; `bash scripts/start-turbo.sh` for the TurboQuant cache |
 
-## What is it?
+## What was it?
 
-The v2 successor to the [12B Coder](gemma4-12b-coder.md), by the same author:
-[`yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF`](https://huggingface.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF).
-Same base (`google/gemma-4-12B-it`) and same body: a **dense** 48-layer Gemma 4 with a native
-context of 262144 tokens and a custom thinking + tool-call template (needs `--jinja`). The focus
-moved from "write code" to **coding plus agentic, terminal-style tool use**.
+The v2 successor to the [12B Coder](gemma4-12b-coder.md), by the same hobbyist:
+[`yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF`](https://huggingface.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF),
+pinned at `190a3136`. On top of v1's coding data it added "real multi-step tool-use trajectories… in Gemma 4's
+native tool protocol".
 
-Quants: Q3_K_M (5.7 GB), **Q4_K_M (6.87 GB, recommended)**, Q6_K (9.11 GB), Q8_0 (11.8 GB). No
-Q2_K this time: per the author, it failed their stress tests (and on v1 it was garbage anyway).
+Its one benchmark is the author's own: **τ²-bench telecom, ~55% against ~15%** for the base `gemma-4-12B-it`
+(20 tasks, greedy, a self-simulated user, Q8_0; "not directly comparable to published tau2-bench leaderboard
+figures"). That ratio is the "3.5x" in its name. The author also reports the base model ahead on τ²-bench retail and
+a little ahead on MMLU-Pro, and that v2 "still flails a little sometimes (over-trying, retrying)".
 
-Same warning as v1, straight from the card: *"not safety-aligned, reduced refusals"*. Review what
-it does.
+## Why it was retired
 
-## How does it fit in 8 GB?
+**pibench, 2026-11-02**, with the old `run-12b-agentic.sh` on our fork (32K, 40 layers on the GPU, about 13 tok/s,
+repetition penalty 1.1 as the card advises): **0/18**. It worked as an agent, busily: 31 tool calls a job, pytest
+runs. But:
 
-Dense model, so the lever is `-ngl` (layers on the GPU), just like v1. The new trick is the
-**TurboQuant `turbo3` V cache**: a ~3.5-bit cache format (Walsh-Hadamard rotated polar
-quantization, from Google's TurboQuant research) that shrinks the KV cache enough to keep **all**
-48 layers on the GPU. The key cache stays at `q8_0` (keys are sensitive; values tolerate the
-squeeze). That's ~1.7× the speed of the partial-offload setup.
+- **Time.** 11 of 18 jobs hit the 20-minute limit.
+- **Broken tool calls.** 57 calls had no file path, and about 15 tool errors a job. Some argument names arrived
+  mangled, with Gemma's own markup inside them (`content=<|"|>import csv…`, `<channel|><|tool_call>call`).
+- **Close, not done.** 25/27 and 26/27 on the bug fix; one attempt ran past 32K.
+- **A loop.** In at least one job it wrote the same three lines over and over inside one `write` call (over 30,000
+  characters) until time ran out.
 
-`turbo3` is a **runtime** cache option, not a model format, so it works with any Gemma 4 GGUF.
-But it isn't in mainline llama.cpp: it needs the
-[`TheTom/llama-cpp-turboquant`](https://github.com/TheTom/llama-cpp-turboquant) fork. The recipe
-is the model author's own (~30 tok/s on their RTX 4060). More on the general tricks in
-[How it fits](../how-it-fits.md).
+**The harness?** ([probe](../../bench/gemma12-probe/README.md)). Not shown to be. Its first tool call came out in
+clean native syntax in 16 of 16 raw samples, at repetition penalty 1.1 and 1.0, and all 15 calls in a captured
+pibench job were well formed. The mangled calls are intermittent. We stopped there: no evidence pointed at llama.cpp
+or pi, and the model's own claims didn't justify more GPU time.
 
-## Install & run
-
-```bash
-# 1. Download the recommended quant, pinned and checked
-bash scripts/download-models.sh agentic12
-
-# 2. Server + pi on our llama.cpp fork
-bash scripts/start-agentic.sh
-
-# 3. Optional, for the full-GPU speed below: build the TurboQuant fork and use its cache
-git clone --depth 1 --branch feature/turboquant-kv-cache \
-  https://github.com/TheTom/llama-cpp-turboquant vendor/llama-cpp-turboquant
-SRC_DIR=$PWD/vendor/llama-cpp-turboquant LLAMA_REPO=https://github.com/TheTom/llama-cpp-turboquant \
-  LLAMA_REF=feature/turboquant-kv-cache ENV_NAME=llamacpp-cuda bash scripts/build-llama-cuda.sh
-bash scripts/start-turbo.sh
-
-# 4. Stop the server when you're done
-bash scripts/stop-server.sh
-```
-
-`start-turbo.sh` is the zero-config preset (TurboQuant, Q4_K_M, 16K, then pi; it offers to stop
-the server when pi exits). Prefer to pick your own settings? `start-agentic.sh` is the same
-launcher with every knob open, and `run-12b-agentic.sh` starts just the server:
-
-```bash
-TURBO=1 bash scripts/start-agentic.sh                # same as start-turbo, all knobs available
-bash scripts/run-12b-agentic.sh                       # stock build, partial offload (no fork needed)
-CTX=25000 bash scripts/start-turbo.sh                 # the author's 25K context (marginal on 8 GB)
-```
-
-## Official numbers
-
-The author ran one benchmark, honestly labelled as their own local setup: **τ²-bench "telecom"**,
-20 tasks, same harness for both models, all Q8_0.
-
-| Model | τ²-bench telecom (author's harness) |
-|---|---:|
-| base `gemma-4-12B-it` | ~15% |
-| **this model (v2)** | **~55%** |
-
-The author also reports the trade-off: on τ²-bench *retail* the base model scores a bit higher,
-and on MMLU-Pro this model lands a little below the base. These numbers are not comparable with published
-leaderboards (different harness), only with each other. For the base model's official numbers
-(Google: MMLU Pro 77.2%, LiveCodeBench v6 72.0%, GPQA Diamond 78.8%), see the
-[scoreboard](../scoreboard.md).
-
-## Our numbers
+## What we measured
 
 | Mode (Q4_K_M) | Build | Layers on GPU | KV cache (K / V) | Context | VRAM | Generation |
 |---|---|---:|---|---:|---:|---:|
-| **TurboQuant** | turboquant fork | **48 (all)** | q8_0 / **turbo3** | 16K | 7.76 / 8 GB | **~28.3 tok/s** |
+| TurboQuant | TheTom/llama-cpp-turboquant | **48 (all)** | q8_0 / turbo3 | 16K | 7.76 / 8 GB | **~28.3 tok/s** |
 | stock | mainline llama.cpp | 40–42 | q8_0 / q8_0 | 32K | ~7.1 GB | ~16.5 tok/s |
+| our fork, 2026-11-01 | `adventures` | 40 | q8_0 / q8_0 | 32K | — | 13.4 tok/s |
 
-Fully offloaded, it's coherent on thinking and coding: `merge_intervals`, a hash map and string
-reversal all came out correct. `q8_0` keys + `turbo3` values were first checked on the v1 coder
-(same architecture, head size 256) to make sure the fork's CUDA kernel works on this Turing GPU. It
-does.
+`turbo3` is a ~3.5-bit V cache (Walsh-Hadamard rotated, from Google's TurboQuant research) that isn't in mainline
+llama.cpp; the 25K context the author uses fit on this card only sometimes. More in
+[How it fits](../how-it-fits.md#9-turboquant-an-even-smaller-v-cache).
 
-**[pibench](../pibench.md): 0/18** (2026-11-02), run with `scripts/run-12b-agentic.sh` on our fork: 32K, 40 layers on
-the GPU, about 13 tok/s. Unlike the [coder](gemma4-12b-coder.md) it does work as an agent, busily: 31 tool calls
-a job, and it runs pytest. But it finished nothing:
-
-- **Time.** 11 of 18 jobs hit the 20-minute limit. At 13 tok/s it can't think and iterate fast enough.
-- **Sloppy tool calls.** 57 calls had no file path (pi rejects them), about 15 tool errors a job.
-- **Close, not done.** 25/27 and 26/27 on the bug fix; one attempt ran past 32K and stopped.
-- **A loop.** In at least one job (cli-wordfreq r1) it wrote the same three lines of Python over and over
-  inside a single `write` call (over 30,000 characters) until time ran out.
-
-The 16K TurboQuant setup runs about twice as fast, but its jobs here used up to 25K tokens of context,
-more than that setup holds; it hasn't been tried in pibench. The vision probe hasn't been run.
-
-## How it behaves
-
-- **Fast for a dense 12B on 8 GB.** Everything on the GPU means no CPU round trips; ~28 tok/s is
-  close to the author's ~30 on a newer card.
-- **A thinker with a native tool protocol.** Reasoning lands in `reasoning_content`, tool calls
-  come out as proper calls (with `--jinja`). Give it a generous `max_tokens`.
-- **Can get stuck repeating `0000…`.** The card's fix is a repetition penalty of 1.1, and the
-  launcher uses it by default (`REP_PEN`).
-
-## Gotchas
-
-- **The "it's broken!" that wasn't.** Our first download, done with a 16-connection `aria2c` and
-  then interrupted, had the right size and a valid header but **wrong tensor data**. It loaded fine
-  and printed `<unused32><unused32>…` forever, which looked exactly like a TurboQuant bug. It was
-  the file: `sha256sum` against Hugging Face's checksum caught it. **Garbage from a fresh GGUF?
-  Check the checksum before you blame the engine.** (`hf download` verifies it for you.)
-- **Full offload needs small batches.** `-ngl 99` runs out of memory with llama.cpp's default 4
-  parallel slots and 2048 batch (a ~0.5 GB compute buffer). The TurboQuant mode defaults to
-  `--parallel 1 -b 512 -ub 512`; leave those alone unless you like OOMs.
-- **25K context is on a knife's edge.** It fit once and failed once, depending on how much VRAM the
-  desktop happened to use. 16K is the reliable default. For 25K, close other GPU apps or try
-  `BATCH=256 UBATCH=256`.
-- **Q6_K and Q8_0 don't fit fully**, even with turbo3: their weights alone exceed 8 GB, so they
-  fall back to partial offload.
-- **MTP drafts in the repo aren't wired in.** Per the card, only one specific llama.cpp build
-  loads them cleanly; newer ones crash. The scripts don't use them.
-- **pi shows the wrong name.** There's no pi entry for this model, so pi uses the default model id
-  (the 26B's). It works, because llama-server serves whatever is loaded; the label is just wrong.
-
-## Knobs
-
-Env vars for `scripts/start-agentic.sh` / `scripts/run-12b-agentic.sh` (`start-turbo.sh` sets the
-first three for you; `-h` lists everything):
-
-| Knob | What it does | Default |
-|---|---|---|
-| `TURBO` | `1` = TurboQuant build + turbo3 V cache + all layers on GPU | 0 (`start-turbo.sh`: 1) |
-| `QUANT` | `Q3_K_M` \| `Q4_K_M` \| `Q6_K` \| `Q8_0` | Q4_K_M |
-| `CTX` | context window | 16384 with TURBO, else 32768 |
-| `NGL` | layers on the GPU | 99 with TURBO, else 40 (per quant) |
-| `KVQUANT` / `CTK` / `CTV` | KV cache types (TURBO sets K=q8_0, V=turbo3) | q8_0 |
-| `REP_PEN` | repetition penalty (fixes `0000…`) | 1.1 |
-| `TEMP` / `TOP_P` / `TOP_K` | sampling (the card's recommendation) | 1.0 / 0.95 / 64 |
-| `NP` / `BATCH` / `UBATCH` | memory knobs for full offload | 1 / 512 / 512 |
+One lesson worth keeping: our first download, done with a 16-connection `aria2c` and interrupted, had the right size
+and a valid header but wrong tensor data. It loaded and printed `<unused32><unused32>…` forever, which looked like a
+TurboQuant bug. `sha256sum` against Hugging Face's checksum caught it. **Garbage from a fresh GGUF? Check the
+checksum before you blame the engine.**

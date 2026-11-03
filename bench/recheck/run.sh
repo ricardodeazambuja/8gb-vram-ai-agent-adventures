@@ -10,15 +10,13 @@ REPO="$(cd "$HERE/../.." && pwd)"
 OUT="${RECHECK_OUT:-$HERE/results/$(date +%F)}"
 mkdir -p "$OUT"
 cd "$REPO" || exit 1
-ALL=(flint gemma26b tcgemma bolt qwen36 distill groot lfm25 ornith bonsai2 bonsai2q2 spark lfm3 lfm3vl e4b qwen3vl dory coder agentic vibe3b vibe15)
+ALL=(flint gemma26b tcgemma bolt qwen36 distill groot lfm25 ornith bonsai2 bonsai2q2 spark lfm3 lfm3vl e4b qwen3vl dory vibe3b vibe15)
 [ $# -gt 0 ] || set -- "${ALL[@]}"
 
 launch() {
   case "$1" in
     gemma26b) echo "env BACKEND=cuda bash scripts/run-server.sh" ;;
     tcgemma)  echo "env BACKEND=cuda MODEL=models/thinkingcap-gemma4-26b-a4b/${TC_FILE:-ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf} bash scripts/run-server.sh" ;;
-    coder)    echo "env BACKEND=cuda bash scripts/run-12b-coder.sh" ;;
-    agentic)  echo "env BACKEND=cuda bash scripts/run-12b-agentic.sh" ;;
     *)        echo "env QMODEL=$1 bash scripts/run-qwen.sh" ;;
   esac
 }

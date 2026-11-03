@@ -24,8 +24,6 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 | `run-server.sh` | **Gemma 4 26B**, server only (`--cpu-moe`, 32K, port 8080). `--image` loads the vision projector. |
 | `start-qwen.sh` / `run-qwen.sh` | **Every other MoE and small model**, picked with `QMODEL=qwen36 \| distill \| flint \| bolt \| e4b \| bonsai2 \| qwen3vl \| lfm3vl \| lfm25vl \| dory \| spark`: server + pi, or server only. Per-model defaults (context, offload, KV type, sampling, build) are in `run-qwen.sh -h`. |
 | `start_flint.sh`, `start_bolt.sh`, `start_e4b.sh`, `start_bonsai2.sh`, `start_spark.sh`, `start_dory.sh`, `start_qwen3vl.sh` | One-word launchers for those models: `start-qwen.sh` with the right `QMODEL` and pi flags, refusing to start if another model already holds the port. |
-| `run-12b-coder.sh` | Gemma 4 12B coder (dense, partial GPU offload). |
-| `run-12b-agentic.sh`, `start-agentic.sh`, `start-turbo.sh` | Gemma 4 12B agentic; `start-turbo.sh` is the zero-config TurboQuant setup. |
 | `run-qwen.sh` with `QMODEL=lfm3audio \| eg2 \| d1 \| clefflash` | **The helpers**, server only: speech, embeddings and decision models. Their [pages](../docs/models/) show how to call them. |
 | `run-pi.sh` | Opens pi against whatever is serving on port 8080. |
 | `stop-server.sh` | Stops the server listening on the port (default 8080). |

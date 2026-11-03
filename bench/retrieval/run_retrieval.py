@@ -102,6 +102,8 @@ CODE_QUESTIONS = [
     ("Which test builds a poisoned GGUF to check the auditor catches it?", ["utils/test-audit-gguf.py"]),
     ("Where are pictures shrunk and JPEG-compressed for the robustness test?", ["bench/finetune/train_glance.py"]),
     ("Where are OCR fields and bounding-box overlap scored?", ["bench/vision/run_vision.py"]),
+    # scripts/start-turbo.sh was removed with the Gemma 12B models (2026-11-02). The question stays so new runs
+    # compare with the committed results; on a checkout without the file it can no longer be answered.
     ("Which launcher is the zero-config TurboQuant preset?", ["scripts/start-turbo.sh"]),
 ]
 CODE_GLOBS = ["scripts/*.sh", "scripts/*.py", "utils/*.py", "bench/*.py", "bench/*.sh", "bench/*/*.py"]

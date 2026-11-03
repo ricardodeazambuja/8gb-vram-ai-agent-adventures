@@ -10,8 +10,7 @@ before it runs, then gets a [model page](models/) and moves into the README line
 ends its doom loops but not its failures, and neither a LoRA nor a new projector made one model do
 both. Gemma 4 26B already does (18/18, glance 30/30), and LFM3-1.7B driving with VL as eyes gets 57/60 in
 5 GB. No test yet needs both skills at once, so that's next: a pibench task with pictures, on those two.
-Then the larger glance sample for Gemma, and a Gemma 12B fit check, which has image input with no
-vision encoder, if a projector for it exists.
+Then the larger glance sample for Gemma.
 
 ## In progress
 

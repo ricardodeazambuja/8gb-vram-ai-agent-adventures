@@ -1,141 +1,53 @@
-# 🧑‍💻 Gemma 4 12B "Coder" (fable5 v1) — the dense one that needs a different trick
+# 🧑‍💻 Gemma 4 12B "Coder" (fable5 v1) — retired
 
-> **TL;DR**
+> **Retired on 2026-11-02.** It isn't an agent (0/18 on [pibench](../pibench.md), never wrote a file), its own author
+> replaced it with the [v2 "agentic" model](gemma4-12b-agentic.md), and as a chat coder it's slower than models we
+> keep. Its launcher and download entry are gone. This page records what we measured.
 >
 > | | |
 > |---|---|
-> | File | `gemma4-coding-Q4_K_M.gguf`, 7.38 GB |
-> | Where it lives | 40 of 48 layers on the GPU, the last 8 in system RAM |
-> | Context | 32K (q8_0 KV cache) |
-> | Generation | 13–17 tok/s (13.7 on the [2026-11-01 recheck](../../bench/recheck/README.md)) |
-> | Prompt processing | ~67 tok/s (llama-bench) |
-> | [pibench](../pibench.md) | **0/18**: never wrote a file (2026-11-02) |
-> | [Vision probe](../vision-probe.md) | not run (no vision projector set up for it) |
-> | Launch | `bash scripts/run-12b-coder.sh`, then `bash scripts/run-pi.sh` |
+> | File | `gemma4-coding-Q4_K_M.gguf`, 7.38 GB (dense 12B) |
+> | Where it lived | 40 of 48 layers on the GPU, the last 8 in system RAM, 32K, q8_0 KV cache |
+> | Generation | 13–17 tok/s |
+> | [pibench](../pibench.md) | **0/18** (2026-11-02) |
 
-## What is it?
+## What was it?
 
-A coding fine-tune of Google's `gemma-4-12B-it` by yuxinlu1
-([`yuxinlu1/gemma-4-12B-coder-fable5-composer2.5-v1-GGUF`](https://huggingface.co/yuxinlu1/gemma-4-12B-coder-fable5-composer2.5-v1-GGUF)),
-license `gemma`. About 11.9B parameters, **dense** (every parameter works on every token), 48
-layers, a native context of 131072 tokens, and a custom chat template with a thinking channel and
-tool calls (it needs `--jinja`). The repo holds only GGUF files and a README: nothing executable.
+A coding fine-tune of Google's `gemma-4-12B-it` by yuxinlu1, a hobby project ("shared as-is, no warranty"):
+[`yuxinlu1/gemma-4-12B-coder-fable5-composer2.5-v1-GGUF`](https://huggingface.co/yuxinlu1/gemma-4-12B-coder-fable5-composer2.5-v1-GGUF),
+pinned at `1380be17`. Its card describes training on "algorithmic / function-level problems that come with
+deterministic tests", with reasoning traces from two teacher models kept only when the code passed. Nothing about
+tool use, no benchmark of its own, and *"not safety-aligned, reduced refusals"*. The author later wrote that they
+had "owned v1's training problems".
 
-Fair warning from its own card: *"not safety-aligned, reduced refusals"*. It's a task-focused
-coder. Read the code it writes before you run it (you were going to anyway, right?).
+## Why it was retired
 
-It has since been succeeded by the [v2 "agentic" model](gemma4-12b-agentic.md), which is faster
-on this laptop thanks to a fancier KV cache.
+**pibench, 2026-11-02 (our fork, 32K): 0/18.** In 18 jobs it made 6 tool calls (4 `read`, 2 `bash`) and never a
+`write` or `edit`. It put its code in the reply, usually within a minute (median 0.9 min), and stopped. Its 28% of
+hidden tests passed is what the untouched starter files score.
 
-## How does it fit in 8 GB?
+**Not the harness** ([probe](../../bench/gemma12-probe/README.md)). We captured pi's requests and replayed them with
+no grammar or parser in the way. The template and tool declarations it gets are standard Gemma 4, and in 7 of 8
+samples it never emitted Gemma's `<|tool_call>` token: it narrated steps as text (`<channel|>read
+inventory.py<channel|>edit inventory.py`) and then wrote the code out. llama.cpp made that look worse (its parser
+cuts a reply at a stray `<channel|>`, so pi often saw an empty turn), but there was no tool call to lose. The one
+real call it wrote used JSON strings (`read{path: "inventory.py"}`), which Gemma 4's format doesn't use.
 
-The MoE trick from the [26B](gemma4-26b-a4b.md) does nothing here: a dense model has no experts to
-park in RAM. Instead the lever is `-ngl`, **how many of the 48 layers live on the GPU**; the rest
-run on the CPU. At Q4_K_M (7.38 GB of weights) the measured maximum is **42 layers** at 32K
-context with a q8_0 KV cache; 44 runs out of memory. Gemma's sliding-window attention keeps the KV
-cache small (~0.5 GB at 32K), which is what makes 32K possible at all. The model card says
-8 GB / Q4_K_M is "tight, ~2–4K context", but that assumes everything on the GPU; spilling 6 layers
-to RAM gets you 32K. More in [How it fits](../how-it-fits.md).
-
-## Install & run
-
-Our numbers came from a June copy of the file. The repo later fixed the context-length metadata, so a fresh pinned
-download has a different sha256 from ours (`1fe90b72…`, ours `4011bb86…`), at the same size.
-
-You need our llama.cpp fork in `../llama.cpp` (from `bash scripts/build-llama-cuda.sh`; see
-[Getting started](../getting-started.md)). Tested there on 2026-11-01: 13.0–13.8 tok/s, tool calls work, and
-the old stock build gave the same speed that day (13.4–13.7). The ~17 tok/s above is from earlier runs.
-
-```bash
-# 1. Download the recommended quant, pinned and checked
-bash scripts/download-models.sh coder12
-
-# 2. Start the server (Q4_K_M, 40 layers on the GPU, 32K, q8_0 KV, port 8080)
-bash scripts/run-12b-coder.sh
-
-# 3. In another terminal: pi
-bash scripts/run-pi.sh                                  # interactive
-bash scripts/run-pi.sh -p "explain this code @file.py"  # one-shot
-
-# 4. Done? Stop the server
-bash scripts/stop-server.sh
-```
-
-Variations:
-
-```bash
-NGL=42 bash scripts/run-12b-coder.sh                            # the measured max: ~17 tok/s, tighter VRAM
-TEMP=0 bash scripts/run-12b-coder.sh                            # greedy, deterministic coding
-CTX=65536 KVQUANT=q4_0 NGL=38 bash scripts/run-12b-coder.sh     # longer context
-QUANT=Q6_K bash scripts/run-12b-coder.sh                        # more fidelity, much slower
-```
-
-The script defaults to 40 layers rather than 42 on purpose: it leaves some headroom so a VRAM
-spike from your desktop doesn't knock over an unattended server.
-
-## Official numbers
-
-The fine-tune's card has no benchmark table of its own. For the **base model**, Google's card lists
-Gemma 4 12B at MMLU Pro 77.2%, LiveCodeBench v6 72.0%, GPQA Diamond 78.8% and τ²-bench 69.0%;
-another vendor's table gives the base SWE-bench Verified 44.2. Those are the base model's numbers,
-not this fine-tune's. Details on the [scoreboard](../scoreboard.md).
-
-## Our numbers
+## What we measured
 
 All on CUDA, 32K context, q8_0 KV cache, flash attention on, greedy, 200 generated tokens:
 
 | Quant | Size | Max layers on GPU | VRAM used | Prompt | Generation | Usable? |
 |---|---:|---:|---:|---:|---:|---|
 | Q2_K | 4.83 GB | all (99) | 6.3 GB | 103 tok/s | 19.5 tok/s | **no, garbage** |
-| **Q4_K_M** | 7.38 GB | **42** | 7.67 GB | 66.9 tok/s | **17.4 tok/s** | **yes, excellent** |
+| **Q4_K_M** | 7.38 GB | **42** | 7.67 GB | 66.9 tok/s | **17.4 tok/s** | yes |
 | Q6_K | 9.79 GB | 32 | 7.78 GB | 30.0 tok/s | 7.2 tok/s | yes |
 | Q8_0 | 12.67 GB | 24 | 7.75 GB | 12.9 tok/s | 4.5 tok/s | yes |
 
-"VRAM used" includes ~0.5 GB of desktop. Q4_K_M is the clear winner: only 6 layers spill to RAM.
-Each step up in quality pushes more layers off the GPU, and the speed falls off a cliff.
+A dense model has no experts to park in RAM, so the lever is `-ngl`, how many layers live on the GPU; each step up
+in quant pushes more layers off and the speed falls off a cliff ([How it fits](../how-it-fits.md)). On our fork on
+2026-11-01 it did 13.0–13.8 tok/s and passed the [code check](../../bench/recheck/README.md) (0/500 wrong).
 
-**[pibench](../pibench.md): 0/18** (2026-11-02, our fork, 32K). It isn't an agent. In 18 jobs it made 6 tool calls
-(4 `read`, 2 `bash`) and never a `write` or `edit`: it put its code in the reply, usually within a minute
-(median 0.9 min, 662 tokens), and stopped. Nothing was saved, so its 28% of hidden tests passed is just what
-the untouched starter files score. Use it in chat and paste the code yourself. The vision probe hasn't been run.
-
-## How it behaves
-
-- **Good, careful code.** Spot checks at Q4_K_M were correct: an `is_prime` with edge cases, a
-  square-root bound and even-number skipping, correct one-liners, and sensible O(1) LRU cache
-  designs (hash map plus a doubly linked list with dummy head and tail, or an `OrderedDict`).
-- **…but not infallible.** Across runs, the LRU cache's `put` method sometimes lost its final
-  insertion line. A small model, so review and run what it writes.
-- **Tool calls work.** Through `/v1/chat/completions` with tools (the path pi uses) it returned a
-  clean `tool_calls` response with a well-formed call. Good enough to drive an agent.
-- **A thinker.** Its reasoning goes to `reasoning_content`; give it a generous `max_tokens`.
-
-## Gotchas
-
-- **Skip Q2_K.** It loads, it's fast, and it produces `l. l. l.`, CJK noise, or rambling with an
-  empty answer. The launcher refuses it. Q4_K_M and up are fine.
-- **Always talk to it through the chat template.** A raw prompt without the chat structure drives
-  even Q4_K_M into garbage. That's expected for an instruct model, not a bug. pi already uses the
-  right path.
-- **Don't reuse the 26B launcher.** `--cpu-moe` does nothing on a dense model and `-ngl 99` runs
-  out of memory. That's why it has its own script.
-- **pi shows the wrong name.** There's no pi entry for this model, so `run-pi.sh` uses the default
-  model id (the 26B's). It still works, because llama-server serves whatever model is loaded; the
-  label in pi is just wrong. `MODEL_ID=gemma-4-12b-coder` won't help unless you add a matching
-  entry to `config/pi-provider.json`.
-- **Context sync.** pi's context window comes from `config/pi-provider.json` (via
-  `scripts/configure-pi.sh`), not from the server. Keep them consistent if you change `CTX`.
-
-## Knobs
-
-Env vars for `scripts/run-12b-coder.sh` (`-h` lists them all):
-
-| Knob | What it does | Default |
-|---|---|---|
-| `QUANT` | `Q4_K_M` \| `Q6_K` \| `Q8_0` | Q4_K_M |
-| `NGL` | layers on the GPU (the main lever) | 40 / 30 / 22 per quant |
-| `CTX` | context window | 32768 |
-| `KVQUANT` | KV cache type (`q4_0` for ~2× context) | q8_0 |
-| `TEMP` / `TOP_P` / `TOP_K` | sampling (the card's recommendation) | 1.0 / 0.95 / 64 |
-| `BACKEND` | `cuda` \| `vulkan` | CUDA if built |
-| `MODEL_DIR` | where the GGUFs live | `models/gemma4-12b-coder` |
+In chat it wrote careful small-scale code (an `is_prime` with edge cases, sensible O(1) LRU caches), though an LRU
+`put` sometimes lost its last line. Q2_K loads and runs at 19.5 tok/s and produces `l. l. l.`, CJK noise, or an
+empty answer: see the [graveyard](../graveyard.md#gemma-4-12b-coder-at-q2_k-fits-runs-talks-nonsense).

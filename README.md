@@ -32,13 +32,11 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 | 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
 | 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | 1/18 | 89% | Reads an image in 5 seconds flat. Not an agent. |
 | 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md) | 4B, looped | 64K | 29 t/s | 14/18 | text only | Runs its middle layers twice. Just keeps swimming, and gets there: Spark's score at 4B. |
-| 🧑‍💻 | [**Gemma 4 12B coder**](docs/models/gemma4-12b-coder.md) | 12B dense | 32K | 17 t/s | 0/18 | — | A community coding fine-tune. Answers in chat; never touched a file in pibench. |
-| 🤖 | [**Gemma 4 12B agentic**](docs/models/gemma4-12b-agentic.md) | 12B dense | 16K | 28 t/s | 0/18 ¹ | — | Fully on the GPU thanks to a ~3.5-bit V cache. Busy, but finished nothing in pibench. |
 
 **pibench** = six real chores (fix bugs, build a CLI, scrape websites, log in through a form) done
 alone, in a sandbox, graded by hidden tests; solved attempts out of 18. **Vision** = twelve
 images with known answers: OCR, bounding boxes, charts, counting, engineering drawings. "—" means
-we haven't run it (yet). ¹ Run at 32K on our fork (13 t/s), not at the 16K/28 t/s TurboQuant setup. The full numbers, and what the vendors claim, are on the
+we haven't run it (yet). The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md).
 
 ## The helpers

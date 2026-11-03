@@ -2,7 +2,7 @@
 #
 # run-qwen.sh — serve one of the models below with llama.cpp's OpenAI-compatible server,
 # on the same port pi already uses. (It started life serving the Qwen candidates, hence the
-# name; it now covers every model except the Gemma 4 family: run-server.sh, run-12b-*.sh.)
+# name; it now covers every model except the Gemma 4 family: run-server.sh.)
 #
 # Pick the model with QMODEL (download first: scripts/download-models.sh):
 #   qwen36   Qwen3.6-35B-A3B UD-IQ4_XS        MoE, 3B active -> experts in RAM (--cpu-moe)
