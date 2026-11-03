@@ -379,8 +379,8 @@ What it needs before it runs here:
   (38 tok/s against 28.5 on PrismML's own build, and a q8_0 KV gives it 32K instead of 16K). A full
   recheck after the merge found every other model within run-to-run noise
   ([`bench/recheck/`](../bench/recheck/README.md)).
-  Note `vendor/` is a symlink to `GitStuff/Gemma4/vendor`, shared with that project on purpose:
-  builds there serve both.
+  `vendor/` used to be a symlink into the old Gemma4 project; on 2026-11-02 that project went to GitHub only, and
+  its models and vendor builds moved here.
 
 ## ⚡ Parallel Language Models (PLM): watch, and borrow one idea
 
