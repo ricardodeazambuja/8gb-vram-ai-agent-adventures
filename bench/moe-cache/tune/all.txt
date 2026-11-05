@@ -1,0 +1,79 @@
+=== qwen36: build/bin/llama-server -m /home/ricardodeazambuja/GitStuff/8gb-vram-ai-agent-adventures/models/qwen36-35b-a3b/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf -ngl 99 -cmoe -c 131072 -ctk q8_0 -ctv q8_0 -fa on --parallel 1 -b 512 -ub 512 -t 6 --jinja
+1/6 1408 MiB, share 0: 21.4 t/s
+2/6 1408 MiB, share 0.5: 25.5 t/s
+3/6 1408 MiB, share 0.95: 31.2 t/s
+4/6 2624 MiB, share 0: 31.6 t/s
+5/6 2624 MiB, share 0.5: 32.3 t/s
+6/6 2624 MiB, share 0.95: 39.9 t/s
+Qwen3.6-35B-A3B-UD-IQ4_XS.gguf: 14462 MiB of experts, CUDA0 6991 MiB free, cache up to 2632 MiB
+
+  cache MiB  share   t/s  hits
+       1408      0  21.4   66%
+       1408    0.5  25.5   59%
+       1408   0.95  31.2   53%
+       2624      0  31.6   81%
+       2624    0.5  32.3   72%
+       2624   0.95  39.9   74%
+
+machine: uploads 4.6 GiB/s, CPU 13.2 GiB/s, CPU part 1.51 ms, overlap -37.4 ms/GiB, rest 13.75 ms per token, fit within 1.6%
+
+predicted t/s, warm cache:
+  cache MiB     0   0.5    0.8    0.9  0.95  0.98
+        704  14.4  21.7   25.2  26.3*  26.8  26.9
+       1408  21.1  27.2  30.4*   31.5  31.8  31.8
+       2624  30.3  35.8  38.6*   39.5  39.7  39.5
+
+recommended: --moe-cache-mib 2624 --moe-cache-cpu-share 0.8 (38.6 t/s, 30.3 with share 0)
+=== gemma26b: build/bin/llama-server -m /home/ricardodeazambuja/GitStuff/8gb-vram-ai-agent-adventures/models/gemma4-26b-a4b-qat/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf -ngl 99 -cmoe --load-mode none -c 32768 -fa on -t 6 --jinja
+1/6 1216 MiB, share 0: 12.5 t/s
+2/6 1216 MiB, share 0.5: 18.7 t/s
+3/6 1216 MiB, share 0.95: 29.6 t/s
+4/6 3008 MiB, share 0: 27.5 t/s
+5/6 3008 MiB, share 0.5: 34.3 t/s
+6/6 3008 MiB, share 0.95: 34.9 t/s
+gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf: 12251 MiB of experts, CUDA0 6902 MiB free, cache up to 3049 MiB
+
+  cache MiB  share   t/s  hits
+       1216      0  12.5   48%
+       1216    0.5  18.7   51%
+       1216   0.95  29.6   52%
+       3008      0  27.5   83%
+       3008    0.5  34.3   90%
+       3008   0.95  34.9   76%
+
+machine: uploads 6.4 GiB/s, CPU 40.9 GiB/s, CPU part 4.65 ms, overlap 0.0 ms/GiB, rest 17.10 ms per token, fit within 3.7%
+
+predicted t/s, warm cache:
+  cache MiB     0   0.5    0.8    0.9   0.95   0.98
+        576   7.5  12.3   20.8   24.5   26.8  28.2*
+       1216  11.6  18.5   25.7   29.1  30.9*   31.7
+       2432  23.8  27.7   33.5  35.6*   36.3   35.8
+       3008  29.3  31.5  36.2*   37.7   37.9   37.0
+
+recommended: --moe-cache-mib 3008 --moe-cache-cpu-share 0.8 (36.2 t/s, 29.3 with share 0)
+=== flint: build/bin/llama-server -m /home/ricardodeazambuja/GitStuff/8gb-vram-ai-agent-adventures/models/flint-40b-a2.5b/flint-UD-Q3_K_XL.gguf -ngl 99 -cmoe -c 131072 -ctk q8_0 -ctv q8_0 -fa on --parallel 1 -b 2048 -ub 2048 -t 6 --jinja
+1/6 1536 MiB, share 0: 18.3 t/s
+2/6 1536 MiB, share 0.5: 21.7 t/s
+3/6 1536 MiB, share 0.95: 24.8 t/s
+4/6 2048 MiB, share 0: 16.8 t/s
+5/6 2048 MiB, share 0.5: 24.9 t/s
+6/6 2048 MiB, share 0.95: 23.4 t/s
+flint-UD-Q3_K_XL.gguf: 15770 MiB of experts, CUDA0 6991 MiB free, cache up to 2070 MiB
+
+  cache MiB  share   t/s  hits
+       1536      0  18.3   43%
+       1536    0.5  21.7   32%
+       1536   0.95  24.8   27%
+       2048      0  16.8   43%
+       2048    0.5  24.9   44%
+       2048   0.95  23.4   34%
+
+machine: uploads 6.4 GiB/s, CPU 16.0 GiB/s, CPU part 0.00 ms, overlap -58.2 ms/GiB, rest 25.15 ms per token, fit within 5.0%
+
+predicted t/s, warm cache:
+  cache MiB     0   0.5    0.8   0.9  0.95  0.98
+        768  14.9  21.1  22.2*  22.6  22.7  22.7
+       1536  16.3  22.7  23.8*  24.2  24.2  24.0
+       2048  17.4  23.8  24.8*  25.1  25.0  24.7
+
+recommended: --moe-cache-mib 2048 --moe-cache-cpu-share 0.8 (24.8 t/s, 17.4 with share 0)

@@ -36,6 +36,8 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `longgen.py` | a 2,500-token streamed answer, speed per 500-token window |
 | `divergence.py`, `toklcp.py` | where the cached text (and tokens) first differ from the template's re-render of the parsed reply |
 | `gemma4-template.jinja` | Gemma 4 26B's stock template, from the GGUF, for diffing against `config/gemma4-26b-nonl.jinja` |
+| `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
+| `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
 `srv-ncmoe32.log` was overwritten by a rerun with the same label: earlier attempts ran out of memory without
@@ -46,3 +48,18 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 On sliding-window models, llama-server restores a checkpoint even when the whole cache matches, if the prompt
 is shorter than the window (~1K tokens for Gemma). Real pi prompts are longer, so this doesn't affect our runs.
 Details in RESULTS.md §9.
+
+## Before pibench: does it fit, and does it hold with a long prompt? (fitcheck.sh)
+
+A ~30K-token prompt, then 200 tokens, through the real launchers at pibench's settings (2026-11-04, single runs):
+
+| Model | Layers on the GPU (`NCMOE`) | Cache, share 0.95 |
+|---|---|---|
+| Qwen3.6, 128K | 20.0 tok/s, 7.70 GB | 20.6 tok/s (2900 MiB), 7.75 GB |
+| Flint, 128K | 20.2 tok/s, 7.44 GB | 16.5 tok/s (2168 MiB), 7.45 GB |
+| Gemma 26B, 64K q8_0 | out of memory at load (`NCMOE=20`) | 4084 MiB: out of memory; **3500 MiB: 25.3 tok/s, 7.51 GB** |
+
+After a long prompt the short-prompt gains are gone: 200 tokens are too few to tell apart, or the cache
+needs warming that a long prefill doesn't do. The pibench batch is the real test. The tuner's recommendations
+(`tune/*.txt`): Qwen3.6 2624 MiB / share 0.8, Gemma 3008 / 0.8, Flint 2048 / 0.8, its Flint numbers lower
+than both our A/B and the `NCMOE=42` baseline.

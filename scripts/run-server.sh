@@ -26,8 +26,8 @@
 #   MOE_CACHE  opt-in: N MiB (or auto, below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every expert
 #              in RAM, NCMOE ignored. Needs our fork's moe-offload branch (upstream PR #30966).
 #              Measured +43% decode at 32K (MOE_CACHE=3267 vs NCMOE=22). docs/how-it-fits.md §12.
-#              auto = the expert bytes NCMOE would put on the GPU, 408.4 MiB per layer for this model
-#              (NCMOE=22 -> 3267, NCMOE=20 -> 4084); needs NCMOE set.
+#              auto = a size measured to fit, with KVQUANT=q8_0: 3267 at 32K, 3500 at 64K (2026-11-04: 4084,
+#              the expert bytes of NCMOE=20, ran out of memory at load; so did NCMOE=20 itself that day).
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU, not copied over PCIe  (default: 0.95)
 #   HOST/PORT  bind address                   (default: 127.0.0.1 / 8080)
 #   ALIAS      model name the server reports    (default: gemma-4-26b-a4b-qat; set it
@@ -150,8 +150,11 @@ if [ "$BACKEND" = "cpu" ]; then
   echo ">> MoE: n/a — CPU-only run, all weights on CPU"
 elif [ -n "${MOE_CACHE:-}" ]; then
   if [ "$MOE_CACHE" = auto ]; then
-    [ -n "$NCMOE" ] || { echo "ERROR: MOE_CACHE=auto needs NCMOE (the layer split it replaces)"; exit 1; }
-    MOE_CACHE=$(( (30 - NCMOE) * 4084 / 10 ))   # 30 MoE layers, 128 experts x 3.19 MiB each
+    case "$CTX/${KVQUANT,,}" in
+      32768/q8_0) MOE_CACHE=3267 ;;
+      65536/q8_0) MOE_CACHE=3500 ;;
+      *) echo "ERROR: MOE_CACHE=auto has no measured size for CTX=$CTX KVQUANT=$KVQUANT; give MiB"; exit 1 ;;
+    esac
   fi
   MOE_ARGS=(--cpu-moe --moe-cache-mib "$MOE_CACHE" --moe-cache-cpu-share "${MOE_CACHE_SHARE:-0.95}")
   echo ">> MoE: all experts in RAM, $MOE_CACHE MiB GPU expert cache, CPU computes ${MOE_CACHE_SHARE:-0.95} of misses"

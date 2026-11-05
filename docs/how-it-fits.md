@@ -294,7 +294,9 @@ tok/s, while `NCMOE=32` sank to 18–21 tok/s as the CPU package hit 100 °C (83
 gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.
 
 The cache sizes match the expert bytes `--n-cpu-moe` puts on the GPU (Qwen3.6's 2900 is a little under its
-3070); they are not tuned yet. For pibench's Gemma setting (64K, `NCMOE=20`) that is 4084 MiB. The method,
+3070); they are not tuned yet. Gemma at pibench's 64K is the exception: the matching 4084 MiB ran out of memory at load (and so did
+`NCMOE=20` itself that day, with the desktop using ~0.7 GB), so it gets 3500, peaking at 7.5 GB after a 34K-token
+prompt. The method,
 scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
 
 ```bash

@@ -44,7 +44,7 @@ with numbers, is in [How it fits](../how-it-fits.md).
 
 **Faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts instead of
 fixed layers, with the CPU computing 95% of the misses: **30.0 vs 21.0 tok/s** at 32K (A/B/A).
-`KVQUANT=q8_0 MOE_CACHE=3267` (4084 at pibench's 64K / `NCMOE=20`) on our fork's `moe-offload` build;
+`KVQUANT=q8_0 MOE_CACHE=3267` (3500 at pibench's 64K) on our fork's `moe-offload` build;
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 
 **Its chat template wastes prompt processing in agent loops.** The GGUF's template renders the thinking
