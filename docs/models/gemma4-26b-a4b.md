@@ -43,7 +43,9 @@ layer's experts cost ~0.45 GB, and at 32K context about 8 layers fit (`NCMOE=22`
 with numbers, is in [How it fits](../how-it-fits.md).
 
 **Faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts instead of
-fixed layers, with the CPU computing 95% of the misses: **30.0 vs 21.0 tok/s** at 32K (A/B/A).
+fixed layers, with the CPU computing 95% of the misses: **30.0 vs 21.0 tok/s** at 32K (A/B/A). In a full
+pibench batch at 64K: 17/18 (the miss passed 5 of 6 hidden tests), decode 32.3 vs 25.6 tok/s, model time
+75 vs 93 min for all 18 runs.
 `KVQUANT=q8_0 MOE_CACHE=3267` (3500 at pibench's 64K) on our fork's `moe-offload` build;
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 

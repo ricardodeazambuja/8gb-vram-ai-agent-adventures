@@ -43,7 +43,9 @@ RAM, llama.cpp ships the expert math for big batches to the GPU, so going from b
 layer of experts, hence `NCMOE=42` instead of 41. See [how-it-fits.md](../how-it-fits.md).
 
 **A little faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts, with
-the CPU computing 95% of the misses: **32.1 vs 26.9 tok/s** (A/B/A, one noisy baseline run at 17.4).
+the CPU computing 95% of the misses: **32.1 vs 26.9 tok/s** (A/B/A, one noisy baseline run at 17.4). In a
+full pibench batch: still 18/18, decode 26.4 vs 21.5 tok/s, but prefill 354 vs 426 tok/s; median run 3.6 vs
+4.3 min.
 `MOE_CACHE=auto` (2168 MiB) on our fork's `moe-offload` build;
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 

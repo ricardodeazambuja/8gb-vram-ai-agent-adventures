@@ -307,7 +307,26 @@ BACKEND=cuda KVQUANT=q8_0 MOE_CACHE=3267 bash scripts/run-server.sh   # Gemma 4 
 The flag isn't in upstream llama.cpp yet. Build our fork's
 [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch (`adventures` +
 PR #30966's 8 commits): `LLAMA_REF=3a72c57bef4ca02bfa394961f1789393c5e4e9c6 bash scripts/build-llama-cuda.sh`.
-Without it, `MOE_CACHE` fails at startup with an unknown flag. Whether the cache changes [pibench](pibench.md) scores or times: in progress.
+Without it, `MOE_CACHE` fails at startup with an unknown flag.
+
+**In real agent sessions too.** A full [pibench](pibench.md) batch with `MOE_CACHE=auto` (2026-11-04,
+18 attempts per model, same 64K/128K contexts as the scored batch) against the scored batch from 2026-10-23.
+Decode and prefill come from pi's own record of every model call (tokens and duration), fitted as
+`time = input/prefill + output/decode + overhead`:
+
+| Model | Solved (before → cache) | Decode tok/s | Prefill tok/s | Model time, all 18 runs | Median run |
+|---|---|---|---|---|---|
+| Qwen3.6 | 16/18 → 17/18 | 20.7 → **32.9** (+59%) | 213 → 204 | 66.6 → 55.3 min, with 25% more output | 3.4 → 2.6 min |
+| Gemma 4 26B (3500 MiB) | 18/18 → 17/18 | 25.6 → **32.3** (+26%) | 327 → 322 | 92.7 → 75.3 min | 4.8 → 4.5 min |
+| Flint | 18/18 → 18/18 | 21.5 → **26.4** (+23%) | 426 → 354 (−17%) | 87.7 → 79.0 min | 4.3 → 3.6 min |
+
+Scores held: Gemma's one miss passed 5 of 6 hidden tests, and Qwen3.6's one fewer failure is within its
+run-to-run spread. The two batches ran on different builds two weeks apart, but the decode gains agree with
+the same-build A/B above. The cold start after a long prompt (the fit check in
+[`bench/moe-cache/`](../bench/moe-cache/README.md)) doesn't show here: pi's turns add a few hundred
+tokens to a cached prompt, which the cache handles well. Flint's prefill is the cost: batches over 32 tokens
+bypass the cache and copy all 40 layers' experts. Numbers: [`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt),
+[`stats-moecache.txt`](../bench/results/stats-moecache.txt).
 
 The idea comes from [FreeToken](https://github.com/FlashML-org/FreeToken) (read, not run: it executes
 model-repo code), which pairs an expert cache with CPU-computed misses on a single GPU. Both turned out to

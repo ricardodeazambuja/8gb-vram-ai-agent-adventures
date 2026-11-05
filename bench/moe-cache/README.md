@@ -38,6 +38,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `gemma4-template.jinja` | Gemma 4 26B's stock template, from the GGUF, for diffing against `config/gemma4-26b-nonl.jinja` |
 | `thinkingcap-template.jinja` | ThinkingCap Gemma 4 26B's template, from its GGUF: different file (a `thinking_gate`), same `'\n<channel|>'` after the thinking. [`config/thinkingcap-gemma4-26b-nonl.jinja`](../../config/thinkingcap-gemma4-26b-nonl.jinja) drops it; whether ThinkingCap also writes no newline there isn't checked yet |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
+| `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -71,3 +72,8 @@ Why, from the code (read-only, not yet measured): batches over 32 tokens skip th
 decode after a long prompt starts nearly empty, and until the cache fills, every miss is copied, none computed on
 the CPU. A 200-token answer is mostly that warm-up. pi's turns are short additions to a cached prompt, the case
 the cache is good at; pibench decides.
+
+**pibench decided (2026-11-04):** scores held and decode inside the sessions was faster for all three
+(Qwen3.6 +59%, Gemma +26%, Flint +23%); Flint's prefill was 17% slower.
+[How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
+has the table.

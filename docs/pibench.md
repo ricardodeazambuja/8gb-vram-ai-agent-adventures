@@ -247,6 +247,14 @@ The 2026-11-02 batch shows that a tool-calling template doesn't make a model an 
 The run-by-run notes, with transcript paths and quotes, are in
 [`bench/results/notes.md`](../bench/results/notes.md).
 
+## Same scores, less waiting: the MoE expert cache (2026-11-04)
+
+The three MoE models ran the whole bench again with a GPU cache of recently used experts instead of fixed
+layers ([how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)),
+same VRAM. Scores held (Qwen3.6 17/18, Gemma 26B 17/18 with the miss at 5 of 6 hidden tests, Flint 18/18)
+and decode inside the sessions got faster: Qwen3.6 +59%, Gemma +26%, Flint +23%. It's opt-in
+(`MOE_CACHE=auto`) and needs our fork's `moe-offload` build; the scoreboard above keeps the original batch.
+
 ## Three bugs we found in our own setup
 
 Honesty corner. The first time Spark ran, it scored 0 on everything in 20 seconds flat: pi asks
