@@ -36,6 +36,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `longgen.py` | a 2,500-token streamed answer, speed per 500-token window |
 | `divergence.py`, `toklcp.py` | where the cached text (and tokens) first differ from the template's re-render of the parsed reply |
 | `gemma4-template.jinja` | Gemma 4 26B's stock template, from the GGUF, for diffing against `config/gemma4-26b-nonl.jinja` |
+| `thinkingcap-template.jinja` | ThinkingCap Gemma 4 26B's template, from its GGUF: different file (a `thinking_gate`), same `'\n<channel|>'` after the thinking. [`config/thinkingcap-gemma4-26b-nonl.jinja`](../../config/thinkingcap-gemma4-26b-nonl.jinja) drops it; whether ThinkingCap also writes no newline there isn't checked yet |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
@@ -63,3 +64,10 @@ After a long prompt the short-prompt gains are gone: 200 tokens are too few to t
 needs warming that a long prefill doesn't do. The pibench batch is the real test. The tuner's recommendations
 (`tune/*.txt`): Qwen3.6 2624 MiB / share 0.8, Gemma 3008 / 0.8, Flint 2048 / 0.8, its Flint numbers lower
 than both our A/B and the `NCMOE=42` baseline.
+
+Why, from the code (read-only, not yet measured): batches over 32 tokens skip the cache
+(`src/llama-moe-cache.cpp`, `max_batch = 32`). They copy every layer's experts per ubatch, 40 layers with
+`--cpu-moe` against 32 with `NCMOE=32`, so prefill runs ~10% slower. They also never insert into the cache, so
+decode after a long prompt starts nearly empty, and until the cache fills, every miss is copied, none computed on
+the CPU. A 200-token answer is mostly that warm-up. pi's turns are short additions to a cached prompt, the case
+the cache is good at; pibench decides.
