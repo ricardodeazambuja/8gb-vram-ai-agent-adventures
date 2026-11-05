@@ -6,6 +6,7 @@
 # Bolt and Ornith back to back, made systemd-oomd kill the terminal. Run the tuner only on models < 16 GB,
 # and evict the previous model's pages first.
 Q="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ADV="$(cd "$Q/../../.." && pwd)"; L="$Q/../longctx"; PYT=${PY_TUNE:-python3}; M=$ADV/models
+export LOGDIR=${LOGDIR:-$Q/logs}
 LLAMA=${ADV_LLAMA:-$ADV/../llama.cpp}
 model() { case $1 in
   groot)   echo "$M/groot-19b-a3b/Groot-19B-A3B-261023-Q4_K_M.gguf 2048 27 3321" ;;

@@ -1,0 +1,41 @@
+### q38-ncmoe31 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -ncmoe 31 | env NO_WARM=
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 27.8 GiB -> ok
+    vram before: 411 MiB
+    vram loaded: 7230 MiB
+q38-ncmoe31                  vram  7230 MiB  prefill  6236 tok   220.1 t/s   decode 400 tok  39.04 t/s
+q38-ncmoe31                  vram  7230 MiB  prefill  6236 tok   219.6 t/s   decode 400 tok  39.84 t/s
+req1: prompt 33816 tok (0 cached) 213.2 t/s | decode 600 tok 30.97 t/s | per 100:  31.6  31.0  31.0  31.0  30.9  30.6 | CPU +85.0°C -> +88.0°C
+req2: prompt 4 tok (33812 cached) 31.7 t/s | decode 600 tok 30.69 t/s | per 100:  31.2  30.8  30.7  30.7  30.5  30.6 | CPU +88.0°C -> +91.0°C
+    vram end: 7259 MiB
+### q38-cache3661-s0.95 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 3661 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.2 GiB -> ok
+    vram before: 410 MiB
+    vram loaded: 7227 MiB
+q38-cache3661-s0.95          vram  7227 MiB  prefill  6236 tok   201.0 t/s   decode 400 tok  51.58 t/s
+q38-cache3661-s0.95          vram  7227 MiB  prefill  6236 tok   222.6 t/s   decode 400 tok  53.83 t/s
+req1: prompt 33816 tok (0 cached) 216.7 t/s | decode 600 tok 34.23 t/s | per 100:  33.9  35.2  36.3  33.2  33.2  34.1 | CPU +89.0°C -> +89.0°C
+req2: prompt 4 tok (33812 cached) 30.7 t/s | decode 600 tok 33.86 t/s | per 100:  32.9  34.3  35.4  34.4  33.2  33.4 | CPU +89.0°C -> +92.0°C
+    vram end: 7181 MiB
+    impl:      CUDA0 MoE cache size =  3660.84 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 415657, misses = 228587 (215593 on the CPU), hit rate = 64.52%, uploaded = 20709.19 MiB
+    llama_moe_cache: ubatch  > 8: hits = 3629, misses = 5615 (4633 on the CPU), hit rate = 39.26%, uploaded = 1565.06 MiB
+    llama_moe_cache: large batches: 512850 experts copied from the cache, 272451.56 MiB
+### q38-cache3661-s0.8 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 3661 --moe-cache-cpu-share 0.8 | env NO_WARM=
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.2 GiB -> ok
+    vram before: 334 MiB
+    vram loaded: 7151 MiB
+q38-cache3661-s0.8           vram  7151 MiB  prefill  6236 tok   199.3 t/s   decode 400 tok  46.15 t/s
+q38-cache3661-s0.8           vram  7151 MiB  prefill  6236 tok   221.3 t/s   decode 400 tok  46.74 t/s
+    vram end: 7177 MiB
+    impl:      CUDA0 MoE cache size =  3660.84 MiB for 16320.00 MiB of host experts, 80% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 195636, misses = 63930 (49826 on the CPU), hit rate = 75.37%, uploaded = 22478.25 MiB
+    llama_moe_cache: ubatch  > 8: hits = 2247, misses = 3685 (2375 on the CPU), hit rate = 37.88%, uploaded = 2087.81 MiB
+    llama_moe_cache: large batches: 112515 experts copied from the cache, 59773.59 MiB
+### q38-ncmoe31-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -ncmoe 31 | env NO_WARM=
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.2 GiB -> ok
+    vram before: 334 MiB
+    vram loaded: 7153 MiB
+q38-ncmoe31-b                vram  7153 MiB  prefill  6236 tok   219.9 t/s   decode 400 tok  39.33 t/s
+q38-ncmoe31-b                vram  7153 MiB  prefill  6236 tok   220.3 t/s   decode 400 tok  39.02 t/s
+    vram end: 7179 MiB
+exit 0

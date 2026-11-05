@@ -145,11 +145,19 @@ long-prompt check for the first two. All logs in [`models/logs/`](models/logs/),
 |---|---|---|---|---|---|---|
 | Groot 19B-A3B (2048) | `NCMOE=27` | 3321 MiB | 7205 / 7333 MiB | 41.0 → **47.6** (+16%) | 30.9 → 32.7 (+6%) | 790 → 741 (−6%) |
 | LFM2.5 24B-A2B (2048) | `NCMOE=27` | 4212 MiB | 7521 / 7512 MiB | 34.0 → **48.5** (+42%) | 29.2 → 37.9 (+30%) | 992 → 920 (−7%) |
-| Qwen3.8 distill (512) | `NCMOE=34` | 3264 MiB | 5926 / 6753 MiB | not comparable: the cache had 827 MiB more VRAM; redo at ~2437 MiB | | |
+| Qwen3.8 distill (512) | `NCMOE=31` | 3661 MiB | 7230 / 7227 MiB | 39.3 → **52.7** (+34%) | 30.8 → 34.0 (+10%) | 220 → 212 (−4%) |
 | Ornith 1.5 35B (2048) | `NCMOE=34` | 3486 MiB | 7219 / 7722 MiB | the cache ran out of VRAM on the first request; redo at ~2980 MiB | | |
 | Bolt 74B-A9B | | | | not run: the tuner ran out of VRAM (1299 MiB compute buffer at 128K, batch 2048) | | |
 
-Old-split numbers are the mean of both old runs (the long check: the first only). Groot's cache run had
+Old-split numbers are the mean of both old runs (the long check: the first only). The Qwen3.8 row is `models/step5-qwen38.sh`
+([`step5.log`](models/logs/step5.log)), which replaced a first try that compared `NCMOE=34` (5926 MiB) with a
+cache that had 827 MiB more. It compares the best of each at the same VRAM. The cache needs ~3.5 GB besides
+itself (`-cmoe` + cache C loads at ~3489 + C MiB), against ~5.9 GB at `NCMOE=34` plus 408 MiB per layer fewer.
+Share 0.8 was slower (46.4 tok/s) despite a higher hit rate (75% vs 65%).
+
+These sizes were measured with 0.33–0.41 GB of VRAM already in use by the desktop. Qwen3.8's model page measured
+`NCMOE=34` at 7.2–7.3 GB and `NCMOE=32` out of memory, likely with a heavier desktop; so `NCMOE=31` and a
+3661 MiB cache only fit when the desktop is light. The launcher keeps `NCMOE=34` for now. Groot's cache run had
 128 MiB more VRAM, so its gain is slightly flattering. The tuner's picks: Groot 3264 MiB / share 0.9, LFM2.5
 3968 / 0.95.
 
