@@ -1,0 +1,38 @@
+### q38-turns-b512 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 3661 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.2 GiB -> ok
+    vram before: 334 MiB
+    vram loaded: 7151 MiB
+base 2000 tokens; new-token sizes [16, 48, 100, 200, 400, 800, 1500, 2048], 3 reps
+  new prompt_n       ms     t/s
+   16       16      239    66.8
+   48       48      737    65.1
+  100      100     1085    92.1
+  200      200     1567   127.6
+  400      400     2035   196.5
+  800      800     3850   207.8
+ 1500     1500     6532   229.6
+ 2048     2048     8755   233.9
+    vram end: 7281 MiB
+    impl:      CUDA0 MoE cache size =  3660.84 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 30630, misses = 11358 (9047 on the CPU), hit rate = 72.95%, uploaded = 3683.16 MiB
+    llama_moe_cache: ubatch  > 8: hits = 1897, misses = 2682 (2070 on the CPU), hit rate = 41.43%, uploaded = 975.38 MiB
+    llama_moe_cache: large batches: 249048 experts copied from the cache, 132306.75 MiB
+### q38-turns-b2048 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 3174 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.1 GiB -> ok
+    vram before: 334 MiB
+    vram loaded: 7227 MiB
+base 2000 tokens; new-token sizes [16, 48, 100, 200, 400, 800, 1500, 2048], 3 reps
+  new prompt_n       ms     t/s
+   16       16      247    64.9
+   48       48      781    61.4
+  100      100     1132    88.3
+  200      200     1645   121.6
+  400      400     2106   189.9
+  800      800     2637   303.3
+ 1500     1500     3147   476.7
+ 2048     2048     3527   580.6
+    vram end: 7403 MiB
+    impl:      CUDA0 MoE cache size =  3173.16 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 29766, misses = 12190 (9848 on the CPU), hit rate = 70.95%, uploaded = 3732.56 MiB
+    llama_moe_cache: ubatch  > 8: hits = 1712, misses = 2875 (2544 on the CPU), hit rate = 37.32%, uploaded = 527.53 MiB
+    llama_moe_cache: large batches: 108864 experts copied from the cache, 57834.00 MiB

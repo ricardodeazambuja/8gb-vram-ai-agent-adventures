@@ -170,6 +170,36 @@ in MiB instead. Groot's cache run had
 128 MiB more VRAM, so its gain is slightly flattering. The tuner's picks: Groot 3264 MiB / share 0.9, LFM2.5
 3968 / 0.95.
 
+### Qwen3.8: batch 512 or 2048? (`models/step6-qwen38-ubatch.sh`, `step7-turns.sh`)
+
+A bigger batch needs more VRAM besides the cache (`-cmoe`, 128K q8_0 KV: 3489 MiB at 512, 3677 at 1024,
+4053 at 2048, from `srv-q38-probe-*.log`), so at the same VRAM the cache shrinks
+([`step6.log`](models/logs/step6.log), order 512 / 2048 / 1024 / 512):
+
+| Batch | Cache | Decode | Prompt, 6K / 34K tokens | 30K prompt, then decode | Hit rate |
+|---|---|---|---|---|---|
+| 512 | 3661 MiB | 52.9 tok/s (two runs: 53.2, 52.6) | 211 / 216 tok/s | 34.2 tok/s | 64.5% |
+| 1024 | 3550 MiB | 52.6 | 338 / 343 | 34.6 | 67.0% |
+| 2048 | 3174 MiB | 51.5 (−2.6%, within noise) | 517 / 495 (2.3×) | 34.0 | 63.1% |
+
+Prompt time per agent turn, a cached 2,000-token prompt plus N new tokens, median of 3
+([`step7.log`](models/logs/step7.log), `turnbench.py`), in ms at batch 512 / 2048:
+
+| New tokens | 16 | 48 | 100 | 200 | 400 | 800 | 1500 | 2048 |
+|---|---|---|---|---|---|---|---|---|
+| ms | 239 / 247 | 737 / 781 | 1085 / 1132 | 1567 / 1645 | 2035 / 2106 | 3850 / 2637 | 6532 / 3147 | 8755 / 3527 |
+
+Up to 512 new tokens the two are the same; above that batch 2048 wins. With turn time = prompt(N) + D /
+decode, batch 2048 costs 3% on turns under 512 new tokens and saves 20% / 11% / 3% on an 800-token turn
+(D = 100 / 300 / 1,000 tokens written), and 49% / 35% / 17% on a 2,048-token one. An agent's first turn
+(system prompt and tools) and every file it reads are such turns, so batch 2048 is the better default
+for Qwen3.8 with the cache.
+
+But size the cache for the desktop: the batch-2048 server grew from 6893 MiB of its own at load to 7069 MiB
+after the turn test, which leaves ~320 MiB for the desktop under the rule above. That's less than the
+desktop's 334 MiB tonight. It ran, inside the 300 MiB margin. A smaller cache (2900 MiB, say) would leave
+room for a normal desktop; not measured yet.
+
 **This queue made systemd-oomd kill the terminal** (03:17, 03:30, 03:31). The tuner reads the whole GGUF into
 the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,
 memory pressure passed oomd's 50% for 20 s. Plain llama-server runs of the same models were fine. Distill and
