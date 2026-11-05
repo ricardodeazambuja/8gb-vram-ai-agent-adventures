@@ -1,0 +1,66 @@
+### lc-qwen-ncmoe32 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -ncmoe 32 | env NO_WARM=
+    vram before: 331 MiB
+    vram loaded: 7300 MiB
+req1: prompt 33799 tok (0 cached) 230.2 t/s | decode 600 tok 22.80 t/s | per 100:  23.3  23.1  22.8  22.7  22.7  22.4 | CPU +61.0°C -> +90.0°C
+req2: prompt 4 tok (33795 cached) 22.6 t/s | decode 600 tok 22.19 t/s | per 100:  22.7  22.2  22.1  22.3  22.1  22.1 | CPU +90.0°C -> +92.0°C
+    vram end: 7335 MiB
+### lc-qwen-cache | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 | env NO_WARM=1
+    vram before: 334 MiB
+    vram loaded: 7215 MiB
+req1: prompt 33799 tok (0 cached) 215.3 t/s | decode 600 tok 28.28 t/s | per 100:  26.1  28.0  29.7  29.4  29.1  28.1 | CPU +86.0°C -> +91.0°C
+req2: prompt 4 tok (33795 cached) 25.3 t/s | decode 600 tok 28.72 t/s | per 100:  29.5  29.7  28.9  29.7  28.0  27.1 | CPU +91.0°C -> +92.0°C
+    vram end: 7247 MiB
+### lc-qwen-warm | d2503edb4 moe-cache : keep the most used experts of large ba | build-warm/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7215 MiB
+req1: prompt 33799 tok (0 cached) 226.2 t/s | decode 600 tok 28.10 t/s | per 100:  25.9  28.1  28.5  30.5  28.4  27.9 | CPU +80.0°C -> +91.0°C
+req2: prompt 4 tok (33795 cached) 25.4 t/s | decode 600 tok 29.28 t/s | per 100:  29.8  29.7  29.7  29.5  28.9  28.4 | CPU +91.0°C -> +98.0°C
+    vram end: 7247 MiB
+### lc-qwen-ncmoe32-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -ncmoe 32 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7303 MiB
+req1: prompt 33799 tok (0 cached) 228.0 t/s | decode 600 tok 21.72 t/s | per 100:  22.2  21.9  21.8  21.6  21.6  21.4 | CPU +81.0°C -> +92.0°C
+req2: prompt 4 tok (33795 cached) 22.5 t/s | decode 600 tok 21.85 t/s | per 100:  22.3  22.0  21.8  21.8  21.7  21.7 | CPU +92.0°C -> +93.0°C
+    vram end: 7335 MiB
+### lc-flint-ncmoe42 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | flint-UD-Q3_K_XL.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 42 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7037 MiB
+req1: prompt 30388 tok (0 cached) 468.7 t/s | decode 600 tok 19.77 t/s | per 100:  20.3  20.0  19.9  19.6  19.6  19.4 | CPU +71.0°C -> +84.0°C
+req2: prompt 1 tok (30387 cached) 14.9 t/s | decode 600 tok 19.52 t/s | per 100:  19.9  19.6  19.6  19.5  19.4  19.4 | CPU +84.0°C -> +89.0°C
+    vram end: 7079 MiB
+### lc-flint-cache | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | flint-UD-Q3_K_XL.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2168 --moe-cache-cpu-share 0.95 | env NO_WARM=1
+    vram before: 334 MiB
+    vram loaded: 7047 MiB
+req1: prompt 30388 tok (0 cached) 449.7 t/s | decode 600 tok 21.50 t/s | per 100:  21.6  21.7  21.8  21.3  21.7  21.2 | CPU +87.0°C -> +93.0°C
+req2: prompt 1 tok (30387 cached) 15.0 t/s | decode 600 tok 21.67 t/s | per 100:  22.6  21.5  21.6  21.5  21.5  21.6 | CPU +93.0°C -> +91.0°C
+    vram end: 7089 MiB
+### lc-flint-warm | d2503edb4 moe-cache : keep the most used experts of large ba | build-warm/bin/llama-server | flint-UD-Q3_K_XL.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2168 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7047 MiB
+req1: prompt 30388 tok (0 cached) 457.6 t/s | decode 600 tok 21.51 t/s | per 100:  21.5  21.7  21.6  21.6  21.8  21.1 | CPU +81.0°C -> +92.0°C
+req2: prompt 1 tok (30387 cached) 11.9 t/s | decode 600 tok 21.71 t/s | per 100:  22.0  21.7  22.1  21.4  21.9  21.4 | CPU +92.0°C -> +98.0°C
+    vram end: 7089 MiB
+### lc-flint-ncmoe42-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | flint-UD-Q3_K_XL.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 42 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7037 MiB
+req1: prompt 30388 tok (0 cached) 467.1 t/s | decode 600 tok 19.39 t/s | per 100:  19.9  19.5  19.5  19.4  19.2  19.2 | CPU +82.0°C -> +94.0°C
+req2: prompt 1 tok (30387 cached) 14.3 t/s | decode 600 tok 19.29 t/s | per 100:  19.6  19.4  19.4  19.3  19.2  19.1 | CPU +94.0°C -> +94.0°C
+    vram end: 7079 MiB
+### hits qwen-cache | build/bin/llama-completion | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 | env NO_WARM=1
+    layers crashed on the first request (CUDA out of memory in the cuBLAS workspace). A `llama-bench`
+    for normal decoding of the same split: 5.8× slower. 26 GPU expert layers ran out of memory; forcing
+    practice 128K ran out of memory by about 165 MiB. The culprit: with a *quantized* KV cache, flash
+    3070); they are not tuned yet. Gemma at pibench's 64K is the exception: the matching 4084 MiB ran out of memory at load (and so did
+    prompt eval time =  173822.71 ms / 33788 tokens (    5.14 ms per token,   194.38 tokens per second)
+    eval time =   21162.40 ms /   599 runs   (   35.33 ms per token,    28.30 tokens per second)
+### hits qwen-warm | build-warm/bin/llama-completion | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    layers crashed on the first request (CUDA out of memory in the cuBLAS workspace). A `llama-bench`
+    for normal decoding of the same split: 5.8× slower. 26 GPU expert layers ran out of memory; forcing
+    practice 128K ran out of memory by about 165 MiB. The culprit: with a *quantized* KV cache, flash
+    3070); they are not tuned yet. Gemma at pibench's 64K is the exception: the matching 4084 MiB ran out of memory at load (and so did
+    prompt eval time =  151098.95 ms / 33788 tokens (    4.47 ms per token,   223.62 tokens per second)
+    eval time =   23026.84 ms /   599 runs   (   38.44 ms per token,    26.01 tokens per second)
+### hits flint-cache | build/bin/llama-completion | flint-UD-Q3_K_XL.gguf | -cmoe --moe-cache-mib 2168 --moe-cache-cpu-share 0.95 | env NO_WARM=1
+    0.27.680.451 E ggml_backend_cuda_buffer_type_alloc_buffer: allocating 1760.24 MiB on device 0: cudaMalloc failed: out of memory
+### hits flint-warm | build-warm/bin/llama-completion | flint-UD-Q3_K_XL.gguf | -cmoe --moe-cache-mib 2168 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    0.11.747.366 E ggml_backend_cuda_buffer_type_alloc_buffer: allocating 1760.24 MiB on device 0: cudaMalloc failed: out of memory

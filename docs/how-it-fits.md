@@ -322,9 +322,10 @@ Decode and prefill come from pi's own record of every model call (tokens and dur
 
 Scores held: Gemma's one miss passed 5 of 6 hidden tests, and Qwen3.6's one fewer failure is within its
 run-to-run spread. The two batches ran on different builds two weeks apart, but the decode gains agree with
-the same-build A/B above. The cold start after a long prompt (the fit check in
-[`bench/moe-cache/`](../bench/moe-cache/README.md)) doesn't show here: pi's turns add a few hundred
-tokens to a cached prompt, which the cache handles well. Flint's prefill is the cost: batches over 32 tokens
+the same-build A/B above. After a single 30K-token prompt the cache still wins, by less: Qwen3.6 28.5 vs
+22.1 tok/s (+29%), Flint 21.6 vs 19.5 (+11%), over 600-token answers
+([the long-prompt test](../bench/moe-cache/README.md#after-a-long-prompt-600-tokens-and-a-warm-up-that-didnt-help-longctx-2026-11-05)).
+Flint's prefill is the cost: batches over 32 tokens
 bypass the cache and copy the used experts of all 47 MoE layers, where `NCMOE=42` keeps 7 of them on the
 GPU. Shrinking that would take a different change (prefill on the CPU for some layers, or a bigger batch so
 each copy serves more tokens), not a warmer cache. Numbers: [`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt),

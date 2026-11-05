@@ -41,6 +41,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `empty_thoughts.py FOLDER...` | tool-call turns without thinking in pibench transcripts; output in `logs/empty-thoughts.txt` |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
+| `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -94,19 +95,44 @@ A ~30K-token prompt, then 200 tokens, through the real launchers at pibench's se
 | Flint, 128K | 20.2 tok/s, 7.44 GB | 16.5 tok/s (2168 MiB), 7.45 GB |
 | Gemma 26B, 64K q8_0 | out of memory at load (`NCMOE=20`) | 4084 MiB: out of memory; **3500 MiB: 25.3 tok/s, 7.51 GB** |
 
-After a long prompt the short-prompt gains are gone: 200 tokens are too few to tell apart, or the cache
-needs warming that a long prefill doesn't do. The pibench batch is the real test. The tuner's recommendations
+In this check the short-prompt gains looked gone after a long prompt. The longer test below shows that was
+the 200-token answer: the first ~100 tokens after a big prefill are the slowest. The tuner's recommendations
 (`tune/*.txt`): Qwen3.6 2624 MiB / share 0.8, Gemma 3008 / 0.8, Flint 2048 / 0.8, its Flint numbers lower
 than both our A/B and the `NCMOE=42` baseline.
 
-Why, from the code (read-only, not yet measured): batches over 32 tokens skip the cache
-(`src/llama-moe-cache.cpp`, `max_batch = 32`). They copy every layer's experts per ubatch, 40 layers with
-`--cpu-moe` against 32 with `NCMOE=32`, so prefill runs ~10% slower. They also never insert into the cache, so
-decode after a long prompt starts nearly empty, and until the cache fills, every miss is copied, none computed on
-the CPU. A 200-token answer is mostly that warm-up. pi's turns are short additions to a cached prompt, the case
-the cache is good at; pibench decides.
+Why, from the code: batches over 32 tokens skip the cache (`src/llama-moe-cache.cpp`, `max_batch = 32`) and
+copy the used experts of every MoE layer per ubatch (40 on Qwen3.6, 47 on Flint), so prefill runs a few
+percent slower. They also never insert into the cache, so decode after a long prompt starts with an empty
+cache, and until it fills, every miss is copied rather than computed on the CPU.
 
-**pibench decided (2026-11-04):** scores held and decode inside the sessions was faster for all three
-(Qwen3.6 +59%, Gemma +26%, Flint +23%); Flint's prefill was 17% slower.
+## After a long prompt: 600 tokens, and a warm-up that didn't help (`longctx/`, 2026-11-05)
+
+`longctx/step1-longctx.sh`: a ~30K-token prompt from our docs, then 600 greedy tokens twice (the second
+request reuses the cached prompt), through llama-server at the launchers' settings; old split, cache, cache
+plus warm-up, old split again. Decode in tok/s, request 1 / 2, prompt speed in brackets
+([`longctx/logs/step1.log`](longctx/logs/step1.log)):
+
+| | Old split, run 1 | Cache, share 0.95 | Cache + warm-up | Old split, run 2 |
+|---|---|---|---|---|
+| Qwen3.6 (`NCMOE=32` / 2900 MiB) | 22.8 / 22.2 [230] | **28.3 / 28.7** [215] | 28.1 / 29.3 [226] | 21.7 / 21.9 [228] |
+| Flint (`NCMOE=42` / 2168 MiB) | 19.8 / 19.5 [469] | **21.5 / 21.7** [450] | 21.5 / 21.7 [458] | 19.4 / 19.3 [467] |
+
+The cache still wins after a long prompt: Qwen3.6 +29%, Flint +11% against the mean of the old-split runs,
+with prompt speed 6% and 4% lower. Smaller gains than at short prompts (+58%, +19%), probably because attention
+over 30K tokens takes a larger share of each token (not measured). In 100-token windows, Qwen3.6's cache run starts at 26.1 and
+settles at 28–30.
+
+The warm-up was a local experiment in the fork (branch `moe-cache-warm` at `d2503edb4`, not pushed): large
+batches put their most-used experts into free cache slots, so decode wouldn't start cold. It works as built
+and makes things slightly worse. In `longctx/step1b-warmcheck.sh` (Qwen3.6, 13.7K-token prompt, 300 tokens,
+with the cache statistics on, [`longctx/logs/step1b.log`](longctx/logs/step1b.log)), the decode hit rate fell
+from 58.1% to 50.6% and decode from 33.2 to 31.3 tok/s. The cache starts full of the experts the *prompt*
+used, so the 95% CPU share applies at once and the experts decode needs get in slowly. Its prompt speed gain
+(210 to 237 tok/s) is within single-run noise. The `llama-completion` hit-rate runs at 30K (`hits-*.log`)
+printed no hit rates (that needs `-lv 4`), and on Flint they ran out of memory (1760 MiB compute buffer)
+where llama-server didn't.
+
+**pibench (2026-11-04):** scores held and decode inside the sessions was faster for all three
+(Qwen3.6 +59%, Gemma +26%, Flint +23%); Flint's prompt speed was 17% lower there, 4% in the test above.
 [How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
 has the table.
