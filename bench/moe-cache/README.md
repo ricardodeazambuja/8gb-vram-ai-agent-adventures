@@ -44,6 +44,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
 | `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), logs and tuner output |
+| `experimental/` | the fork's local `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`, logs) |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -199,6 +200,25 @@ But size the cache for the desktop: the batch-2048 server grew from 6893 MiB of 
 after the turn test, which leaves ~320 MiB for the desktop under the rule above. That's less than the
 desktop's 334 MiB tonight. It ran, inside the 300 MiB margin. A smaller cache (2900 MiB, say) would leave
 room for a normal desktop; not measured yet.
+
+### Two experiments in the fork (`experimental/`, local branch, not pushed)
+
+Built from the fork's local branch `moe-cache-warm` at `ba50735ac` (on top of `moe-offload` 3a72c57be) into
+`../llama.cpp-warm/build-warm` (`WARM_LLAMA`). It adds two environment switches. Qwen3.8, batch 2048,
+3174 MiB cache, share 0.95 ([`step8.log`](experimental/logs/step8.log)):
+
+- **A softer warm-up** (prompt experts go into free slots without counting as full): decode 48.5 tok/s
+  against 51.6 without it, hit rate 60.8% vs 62.2%. The second warm-up that made things worse; dropped.
+- **`LLAMA_MOE_CACHE_MAX_BATCH`**, the largest ubatch that goes through the cache and the CPU share instead
+  of copying every used expert (upstream: 32). At 512, short turns' prompts got faster: 16 / 48 / 100 / 200
+  / 400 new tokens in 258 / 433 / 658 / 1116 / 1955 ms against 328 / 858 / 1219 / 1668 / 2144 (−21%, −50%,
+  −46%, −33%, −9%); 800 tokens and up unchanged. Decode 50.2 tok/s (within noise of 51.6).
+
+Does the cache path compute the same thing? Perplexity on 8 chunks of 2,048 tokens of the long prompt, ubatch
+512 ([`step9.log`](experimental/logs/step9.log)): `NCMOE=31` 6.8356 ± 0.189, cache 6.8329, cache with
+`MAX_BATCH=512` 6.8264. Yes. But full 512-token ubatches through the cache are *slower* (200 vs 233 tok/s,
+`NCMOE=31` 266): the hit rate drops to 1.25% and 137 GB get copied. So the threshold has to sit below the
+size where copying everything wins; a sweep of 128 and 256 is next.
 
 **This queue made systemd-oomd kill the terminal** (03:17, 03:30, 03:31). The tuner reads the whole GGUF into
 the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,
