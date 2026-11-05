@@ -42,6 +42,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
+| `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
 | `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), logs and tuner output |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
@@ -156,6 +157,13 @@ Old-split numbers are the mean of both old runs (the long check: the first only)
 the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,
 memory pressure passed oomd's 50% for 20 s. Plain llama-server runs of the same models were fine. Distill and
 Ornith's tuner runs were killed, which is why they have no tuner pick.
+
+`oomctl` shows the limits: 50% memory pressure on `user@1000.service` for 20 s (swap 90%), and oomd kills
+the descendant cgroup with the most reclaim, which isn't necessarily the one causing it. Every run since has
+two guards, in `longctx/`: `memguard.py` (started once, in a scope not named `moe*`) kills our `moe*.scope`
+bench units when pressure stays over 20% for 3 s, and `srv.sh` calls `memcheck.py` before each launch, which
+drops other models' cached pages and refuses to start without the model's size + 4 GiB available. `srv.sh`
+also runs the server with `-lv 4` now, so each log ends with the cache's hit rates.
 
 **pibench (2026-11-04):** scores held and decode inside the sessions was faster for all three
 (Qwen3.6 +59%, Gemma +26%, Flint +23%); Flint's prompt speed was 17% lower there, 4% in the test above.
