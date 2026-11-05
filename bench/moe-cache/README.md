@@ -218,7 +218,28 @@ Does the cache path compute the same thing? Perplexity on 8 chunks of 2,048 toke
 512 ([`step9.log`](experimental/logs/step9.log)): `NCMOE=31` 6.8356 ± 0.189, cache 6.8329, cache with
 `MAX_BATCH=512` 6.8264. Yes. But full 512-token ubatches through the cache are *slower* (200 vs 233 tok/s,
 `NCMOE=31` 266): the hit rate drops to 1.25% and 137 GB get copied. So the threshold has to sit below the
-size where copying everything wins; a sweep of 128 and 256 is next.
+size where copying everything wins.
+
+The sweep, with the VRAM-safe 2900 MiB cache at batch 2048 (`step10-maxbatch.sh`,
+[`step10.log`](experimental/logs/step10.log); `srv.sh` now also samples VRAM every second and prints the peak).
+Prompt time in ms for N new tokens after a cached 2,000-token prompt:
+
+| Limit | 16 | 48 | 100 | 200 | 300 | 400 | 600 | 800 |
+|---|---|---|---|---|---|---|---|---|
+| 32 (upstream) | 276 | 815 | 1227 | 1669 | 1948 | 2162 | 2456 | 2695 |
+| 256 | 278 | 475 | 692 | 1175 | 1918 | 2137 | 2459 | 2694 |
+| 128 | 277 | 479 | 693 | 1646 | 1914 | 2142 | 2456 | 2689 |
+| 32 again | 274 | 811 | 1198 | 1649 | 1929 | 2162 | 2453 | 2695 |
+
+256 is the pick: 48–200-token turns take 30–44% less time, nothing gets slower, and the decode hit rate is
+unchanged (62.0 / 61.8 / 61.6 / 62.0%), so the bigger batches don't push decode's experts out. Decode varied
+from 44.5 to 50.7 tok/s, and the two identical runs with limit 32 differed by 8%, so that's noise. Peak VRAM of
+the server itself was 6767–6817 MiB, which leaves room for a desktop of ~570 MiB; `MOE_CACHE=auto` uses 2770
+MiB for Qwen3.8 to leave ~700.
+
+The other session has since made this a proper option, `--moe-cache-max-batch N`, on the fork's local branch
+`moe-cache-max-batch` at `69ca796dd` (`moe-offload` plus one commit; default 32, so nothing changes without the
+flag). It isn't pushed: that's for the user to decide.
 
 **This queue made systemd-oomd kill the terminal** (03:17, 03:30, 03:31). The tuner reads the whole GGUF into
 the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,

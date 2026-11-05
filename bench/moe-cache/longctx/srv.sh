@@ -18,9 +18,11 @@ systemd-run --user --scope -q --unit=moeq-$$ mamba run --no-capture-output -n ll
 ok=0; for _ in $(seq 400); do curl -sf 127.0.0.1:8090/health >/dev/null && { ok=1; break; }; sleep 1; done
 if [ $ok = 1 ]; then
   VRAM=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader); echo "    vram loaded: $VRAM"
+  PEAKF=$(mktemp); ( while true; do nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits >> "$PEAKF"; sleep 1; done ) & SAMPLER=$!
   [ "${RUNS:-0}" -gt 0 ] && ${PY:-python3} -I "$S/srvbench.py" "$L" "$VRAM" "$RUNS"
   [ -n "$AFTER" ] && eval "$AFTER"
   echo "    vram end: $(nvidia-smi --query-gpu=memory.used --format=csv,noheader)"
+  kill $SAMPLER 2>/dev/null; echo "    vram peak: $(sort -n "$PEAKF" | tail -1) MiB (1-s samples)"; rm -f "$PEAKF"
 else
   echo "    LOAD FAILED"
 fi

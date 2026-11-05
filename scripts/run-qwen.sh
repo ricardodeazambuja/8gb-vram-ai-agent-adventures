@@ -52,7 +52,9 @@
 #   MOE_CACHE  MoE only, opt-in: N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
 #              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-offload branch (upstream
 #              PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
-#              auto = qwen36 2900, flint 2168 (each the VRAM its NCMOE default uses). See docs/how-it-fits.md §12.  (default: empty = off)
+#              auto = qwen36 2900, flint 2168 (each the VRAM its NCMOE default uses); distill 2770 with
+#              batch 2048 (+34% decode, long prompts 2.3x faster; room for a ~700 MiB desktop, see
+#              bench/moe-cache/README.md). See docs/how-it-fits.md §12.  (default: empty = off)
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU instead of copied over PCIe
 #              (--moe-cache-cpu-share)  (default: 0.95)
 #   NGL        dense only: transformer layers on GPU   (default: bonsai2, qwen3vl 99 = all;
@@ -118,6 +120,9 @@ case "$QMODEL" in
     ALIAS=qwen3.8-35b-a3b-distill
     _ngl=30; _ctx=; _minp=0; _bin=
     _ncmoe=34
+    # MOE_CACHE=auto: batch 2048 + 2770 MiB. Measured at 2900: 6820 MiB own peak (desktop <= ~570 MiB);
+    # 130 MiB less leaves room for a ~700 MiB desktop. bench/moe-cache/experimental/logs/step10.log.
+    _moecache=2770; _moecache_batch=2048
     _temp=0.6 ;;
   bonsai2)
     # Qwen3.8-27B in ternary weights (5.95 GB) — fits fully on an 8 GB GPU. PTQ1_0 and the
@@ -444,6 +449,8 @@ MOE_CACHE="${MOE_CACHE:-}"
 if [ "$MOE_CACHE" = auto ]; then
   MOE_CACHE="${_moecache:-}"
   [ -n "$MOE_CACHE" ] || { echo "ERROR: MOE_CACHE=auto has no measured size for QMODEL=$QMODEL; give MiB"; exit 1; }
+  # the size was measured at this batch; a bigger batch needs more VRAM besides the cache
+  [ -n "${_moecache_batch:-}" ] && _batch=$_moecache_batch
 fi
 MOE_CACHE_SHARE="${MOE_CACHE_SHARE:-0.95}"
 NGL="${NGL:-$_ngl}"

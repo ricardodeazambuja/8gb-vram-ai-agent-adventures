@@ -32,6 +32,14 @@ of 34 of the 40 layers in RAM. `NCMOE=32` runs out of VRAM at load (a 545 MiB `c
 fails). The KV cache is identical to the base model: 128K at q8_0 is about 1.42 GB. More in
 [how-it-fits.md](../how-it-fits.md).
 
+**Faster, same VRAM (2026-11-05, opt-in):** a GPU cache of the most recently used experts instead of fixed
+layers, with the CPU computing 95% of the misses. At the same ~7.2 GB as `NCMOE=31`: **52.7 vs 39.3 tok/s**
+decode, 34.0 vs 30.8 after a 30K-token prompt. With batch 2048 (and a smaller cache to pay for it) long prompts
+run 2.3× faster (~500 vs ~215 tok/s) for ~3% of decode, so turns that read a file or start a session get much
+shorter. `QMODEL=distill MOE_CACHE=auto` sets both: 2770 MiB, batch 2048, which leaves room for a desktop
+using up to ~700 MiB of VRAM (give a smaller MiB number if yours uses more). Needs our fork's `moe-offload`
+build; measurements in [`bench/moe-cache/`](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05).
+
 ## Install & run
 
 After [getting-started.md](../getting-started.md):
