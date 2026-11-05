@@ -241,6 +241,28 @@ The other session has since made this a proper option, `--moe-cache-max-batch N`
 `moe-cache-max-batch` at `69ca796dd` (`moe-offload` plus one commit; default 32, so nothing changes without the
 flag). It isn't pushed: that's for the user to decide.
 
+With that flag (`step11-flag.sh`, [`step11.log`](experimental/logs/step11.log), built from `69ca796dd` into
+`../llama.cpp-warm/build-warm`), 32 against 256 on three models. Change in prompt time for 16 / 48 / 100 / 200 /
+300 / 400 / 600 new tokens:
+
+| Model (batch, cache) | 16 | 48 | 100 | 200 | 300–600 | Decode, 32 → 256 | Decode hit rate |
+|---|---|---|---|---|---|---|---|
+| Qwen3.8 (2048, 2900 MiB) | −1% | **−41%** | **−43%** | **−30%** | 0 to −1% | 46.7 → 44.7 tok/s | 62% |
+| Qwen3.6 (512, 2900 MiB) | −1% | −15% | −12% | +6% | −1 to −3% | 40.0 → 39.0 | 63% |
+| Flint (2048, 2168 MiB) | +4% | −17% | −7% | **+15%** | 0 to +1% | 33.0 → 31.9 | 33% |
+
+So 256 suits Qwen3.8 only. For Qwen3.6 and Flint, 200-token turns get slower, so the break-even is nearer 100–150
+tokens. 128 would probably keep their gains at 48 and 100 tokens without the loss at 200; not tested. Flint
+gains least: with a 33% hit rate, more of each turn falls to the CPU. Like the cache size, the limit is per
+model.
+
+The peak VRAM in these runs also says how much desktop the launchers' `MOE_CACHE=auto` sizes leave room for,
+by the rule above (7687 − 300 − the server's own peak): Qwen3.6 at 2900 MiB peaked at 6973–7005 MiB of its own,
+which leaves ~380 MiB; Flint at 2168, ~6883, ~500; Qwen3.8 at 2900 (batch 2048), ~6833, ~550, hence its 2770.
+The cache sizes match the VRAM of each model's `NCMOE` default, and those defaults are as tight (Qwen3.6's
+`NCMOE=32` ended the long-prompt test at 7335 MiB with 331 already in use, ~7000 of its own). With a busier
+desktop, give a smaller `MOE_CACHE` in MiB, or a larger `NCMOE`.
+
 **This queue made systemd-oomd kill the terminal** (03:17, 03:30, 03:31). The tuner reads the whole GGUF into
 the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,
 memory pressure passed oomd's 50% for 20 s. Plain llama-server runs of the same models were fine. Distill and
