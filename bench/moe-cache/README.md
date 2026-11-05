@@ -157,7 +157,16 @@ Share 0.8 was slower (46.4 tok/s) despite a higher hit rate (75% vs 65%).
 
 These sizes were measured with 0.33–0.41 GB of VRAM already in use by the desktop. Qwen3.8's model page measured
 `NCMOE=34` at 7.2–7.3 GB and `NCMOE=32` out of memory, likely with a heavier desktop; so `NCMOE=31` and a
-3661 MiB cache only fit when the desktop is light. The launcher keeps `NCMOE=34` for now. Groot's cache run had
+3661 MiB cache only fit when the desktop is light. The launcher keeps `NCMOE=34` for now.
+
+A rule for any of these sizes: the server's own VRAM is the loaded total minus "vram before" in the logs. The
+card gives CUDA about 7687 MiB (the tuner saw 7353 MiB free with 334 MiB in use), and ~300 MiB should stay free
+for the cuBLAS workspace and first-request buffers (Ornith's cache run failed on its first request). So a
+setting is safe while server + desktop peak + 300 ≤ 7687 MiB. For Qwen3.8 at batch 512, `NCMOE=31` and the
+3661 MiB cache both take ~6820 MiB, so the desktop must stay under ~570 MiB. `NCMOE=34` takes ~5500–5600 and
+leaves ~1.8 GB. Each 100 MiB less cache buys 100 MiB of desktop. `MOE_CACHE=auto` in the launchers uses
+fixed measured sizes, not the VRAM free at launch, so it won't adapt to a busy desktop: give a smaller number
+in MiB instead. Groot's cache run had
 128 MiB more VRAM, so its gain is slightly flattering. The tuner's picks: Groot 3264 MiB / share 0.9, LFM2.5
 3968 / 0.95.
 
