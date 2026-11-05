@@ -325,7 +325,9 @@ run-to-run spread. The two batches ran on different builds two weeks apart, but 
 the same-build A/B above. The cold start after a long prompt (the fit check in
 [`bench/moe-cache/`](../bench/moe-cache/README.md)) doesn't show here: pi's turns add a few hundred
 tokens to a cached prompt, which the cache handles well. Flint's prefill is the cost: batches over 32 tokens
-bypass the cache and copy all 40 layers' experts. Numbers: [`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt),
+bypass the cache and copy the used experts of all 47 MoE layers, where `NCMOE=42` keeps 7 of them on the
+GPU. Shrinking that would take a different change (prefill on the CPU for some layers, or a bigger batch so
+each copy serves more tokens), not a warmer cache. Numbers: [`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt),
 [`stats-moecache.txt`](../bench/results/stats-moecache.txt).
 
 The idea comes from [FreeToken](https://github.com/FlashML-org/FreeToken) (read, not run: it executes
