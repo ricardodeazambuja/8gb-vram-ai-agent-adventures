@@ -19,6 +19,8 @@
 #   TIME_LIMIT  seconds per run           (default: 1200)
 #   RAW      folder for this batch        (default: bench/results/raw; use another for an experiment)
 #   TEMP, EXTRA_ARGS  passed to the server, for sampling and adapter tests
+#   MOE_CACHE=auto    MoE models: GPU expert cache instead of the NCMOE layer split, same VRAM (needs our
+#                     fork's moe-offload build; docs/how-it-fits.md §12). MOE_CACHE_SHARE passes through too.
 #   PREFLIGHT_ONLY=1  only check the sandbox, then exit
 #   PROXY_LOG=DIR     save every request and response between pi and the server in DIR
 #

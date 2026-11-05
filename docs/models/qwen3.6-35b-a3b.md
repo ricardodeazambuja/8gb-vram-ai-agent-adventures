@@ -37,6 +37,11 @@ of the 40 layers in RAM and puts the other 8 on the GPU, for 7.6 GB of VRAM. Bec
 of the 40 layers keep a KV cache (2 KV heads × 256), 128K of context at q8_0 costs just
 1.42 GB. The general idea is explained in [how-it-fits.md](../how-it-fits.md).
 
+**Faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts instead of
+fixed layers, with the CPU computing 95% of the misses: **39.4 vs 24.9 tok/s** decode (A/B/A), prompt speed
+unchanged. `MOE_CACHE=auto` (2900 MiB) on our fork's `moe-offload` build;
+[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
+
 ## Install & run
 
 You need the basics from [getting-started.md](../getting-started.md) first (mamba, an NVIDIA

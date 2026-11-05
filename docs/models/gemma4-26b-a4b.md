@@ -42,6 +42,19 @@ token. Then `--n-cpu-moe N` (the `NCMOE` knob) moves some experts back to the GP
 layer's experts cost ~0.45 GB, and at 32K context about 8 layers fit (`NCMOE=22`). The full story,
 with numbers, is in [How it fits](../how-it-fits.md).
 
+**Faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts instead of
+fixed layers, with the CPU computing 95% of the misses: **30.0 vs 21.0 tok/s** at 32K (A/B/A).
+`KVQUANT=q8_0 MOE_CACHE=3267` (4084 at pibench's 64K / `NCMOE=20`) on our fork's `moe-offload` build;
+[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
+
+**Its chat template wastes prompt processing in agent loops.** The GGUF's template renders the thinking
+block as `thinking + '\n<channel|>'`, but the model writes no `\n` there. So after each long tool call the
+re-rendered history stops matching the cache, and llama-server reprocesses the thinking and the call:
+743 and 1,147 tokens on two `write` turns, measured. Short `bash` calls survive (the sliding-window cache
+has ~512 tokens of slack). [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja)
+drops that `\n` and brings it to 14 tokens: `EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja"`.
+Method in [`bench/moe-cache/`](../../bench/moe-cache/README.md).
+
 ## Install & run
 
 Prerequisites (mamba, an NVIDIA driver, `pi`) are in [Getting started](../getting-started.md).

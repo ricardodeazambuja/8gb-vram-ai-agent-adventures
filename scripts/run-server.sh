@@ -23,6 +23,12 @@
 #   CTX        context window                 (default: 32768; ~max at NCMOE=22 on 8 GB)
 #   NCMOE      if set to N, keep only the first N layers' experts on CPU and put
 #              the rest on the GPU (faster, uses more VRAM). Empty = all on CPU.
+#   MOE_CACHE  opt-in: N MiB (or auto, below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every expert
+#              in RAM, NCMOE ignored. Needs our fork's moe-offload branch (upstream PR #30966).
+#              Measured +43% decode at 32K (MOE_CACHE=3267 vs NCMOE=22). docs/how-it-fits.md §12.
+#              auto = the expert bytes NCMOE would put on the GPU, 408.4 MiB per layer for this model
+#              (NCMOE=22 -> 3267, NCMOE=20 -> 4084); needs NCMOE set.
+#   MOE_CACHE_SHARE  share of cache misses computed on the CPU, not copied over PCIe  (default: 0.95)
 #   HOST/PORT  bind address                   (default: 127.0.0.1 / 8080)
 #   ALIAS      model name the server reports    (default: gemma-4-26b-a4b-qat; set it
 #              when MODEL is another GGUF, e.g. a fine-tune)
@@ -142,6 +148,13 @@ esac
 if [ "$BACKEND" = "cpu" ]; then
   MOE_ARGS=()
   echo ">> MoE: n/a — CPU-only run, all weights on CPU"
+elif [ -n "${MOE_CACHE:-}" ]; then
+  if [ "$MOE_CACHE" = auto ]; then
+    [ -n "$NCMOE" ] || { echo "ERROR: MOE_CACHE=auto needs NCMOE (the layer split it replaces)"; exit 1; }
+    MOE_CACHE=$(( (30 - NCMOE) * 4084 / 10 ))   # 30 MoE layers, 128 experts x 3.19 MiB each
+  fi
+  MOE_ARGS=(--cpu-moe --moe-cache-mib "$MOE_CACHE" --moe-cache-cpu-share "${MOE_CACHE_SHARE:-0.95}")
+  echo ">> MoE: all experts in RAM, $MOE_CACHE MiB GPU expert cache, CPU computes ${MOE_CACHE_SHARE:-0.95} of misses"
 elif [ -n "$NCMOE" ]; then
   MOE_ARGS=(--n-cpu-moe "$NCMOE")
   echo ">> MoE: experts of first $NCMOE layers on CPU, the rest on GPU"

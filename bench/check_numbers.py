@@ -80,7 +80,8 @@ same("agent LoRA pictures 101 against 110 of 150, p", round(fisher(101, 49, 110,
 
 same("Gemma glance", glance("gemma26b-think-on"), (30, 30))
 same("Groot glance", glance("groot-think-on"), (27, 30))
-vision = open(f"{BENCH}/vision/results/summary.md").read()
+with open(f"{BENCH}/vision/results/summary.md") as f:
+    vision = f.read()
 same("vision medians, s", [re.search(rf"\| {m} \|.*\| (\d+) s \|", vision)[1] for m in ("qwen3vl", "lfm3vl", "bolt")], ["5", "8", "110"])
 same("Gemma median s", round(statistics.median(i["secs"] for i in load(f"{VC}/glance-gemma26b-think-on.json")["items"])), 17)
 same("Groot median s", round(statistics.median(i["secs"] for i in load(f"{VC}/glance-groot-think-on.json")["items"])), 16)
@@ -97,6 +98,29 @@ same("new projector", sum(i["ok"] for i in proj["items"]), 35)
 for scene in ("tanks", "signal", "gauge"):
     answers = {json.dumps(i.get("calls") or i.get("text")) for i in proj["items"] if i["scene"] == scene}
     same(f"new projector, different answers to {scene}", len(answers), 1)
+
+# MoE expert cache and the Gemma template (docs/how-it-fits.md §12, bench/moe-cache/)
+MC = f"{BENCH}/moe-cache/logs"
+
+
+def decode(label):  # mean decode tok/s of the 400-token runs in one srvbench log
+    with open(f"{MC}/srv-{label}.log") as f:
+        runs = [float(m[1]) for m in re.finditer(r"eval time = .*/\s+400 tokens .*?([\d.]+) tokens per second", f.read())]
+    return statistics.mean(runs)
+
+
+def reprocessed(label):  # prompt tokens processed per request in one agent-loop log
+    with open(f"{MC}/srv-{label}.log") as f:
+        return [int(m[1]) for m in re.finditer(r"prompt eval time = .*/\s+(\d+) tokens", f.read())]
+
+
+for name, base, cache, want in [("Qwen3.6", "ncmoe32", "cache2900-s0.95", (24.9, 39.4, 58)),
+                                ("Gemma 26B", "gemma-ncmoe22", "gemma-cache-s0.95", (21.0, 30.0, 43)),
+                                ("Flint", "flint-ncmoe42", "flint-cache-s0.95", (26.9, 32.1, 19))]:
+    a, b = decode(base), decode(cache)
+    same(f"{name} decode, layers / cache / gain %", (round(a, 1), round(b, 1), round((b / a - 1) * 100)), want)
+same("Gemma reprocessed per turn, stock template", reprocessed("pi-gemma-stock"), [1416, 743, 1147, 47, 41])
+same("Gemma reprocessed per turn, no-newline template", reprocessed("pi-gemma-nonl"), [1416, 14, 14, 25, 25])
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))

@@ -49,6 +49,12 @@
 #              (faster, more VRAM). NCMOE= (empty) = all experts on CPU.
 #              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 25, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
+#   MOE_CACHE  MoE only, opt-in: N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
+#              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-offload branch (upstream
+#              PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
+#              auto = qwen36 2900, flint 2168 (each the VRAM its NCMOE default uses). See docs/how-it-fits.md §12.  (default: empty = off)
+#   MOE_CACHE_SHARE  share of cache misses computed on the CPU instead of copied over PCIe
+#              (--moe-cache-cpu-share)  (default: 0.95)
 #   NGL        dense only: transformer layers on GPU   (default: bonsai2, qwen3vl 99 = all;
 #              dory 999 — its layer count includes every loop, so 99 leaves layers on the CPU)
 #   KVQUANT    KV-cache type, both K and V             (default: q8_0)
@@ -102,6 +108,7 @@ case "$QMODEL" in
     ALIAS=qwen3.6-35b-a3b
     _ngl=30; _ctx=; _minp=0; _bin=
     _ncmoe=32
+    _moecache=2900
     _temp=0.6 ;;
   distill)
     KIND=moe
@@ -215,6 +222,7 @@ case "$QMODEL" in
     _ngl=99; _ctx=; _minp=0
     _bin="$ADV_BIN"
     _ncmoe=42
+    _moecache=2168
     _batch=2048
     _temp=1.0 ;;
   bolt)
@@ -432,6 +440,12 @@ MMPROJ_GPU="${MMPROJ_GPU:-${_mmgpu:-0}}"
 IMAGE_MAX_TOKENS="${IMAGE_MAX_TOKENS:-${_imgmax:-}}"
 if [ "$KIND" = moe ]; then CTX="${CTX:-131072}"; else CTX="${CTX:-${_ctx:-32768}}"; fi
 NCMOE="${NCMOE-$_ncmoe}"   # unset -> per-model default; set-but-empty -> all on CPU
+MOE_CACHE="${MOE_CACHE:-}"
+if [ "$MOE_CACHE" = auto ]; then
+  MOE_CACHE="${_moecache:-}"
+  [ -n "$MOE_CACHE" ] || { echo "ERROR: MOE_CACHE=auto has no measured size for QMODEL=$QMODEL; give MiB"; exit 1; }
+fi
+MOE_CACHE_SHARE="${MOE_CACHE_SHARE:-0.95}"
 NGL="${NGL:-$_ngl}"
 KVQUANT="${KVQUANT:-${_kv:-q8_0}}"
 MTP="${MTP:-0}"
@@ -474,7 +488,10 @@ echo ">> model: $QMODEL ($KIND) — $MODEL"
 # --- weight placement -------------------------------------------------------
 if [ "$KIND" = moe ]; then
   OFFLOAD_ARGS=(-ngl 99)
-  if [ -n "$NCMOE" ]; then
+  if [ -n "$MOE_CACHE" ]; then
+    OFFLOAD_ARGS+=(--cpu-moe --moe-cache-mib "$MOE_CACHE" --moe-cache-cpu-share "$MOE_CACHE_SHARE")
+    echo ">> MoE: all experts in RAM, $MOE_CACHE MiB GPU expert cache, CPU computes $MOE_CACHE_SHARE of misses"
+  elif [ -n "$NCMOE" ]; then
     OFFLOAD_ARGS+=(--n-cpu-moe "$NCMOE")
     echo ">> MoE: experts of first $NCMOE layers on CPU, the rest on GPU"
   else

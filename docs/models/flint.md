@@ -42,6 +42,11 @@ RAM, llama.cpp ships the expert math for big batches to the GPU, so going from b
 2048 took prompt processing from **192 to 542 tok/s**. The bigger compute buffer costs one
 layer of experts, hence `NCMOE=42` instead of 41. See [how-it-fits.md](../how-it-fits.md).
 
+**A little faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts, with
+the CPU computing 95% of the misses: **32.1 vs 26.9 tok/s** (A/B/A, one noisy baseline run at 17.4).
+`MOE_CACHE=auto` (2168 MiB) on our fork's `moe-offload` build;
+[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
+
 **Why the 3-bit file:** the laptop has 32 GB of RAM with about 20 GB actually available. The
 4-bit `UD-Q4_K_XL` is 25 GB and would leave the page cache gasping; `UD-Q3_K_XL` at 18.5 GB is
 also what Unsloth recommends for 24 GB machines.

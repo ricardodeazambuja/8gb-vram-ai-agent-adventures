@@ -265,3 +265,48 @@ journalctl -k | grep -i oom      # confirm it was host RAM
 Fixes: a smaller context, a smaller quant (that's why Flint uses UD-Q3_K_XL), closing the browser
 with 40 tabs, or more swap. Re-tuning `NCMOE` won't help; the GPU was never the problem. More
 symptoms like this live in [troubleshooting](troubleshooting.md).
+
+## 12. Let a cache pick the experts (opt-in, our fork's `moe-offload` branch)
+
+`--n-cpu-moe` (§1) puts *fixed* layers' experts on the GPU, whether or not the next token uses them. The
+GPU expert cache picks experts by use instead. Every expert lives in RAM (`--cpu-moe`), and llama.cpp keeps
+the recently used ones in a VRAM cache of a size you choose (`--moe-cache-mib`; upstream PRs
+[#29887](https://github.com/ggml-org/llama.cpp/pull/29887) and #30637, so already in our `adventures` build).
+Consecutive tokens reuse many of the same experts: with 20% of Qwen3.6's experts in the cache, 77%
+of lookups hit.
+
+On a miss, the merged code copies the expert to the GPU. Here that is the slow part: this laptop's PCIe
+3.0 link runs at x8, measured at 6.45 GB/s, and copying one expert takes ~0.23 ms. The CPU can compute the
+same expert from RAM in ~0.1 ms. The open upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966)
+(Aman Gupta) adds `--moe-cache-cpu-share F`, which hands that share of the misses to the CPU. Copying
+every miss, the cache gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of misses on the CPU:
+
+| Model (context) | Now: `--n-cpu-moe` | Cache + CPU share 0.95, same VRAM | Gain |
+|---|---:|---:|---:|
+| Qwen3.6-35B-A3B (128K) | 24.9 tok/s (`NCMOE=32`) | **39.4 tok/s** (2900 MiB) | +58% |
+| Gemma 4 26B-A4B (32K) | 21.0 tok/s (`NCMOE=22`) | **30.0 tok/s** (3267 MiB) | +43% |
+| Flint (128K) | 26.9 tok/s (`NCMOE=42`) | **32.1 tok/s** (2168 MiB) | +19% |
+
+Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512, Flint 2048); baseline, cache, baseline
+again, two 400-token runs each; the table compares the first baseline. Prompt speed didn't change. VRAM
+in use was 86–186 MiB lower for Qwen3.6 and within 10 MiB for the other two. The cache also held up over a 2,500-token answer: 33–37
+tok/s, while `NCMOE=32` sank to 18–21 tok/s as the CPU package hit 100 °C (83 °C with the cache). Flint's
+gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.
+
+The cache sizes match the expert bytes `--n-cpu-moe` puts on the GPU (Qwen3.6's 2900 is a little under its
+3070); they are not tuned yet. For pibench's Gemma setting (64K, `NCMOE=20`) that is 4084 MiB. The method,
+scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
+
+```bash
+QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model; or a MiB number
+BACKEND=cuda KVQUANT=q8_0 MOE_CACHE=3267 bash scripts/run-server.sh   # Gemma 4 26B at 32K
+```
+
+The flag isn't in upstream llama.cpp yet. Build our fork's
+[`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch (`adventures` +
+PR #30966's 8 commits): `LLAMA_REF=3a72c57bef4ca02bfa394961f1789393c5e4e9c6 bash scripts/build-llama-cuda.sh`.
+Without it, `MOE_CACHE` fails at startup with an unknown flag. Whether the cache changes [pibench](pibench.md) scores or times: in progress.
+
+The idea comes from [FreeToken](https://github.com/FlashML-org/FreeToken) (read, not run: it executes
+model-repo code), which pairs an expert cache with CPU-computed misses on a single GPU. Both turned out to
+be in llama.cpp already.
