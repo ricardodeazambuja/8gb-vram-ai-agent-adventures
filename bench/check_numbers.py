@@ -121,6 +121,11 @@ for name, base, cache, want in [("Qwen3.6", "ncmoe32", "cache2900-s0.95", (24.9,
     same(f"{name} decode, layers / cache / gain %", (round(a, 1), round(b, 1), round((b / a - 1) * 100)), want)
 same("Gemma reprocessed per turn, stock template", reprocessed("pi-gemma-stock"), [1416, 743, 1147, 47, 41])
 same("Gemma reprocessed per turn, no-newline template", reprocessed("pi-gemma-nonl"), [1416, 14, 14, 25, 25])
+# ThinkingCap: the first two requests are the divergence check, then the agent loop (two loops, off/on, when fixed)
+for label in ("tcap-stock", "tcap-nonl", "tcap-think-stock", "tcap-think-nonl"):
+    same(f"ThinkingCap reprocessed per turn, {label}", reprocessed(label)[2:], [1416, 443, 616, 48, 48])
+same("ThinkingCap reprocessed per turn, empty thoughts kept", reprocessed("tcap-empty")[4:],
+     [2, 17, 17, 28, 28, 3, 17, 17, 28, 28])
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))

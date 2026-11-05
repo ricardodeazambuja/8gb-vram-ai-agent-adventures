@@ -116,3 +116,9 @@ thinking into shorter jobs; we haven't tried one.
 - `NCMOE=20`, the base's setting, runs out of VRAM: use 23.
 - Thinking is off unless the client asks for it, as with the base; there's no saving to be had
   without it.
+- Its chat template makes llama-server reprocess the whole previous turn after most tool calls
+  (443 and 616 tokens on two `write` turns): the model writes an empty thought there, and the template
+  drops empty thoughts from the history. [`config/thinkingcap-gemma4-26b-nonl.jinja`](../../config/thinkingcap-gemma4-26b-nonl.jinja)
+  keeps them (and drops a stray newline), down to 17–28 tokens a turn:
+  `EXTRA_ARGS="--chat-template-file config/thinkingcap-gemma4-26b-nonl.jinja"`.
+  [Details](../../bench/moe-cache/README.md#thinkingcap-the-empty-thought-block-2026-11-05).

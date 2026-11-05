@@ -1,0 +1,34 @@
+### tcap-empty | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf ctx=32768 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 3000 --moe-cache-cpu-share 0.95 --chat-template-file /tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/thinkingcap-template-empty.jinja | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 6831 MiB
+== enable_thinking=False
+PROMPT TAIL: '. Then run the tests with bash.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+RAW HEAD   : '<|tool_call>call:write{content:<|"|>import json\nfrom dataclasses import dataclass, asdict\nfrom typing import Dict\n\n@dataclass\nclass Item:\n    name: str\n    quan'
+parsed: reasoning chars 0 content '' tool write
+raw gen len 1686 first difference 1686 chars into the generation
+GENERATED : 'tems()}\n<|"|>,path:<|"|>/work/inventory.py<|"|>}<tool_call|>'
+RERENDERED: 'tems()}\n<|"|>,path:<|"|>/work/inventory.py<|"|>}<tool_call|><|tool_response>response:write{value:<|"|>ok<|"|>}<tool_response|>'
+== enable_thinking=True
+PROMPT TAIL: 't tests using the write tool. Then run the tests with bash.<turn|>\n<|turn>model\n'
+RAW HEAD   : '<|channel>thought\n<channel|><|tool_call>call:write{content:<|"|>import json\nfrom typing import Dict\n\nclass Inventory:\n    def __init__(self):\n        self.items'
+parsed: reasoning chars 0 content '' tool write
+raw gen len 1535 first difference 1535 chars into the generation
+GENERATED : 'load(f)\n<|"|>,path:<|"|>/work/inventory.py<|"|>}<tool_call|>'
+RERENDERED: 'load(f)\n<|"|>,path:<|"|>/work/inventory.py<|"|>}<tool_call|><|tool_response>response:write{value:<|"|>ok<|"|>}<tool_response|><|channel>thought\n'
+-- agent loop, thinking off
+pi capture: system prompt 2692 chars, 4 tools
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0       1416    1414       2   425           0  write
+   1       1857    1840      17   661           0  write
+   2       2534    2517      17    22           0  bash
+   3       2583    2555      28    22           0  bash
+   4       2632    2604      28    26           0  bash
+-- agent loop, thinking on
+pi capture: system prompt 2692 chars, 4 tools
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0       1416    1413       3   425           0  write
+   1       1857    1840      17   632           0  write
+   2       2505    2488      17    22           0  bash
+   3       2554    2526      28    22           0  bash
+   4       2603    2575      28    22           0  bash
+    vram end: 6891 MiB

@@ -32,6 +32,9 @@ fake = {
     "write": "Successfully wrote file",
 }
 
+KW = {"chat_template_kwargs": {"enable_thinking": True}} if os.environ.get("THINK") else {}
+
+
 def post(body):
     req = urllib.request.Request(URL + "/v1/chat/completions", data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
     return json.load(urllib.request.urlopen(req, timeout=1800))
@@ -45,7 +48,7 @@ def main():
     turns = int(sys.argv[2]) if len(sys.argv) > 2 else 6
     print(f"{'turn':>4} {'prompt_tok':>10} {'cached':>7} {'reproc':>7} {'gen':>5} {'think_chars':>11}  tool")
     for t in range(turns):
-        r = post({"messages": msgs, "tools": tools, "temperature": 0.6, "seed": 1 + t, "max_tokens": int(os.environ.get("MAXTOK", "3000"))})
+        r = post({"messages": msgs, "tools": tools, "temperature": 0.6, "seed": 1 + t, "max_tokens": int(os.environ.get("MAXTOK", "3000")), **KW})
         m = r["choices"][0]["message"]; tm = r.get("timings", {})
         tc = m.get("tool_calls") or []
         print(f"{t:>4} {tm.get('cache_n', 0) + tm.get('prompt_n', 0):>10} {tm.get('cache_n'):>7} {tm.get('prompt_n'):>7} {tm.get('predicted_n'):>5} {len(m.get('reasoning_content') or ''):>11}  {tc[0]['function']['name'] if tc else '-'}", flush=True)
