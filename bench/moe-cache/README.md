@@ -70,7 +70,12 @@ Run on the `moe-offload` build with the cache (`-cmoe --moe-cache-mib 3000`), wh
 reuse. How much it costs in real sessions (`empty_thoughts.py`, `logs/empty-thoughts.txt`, from the pibench
 transcripts): ThinkingCap made 33 of its 197 tool calls (17%) without thinking, each one a whole previous
 turn reprocessed. The base Gemma 26B template has the same `if thinking_text` guard, but the base model
-thought before 435 of its 436 tool calls across two batches, so it hardly ever hits it. Use the fix with
+thought before 435 of its 436 tool calls across two batches, so with pi (thinking on) it hardly ever hits it.
+With thinking *off* it hits it on every turn: the generation prompt ends with the empty block and the history
+drops it (`divergence2.py` on base Gemma, `logs/gemma-step2e.log`). The same two-line change would apply to
+`config/gemma4-26b-nonl.jinja` (its guard is at line 239) but isn't tested there yet, so it isn't in that
+file. (In that log's thinking-on half, the difference 182 characters in is inside the reasoning: the raw and
+the chat call wrote different text at temperature 0, which says nothing about the template.) Use the fix with
 `EXTRA_ARGS="--chat-template-file config/thinkingcap-gemma4-26b-nonl.jinja"`.
 
 ## Not fixed: a needless restore on short SWA prompts
