@@ -95,8 +95,9 @@ A ~30K-token prompt, then 200 tokens, through the real launchers at pibench's se
 | Flint, 128K | 20.2 tok/s, 7.44 GB | 16.5 tok/s (2168 MiB), 7.45 GB |
 | Gemma 26B, 64K q8_0 | out of memory at load (`NCMOE=20`) | 4084 MiB: out of memory; **3500 MiB: 25.3 tok/s, 7.51 GB** |
 
-In this check the short-prompt gains looked gone after a long prompt. The longer test below shows that was
-the 200-token answer: the first ~100 tokens after a big prefill are the slowest. The tuner's recommendations
+In this check the short-prompt gains looked gone after a long prompt. The longer test below doesn't
+reproduce that, and why this check differs isn't known. Untested differences: the launchers' flags against
+the test's, an older build, the CPU's temperature, and the 200-token answer. The tuner's recommendations
 (`tune/*.txt`): Qwen3.6 2624 MiB / share 0.8, Gemma 3008 / 0.8, Flint 2048 / 0.8, its Flint numbers lower
 than both our A/B and the `NCMOE=42` baseline.
 
@@ -119,8 +120,8 @@ plus warm-up, old split again. Decode in tok/s, request 1 / 2, prompt speed in b
 
 The cache still wins after a long prompt: Qwen3.6 +29%, Flint +11% against the mean of the old-split runs,
 with prompt speed 6% and 4% lower. Smaller gains than at short prompts (+58%, +19%), probably because attention
-over 30K tokens takes a larger share of each token (not measured). In 100-token windows, Qwen3.6's cache run starts at 26.1 and
-settles at 28–30.
+over 30K tokens takes a larger share of each token (not measured). The first 100 tokens are the slowest but
+still ahead: Qwen3.6 26.1 vs 23.3 tok/s, then 28–30 with the cache; Flint 21.6 vs 20.3.
 
 The warm-up was a local experiment in the fork (branch `moe-cache-warm` at `d2503edb4`, not pushed): large
 batches put their most-used experts into free cache slots, so decode wouldn't start cold. It works as built
