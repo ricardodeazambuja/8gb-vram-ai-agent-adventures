@@ -1,0 +1,184 @@
+======== groot: Groot-19B-A3B-261023-Q4_K_M.gguf batch=2048 ncmoe=27 matched=3321 MiB  02:59
+    vram before tune: 334 MiB
+    Groot-19B-A3B-261023-Q4_K_M.gguf: 9300 MiB of experts, CUDA0 7353 MiB free, cache up to 3298 MiB
+    recommended: --moe-cache-mib 3264 --moe-cache-cpu-share 0.9 (53.0 t/s, 35.7 with share 0)
+### groot-old | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Groot-19B-A3B-261023-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 27 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7205 MiB
+groot-old                    vram  7205 MiB  prefill  6236 tok   803.8 t/s   decode 400 tok  41.57 t/s
+groot-old                    vram  7205 MiB  prefill  6236 tok   796.8 t/s   decode 400 tok  41.54 t/s
+req1: prompt 33816 tok (0 cached) 683.5 t/s | decode 600 tok 31.15 t/s | per 100:  31.8  31.2  31.1  31.1  31.0  30.9 | CPU +84.0°C -> +90.0°C
+req2: prompt 4 tok (33812 cached) 34.9 t/s | decode 600 tok 30.72 t/s | per 100:  31.2  30.8  30.7  30.6  30.6  30.6 | CPU +90.0°C -> +92.0°C
+    vram end: 7271 MiB
+### groot-new | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Groot-19B-A3B-261023-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 3321 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7333 MiB
+groot-new                    vram  7333 MiB  prefill  6236 tok   703.0 t/s   decode 400 tok  46.62 t/s
+groot-new                    vram  7333 MiB  prefill  6236 tok   778.3 t/s   decode 400 tok  48.54 t/s
+req1: prompt 33816 tok (0 cached) 674.0 t/s | decode 600 tok 32.38 t/s | per 100:  30.1  32.7  32.9  33.3  33.1  32.8 | CPU +90.0°C -> +92.0°C
+req2: prompt 4 tok (33812 cached) 33.3 t/s | decode 600 tok 32.92 t/s | per 100:  32.1  33.4  33.1  33.0  34.3  32.1 | CPU +92.0°C -> +92.0°C
+    vram end: 7405 MiB
+### groot-old-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Groot-19B-A3B-261023-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 27 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7205 MiB
+groot-old-b                  vram  7205 MiB  prefill  6236 tok   782.3 t/s   decode 400 tok  40.76 t/s
+groot-old-b                  vram  7205 MiB  prefill  6236 tok   778.5 t/s   decode 400 tok  39.98 t/s
+    vram end: 7269 MiB
+======== distill: Qwen3.8-35B-A3B-IQ4_XS.gguf batch=512 ncmoe=34 matched=3264 MiB  03:15
+    vram before tune: 334 MiB
+/tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/queue/step3-models.sh: line 18: 1983026 Killed                  systemd-run --user --scope -q --unit=moetune-$n $PY scripts/moe-cache-tune.py --out $Q/tune/out-$n -- build/bin/llama-server -m $MP -ngl 99 -cmoe -c 131072 -ctk q8_0 -ctv q8_0 -fa on --parallel 1 -b $B -ub $B -t 6 --jinja > $Q/tune/$n.txt 2>&1
+### distill-old | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -ncmoe 34 | env NO_WARM=
+    vram before: 430 MiB
+    vram loaded: 5926 MiB
+distill-old                  vram  5926 MiB  prefill  6236 tok   205.2 t/s   decode 400 tok  36.79 t/s
+distill-old                  vram  5926 MiB  prefill  6236 tok   206.6 t/s   decode 400 tok  36.61 t/s
+req1: prompt 33816 tok (0 cached) 200.1 t/s | decode 600 tok 29.57 t/s | per 100:  30.2  29.7  29.7  29.6  29.3  29.2 | CPU +87.0°C -> +91.0°C
+req2: prompt 4 tok (33812 cached) 29.7 t/s | decode 600 tok 29.34 t/s | per 100:  29.8  29.4  29.3  29.3  29.2  29.3 | CPU +91.0°C -> +93.0°C
+    vram end: 5959 MiB
+### distill-new | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 3264 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 6753 MiB
+distill-new                  vram  6753 MiB  prefill  6236 tok   200.9 t/s   decode 400 tok  50.31 t/s
+distill-new                  vram  6753 MiB  prefill  6236 tok   216.7 t/s   decode 400 tok  53.62 t/s
+req1: prompt 33816 tok (0 cached) 211.6 t/s | decode 600 tok 33.97 t/s | per 100:  34.0  34.6  35.2  34.0  32.7  33.7 | CPU +87.0°C -> +93.0°C
+req2: prompt 4 tok (33812 cached) 29.7 t/s | decode 600 tok 33.42 t/s | per 100:  32.5  34.7  35.3  33.7  32.6  32.3 | CPU +93.0°C -> +94.0°C
+    vram end: 6783 MiB
+### distill-old-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -ncmoe 34 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 5929 MiB
+distill-old-b                vram  5929 MiB  prefill  6236 tok   205.8 t/s   decode 400 tok  35.39 t/s
+distill-old-b                vram  5929 MiB  prefill  6236 tok   205.4 t/s   decode 400 tok  35.59 t/s
+    vram end: 5957 MiB
+======== bolt: NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf batch=2048 ncmoe=- matched=- MiB  03:28
+    vram before tune: 334 MiB
+    no cache size, skipping A/B
+======== ornith: Ornith-1.5-35B-Q4_K_M.gguf batch=2048 ncmoe=34 matched=3486 MiB  03:30
+    vram before tune: 334 MiB
+/tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/queue/step3-models.sh: line 18: 1984927 Killed                  systemd-run --user --scope -q --unit=moetune-$n $PY scripts/moe-cache-tune.py --out $Q/tune/out-$n -- build/bin/llama-server -m $MP -ngl 99 -cmoe -c 131072 -ctk q8_0 -ctv q8_0 -fa on --parallel 1 -b $B -ub $B -t 6 --jinja > $Q/tune/$n.txt 2>&1
+### ornith-old | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Ornith-1.5-35B-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 34 | env NO_WARM=
+    vram before: 433 MiB
+    vram loaded: 7219 MiB
+ornith-old                   vram  7219 MiB  prefill  6236 tok   416.4 t/s   decode 400 tok  34.26 t/s
+ornith-old                   vram  7219 MiB  prefill  6236 tok   464.2 t/s   decode 400 tok  34.07 t/s
+req1: prompt 33816 tok (0 cached) 442.4 t/s | decode 600 tok 28.53 t/s | per 100:  29.1  28.7  28.6  28.5  28.2  28.4 | CPU +83.0°C -> +91.0°C
+req2: prompt 4 tok (33812 cached) 31.6 t/s | decode 600 tok 28.19 t/s | per 100:  28.6  28.3  28.2  28.2  28.1  28.0 | CPU +91.0°C -> +93.0°C
+    vram end: 7276 MiB
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/srvbench.py", line 8, in <module>
+    long = post({"prompt": f"<|im_start|>user\nRun {k}. Review this C++ file and list its bugs:\n{src}<|im_end|>\n<|im_start|>assistant\n", "n_predict": 1, "cache_prompt": False})
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/srvbench.py", line 5, in post
+    return json.load(urllib.request.urlopen(r, timeout=3600))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 216, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 519, in open
+    response = self._open(req, data)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 536, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 496, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 1377, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 1352, in do_open
+    r = h.getresponse()
+        ^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 1378, in getresponse
+    response.begin()
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 318, in begin
+    version, status, reason = self._read_status()
+                              ^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 287, in _read_status
+    raise RemoteDisconnected("Remote end closed connection without"
+http.client.RemoteDisconnected: Remote end closed connection without response
+Traceback (most recent call last):
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 1348, in do_open
+    h.request(req.get_method(), req.selector, req.data, headers,
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 1286, in request
+    self._send_request(method, url, body, headers, encode_chunked)
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 1332, in _send_request
+    self.endheaders(body, encode_chunked=encode_chunked)
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 1281, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 1041, in _send_output
+    self.send(msg)
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 979, in send
+    self.connect()
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/http/client.py", line 945, in connect
+    self.sock = self._create_connection(
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/socket.py", line 851, in create_connection
+    raise exceptions[0]
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/socket.py", line 836, in create_connection
+    sock.connect(sa)
+ConnectionRefusedError: [Errno 111] Connection refused
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/queue/longctx.py", line 27, in <module>
+    prompt = post("/apply-template", {"messages": [{"role": "user", "content": txt + "\n\nSummarize the above in 3 sentences."}]})["prompt"]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/queue/longctx.py", line 17, in post
+    return urllib.request.urlopen(r, timeout=7200) if stream else json.load(urllib.request.urlopen(r, timeout=7200))
+                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 216, in urlopen
+    return opener.open(url, data, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 519, in open
+    response = self._open(req, data)
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 536, in _open
+    result = self._call_chain(self.handle_open, protocol, protocol +
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 496, in _call_chain
+    result = func(*args)
+             ^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 1377, in http_open
+    return self.do_open(http.client.HTTPConnection, req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ricardodeazambuja/miniforge3/envs/local/lib/python3.11/urllib/request.py", line 1351, in do_open
+    raise URLError(err)
+urllib.error.URLError: <urlopen error [Errno 111] Connection refused>
+### ornith-new | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Ornith-1.5-35B-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 3486 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7722 MiB
+    vram end: 334 MiB
+    CUDA error: out of memory
+### ornith-old-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Ornith-1.5-35B-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 34 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7218 MiB
+ornith-old-b                 vram  7218 MiB  prefill  6236 tok   462.4 t/s   decode 400 tok  33.50 t/s
+ornith-old-b                 vram  7218 MiB  prefill  6236 tok   462.6 t/s   decode 400 tok  33.65 t/s
+    vram end: 7270 MiB
+======== lfm25: LFM2.5-24B-A2B-QAD-Q4_0.gguf batch=2048 ncmoe=27 matched=4212 MiB  03:36
+    vram before tune: 334 MiB
+    LFM2.5-24B-A2B-QAD-Q4_0.gguf: 12312 MiB of experts, CUDA0 7353 MiB free, cache up to 3999 MiB
+    recommended: --moe-cache-mib 3968 --moe-cache-cpu-share 0.95 (52.4 t/s, 24.5 with share 0)
+### lfm25-old | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | LFM2.5-24B-A2B-QAD-Q4_0.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 27 | env NO_WARM=
+    vram before: 334 MiB
+    vram loaded: 7521 MiB
+lfm25-old                    vram  7521 MiB  prefill  6037 tok  1000.2 t/s   decode 400 tok  34.61 t/s
+lfm25-old                    vram  7521 MiB  prefill  6037 tok   998.1 t/s   decode 400 tok  33.86 t/s
+req1: prompt 31865 tok (0 cached) 941.5 t/s | decode 600 tok 29.94 t/s | per 100:  33.3  30.3  29.5  29.2  29.1  29.0 | CPU +86.0°C -> +90.0°C
+req2: prompt 4 tok (31861 cached) 44.4 t/s | decode 600 tok 28.53 t/s | per 100:  29.0  27.7  28.7  28.7  28.7  28.7 | CPU +90.0°C -> +91.0°C
+    vram end: 7566 MiB
+### lfm25-new | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | LFM2.5-24B-A2B-QAD-Q4_0.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 4212 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    vram before: 331 MiB
+    vram loaded: 7512 MiB
+lfm25-new                    vram  7512 MiB  prefill  6037 tok   839.4 t/s   decode 400 tok  48.09 t/s
+lfm25-new                    vram  7512 MiB  prefill  6037 tok  1001.1 t/s   decode 400 tok  48.84 t/s
+req1: prompt 31865 tok (0 cached) 938.7 t/s | decode 600 tok 37.03 t/s | per 100:  34.6  39.1  36.0  39.1  36.1  38.1 | CPU +90.0°C -> +92.0°C
+req2: prompt 4 tok (31861 cached) 47.3 t/s | decode 600 tok 38.79 t/s | per 100:  37.6  38.9  39.9  37.6  41.6  37.8 | CPU +92.0°C -> +94.0°C
+    vram end: 7568 MiB
+### lfm25-old-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | LFM2.5-24B-A2B-QAD-Q4_0.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 27 | env NO_WARM=
+    vram before: 331 MiB
+    vram loaded: 7518 MiB
+lfm25-old-b                  vram  7518 MiB  prefill  6037 tok   988.4 t/s   decode 400 tok  34.08 t/s
+lfm25-old-b                  vram  7518 MiB  prefill  6037 tok   982.9 t/s   decode 400 tok  33.65 t/s
+    vram end: 7569 MiB

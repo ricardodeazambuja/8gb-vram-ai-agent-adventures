@@ -42,6 +42,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
+| `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), logs and tuner output |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -132,6 +133,29 @@ used, so the 95% CPU share applies at once and the experts decode needs get in s
 (210 to 237 tok/s) is within single-run noise. The `llama-completion` hit-rate runs at 30K (`hits-*.log`)
 printed no hit rates (that needs `-lv 4`), and on Flint they ran out of memory (1760 MiB compute buffer)
 where llama-server didn't.
+
+## Five more MoE models (`models/`, 2026-11-05)
+
+`models/step3-models.sh NAME`: the tuner (`--cpu-moe`, 128K, q8_0 KV), then old split / cache at the
+VRAM-matched size, share 0.95 / old split again, two 400-token `srvbench` runs each, plus the 30K-token
+long-prompt check for the first two. All logs in [`models/logs/`](models/logs/), tuner output in `models/tune/`.
+
+| Model (batch) | Old split | Cache | VRAM old / cache | Decode | 30K prompt, 600 tokens | Prompt speed |
+|---|---|---|---|---|---|---|
+| Groot 19B-A3B (2048) | `NCMOE=27` | 3321 MiB | 7205 / 7333 MiB | 41.0 → **47.6** (+16%) | 30.9 → 32.7 (+6%) | 790 → 741 (−6%) |
+| LFM2.5 24B-A2B (2048) | `NCMOE=27` | 4212 MiB | 7521 / 7512 MiB | 34.0 → **48.5** (+42%) | 29.2 → 37.9 (+30%) | 992 → 920 (−7%) |
+| Qwen3.8 distill (512) | `NCMOE=34` | 3264 MiB | 5926 / 6753 MiB | not comparable: the cache had 827 MiB more VRAM; redo at ~2437 MiB | | |
+| Ornith 1.5 35B (2048) | `NCMOE=34` | 3486 MiB | 7219 / 7722 MiB | the cache ran out of VRAM on the first request; redo at ~2980 MiB | | |
+| Bolt 74B-A9B | | | | not run: the tuner ran out of VRAM (1299 MiB compute buffer at 128K, batch 2048) | | |
+
+Old-split numbers are the mean of both old runs (the long check: the first only). Groot's cache run had
+128 MiB more VRAM, so its gain is slightly flattering. The tuner's picks: Groot 3264 MiB / share 0.9, LFM2.5
+3968 / 0.95.
+
+**This queue made systemd-oomd kill the terminal** (03:17, 03:30, 03:31). The tuner reads the whole GGUF into
+the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,
+memory pressure passed oomd's 50% for 20 s. Plain llama-server runs of the same models were fine. Distill and
+Ornith's tuner runs were killed, which is why they have no tuner pick.
 
 **pibench (2026-11-04):** scores held and decode inside the sessions was faster for all three
 (Qwen3.6 +59%, Gemma +26%, Flint +23%); Flint's prompt speed was 17% lower there, 4% in the test above.
