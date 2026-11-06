@@ -23,6 +23,7 @@
 #   lfm25vl  LFM2.5-VL-450M F16               DENSE, all on GPU, vision (--image)
 #   locate   LocateAnything-3B Q8_0           boxes and points only, vision (--image)
 #   vibe3b / vibe15  VibeThinker 3B, 1.5B Q8_0  one-shot reasoners, no native tool calls
+#   twil             TwIL-8B Q4_K_M verbose     math/code reasoner, dense 8B, 24K, no tool training
 #
 # Not chat models, so they have no start-qwen.sh or pi: start the server, then call its API.
 #   lfm3audio  LFM3-Audio-2B Q8_0             speech in and out, projector always on (/v1/realtime)
@@ -37,7 +38,7 @@
 # the 8 GB card with its weights, so it defaults to 32K.
 #
 # Config (override via env vars):
-#   QMODEL     qwen36 | distill | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash  (default: qwen36)
+#   QMODEL     qwen36 | distill | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | twil | eg2 | d1 | clefflash  (default: qwen36)
 #   MODEL      path to the .gguf                       (default: per QMODEL)
 #   MMPROJ     vision projector                        (default: per QMODEL; used with --image)
 #   MMPROJ_GPU 1 = vision projector on the GPU, 0 = CPU  (default: 0; qwen3vl 1 — its 0.75 GB
@@ -413,6 +414,23 @@ case "$QMODEL" in
     _bin="$ADV_BIN"
     _ncmoe=
     _temp=0.6 ;;
+  twil)
+    # webAI TwIL-8B (Granite 4.2 8B, dense, thinks): math, code and instruction following, no tool
+    # training. Verbose Q4_K_M (5.0 GiB), all on the GPU. 24K with a q4_0 KV cache (~1.1 GB, 45 KiB/token):
+    # leaves room for a ~0.7 GB desktop, by estimate; 32K would need a desktop under ~350 MiB, and q8_0
+    # costs 85 KiB/token. The card wants 40K for hard problems. Sampling is the card's: temp 1.0, top-p 0.95.
+    # See docs/models/twil-8b.md.
+    KIND=dense
+    _dir="$REPO_ROOT/models/twil-8b"
+    _model="$_dir/TwIL-8B-Q4_K_M-verbose.gguf"
+    _mmproj=
+    ALIAS="twil-8b"
+    _ngl=99; _ctx=24576; _minp=0
+    _topp=0.95; _topk=0; _rpen=1.0
+    _kv=q4_0
+    _bin="$ADV_BIN"
+    _ncmoe=
+    _temp=1.0 ;;
   lfm3audio)
     # LiquidAI LFM3-Audio-2B: speech in and out, tools on the chat API. llama.cpp's own default
     # sampling, as in bench/voice/. See docs/models/lfm3-audio-2b.md.
@@ -448,7 +466,7 @@ case "$QMODEL" in
     _ncmoe=
     _temp=0 ;;
   *)
-    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | distill | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | eg2 | d1 | clefflash)"; exit 1 ;;
+    echo "ERROR: unknown QMODEL='$QMODEL' (use qwen36 | distill | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | twil | eg2 | d1 | clefflash)"; exit 1 ;;
 esac
 
 MODEL="${MODEL:-$_model}"

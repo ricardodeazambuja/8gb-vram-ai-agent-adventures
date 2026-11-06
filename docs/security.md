@@ -116,3 +116,4 @@ column is what the audit flagged, not a match against the source repo.
 | [FLUX.2 Klein 4B](models/flux2-klein-4b.md) | `flux-2-klein-4b-Q4_0.gguf` | ✓ pinned | ✓ | none, it's an image model (the one WARN); the VAE and SDXL are plain `.safetensors` | **clean** |
 | [FLUX.2 Klein's text encoder](up-next.md#️-image-generation) | `Qwen3-4B-Q4_K_M.gguf` | ✓ pinned | ✓ | nothing flagged by the audit | **clean** |
 | [Iris-3B's text encoder](up-next.md#️-image-generation) | `Qwen3VL-4B-Instruct-Q4_K_M.gguf` | ✓ pinned | ✓ | nothing flagged by the audit | **clean** |
+| [TwIL-8B](models/twil-8b.md) | `TwIL-8B-Q4_K_M-verbose.gguf` | ✓ pinned | ✓ | identical to the source repo's (`verbose/chat_template.jinja`); its one info line is the stock Qwen "do not tell the user about function calls" wording ([audit](../bench/audits/2026-11-06/twil-8b.txt)) | **clean** |

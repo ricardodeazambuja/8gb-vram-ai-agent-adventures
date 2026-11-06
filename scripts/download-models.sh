@@ -43,6 +43,8 @@
 #   lfm25vl  LFM2.5-VL-450M F16 (LiquidAI, ~0.7 GB + 0.2 GB vision) — tiny vision model, fine-tuning subject
 #   locate   LocateAnything-3B Q8_0 (yuuko-eth port of nvidia's, ~3.6 GB + 0.9 GB vision) — grounding
 #            specialist; non-commercial research license (docs/up-next.md)
+#   twil     TwIL-8B Q4_K_M verbose (webAI, ~5.3 GB) — Granite 4.2 8B post-trained for math, code and
+#            instruction following; dense, thinks; webAI non-commercial license (docs/up-next.md)
 #
 # Reproducible by construction: every file is downloaded at a PINNED Hugging Face repo
 # revision and checked against a PINNED sha256 (the exact bytes tested in
@@ -58,7 +60,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | d1 | eg2 | clefflash | locate | lfm25vl)
+#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -97,6 +99,7 @@ MODELS=(
   "locate|yuuko-eth/LocateAnything-3B-GGUF|c3260717380c24cd2fc11f66c43e2feeec3e32fe|locateanything-3b|LocateAnything-3B-Q8_0.gguf:3d039dea2f121006d5dffe2a0371b4979c67dc17ac9d50a557834a064c9e107f mmproj-LocateAnything-3B-BF16.gguf:0216a6647317bc7d5bd152b66bd8b9248472ad090893f75d2f4a689d1789ee80"
   "bonsai2q2|prism-ml/Ternary-Bonsai-2-27B-gguf|94dd51cdbbec5309ed8b76a12f3268bc4fdceb93|bonsai2-27b|Ternary-Bonsai-2-27B-Q2_0.gguf:4f99aed01b8a877e153f9aa6569a4440fe17c59701cc0953e36d7f460549e70e"
   "vibe3b|mradermacher/VibeThinker-3B-GGUF|d888b8fe5e48f860687f37d17bac083d9082dc9f|vibethinker-3b|VibeThinker-3B.Q8_0.gguf:4f392d489f5c6d1980fa2dbe5af5c169a4111336f1ce8c6d72650561e7390f02"
+  "twil|webAI-Official/TwIL-8B|58d49f0d9909e62f9c2fb09e99fc5c76f3f2d630|twil-8b|TwIL-8B-Q4_K_M-verbose.gguf:5646abbb98f6ab81cfb9f7590aef894011ba50a259fb5d5aac8284d154e64ef0"
   "vibe15|mradermacher/VibeThinker-1.5B-GGUF|d0d66139a78030a92a582f966b0f7cbbb3b19406|vibethinker-1.5b|VibeThinker-1.5B.Q8_0.gguf:4243d9c5de7ba3d682403c8f25708de5efb4eb6f6878898f4c771afe098a3bba"
   "d1|LiquidAI/d1-2B-GGUF|63be75e6586882defeb706ed4bda812d90256a6d|d1-2b|d1-2B-Q8_0.gguf:073313d92b53b0ac8193db6e906cb3c78a98183d244b15b7b8f5426115c6738c"
   "klein|leejet/FLUX.2-klein-4B-GGUF|3b1f5a9dc3abb32238b053aeb3d823c30afdacbd|image-gen/flux2-klein|flux-2-klein-4b-Q4_0.gguf:d1023499ef3f2f82ff7c50e6778495195c1b6cc34835741778868428111f9ff4"
@@ -167,7 +170,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
 done
 
 exit "$FAIL"
