@@ -405,13 +405,13 @@ next-token distributions with the full model's on the held-out sixth task, featu
 The ranking halves the damage of a random cut, but a 10% cut already changes the top token one time in ten:
 a model that wrote different code. The reason is compounding: losing 2% of picks per layer is 6.5 of each
 token's 320 picks (8 per layer × 40 layers) going to a second choice, so only 0.14% of tokens are untouched.
-llama.cpp also doesn't renormalize Qwen3.6's 8 expert weights (`expert_weights_norm` is false for qwen35moe),
-so a pruned router's softmax has a smaller denominator for every token, not just the rerouted ones; how much
-that adds is untested. Perplexity is no help here: `llama-perplexity` compares against the stored, rounded base
+The 8 chosen experts' weights are renormalized to sum to 1 (`qwen35moe.cpp` passes `norm_w = true`, as Qwen's
+`norm_topk_prob` does), so the experts that are gone don't skew the weights of the ones still picked; the
+damage is the rerouting itself. Perplexity is no help here: `llama-perplexity` compares against the stored, rounded base
 log-probs and reads 1.037 for the identical model, and it moves the wrong way (keep 128 reads 0.89).
 
 So frequency pruning without healing is a dead end for Qwen3.6 on this machine. What might change that: REAP's
-score (gate value × output size, which needs the expert outputs, not just the trace), renormalizing the
-remaining experts' weights, or a short fine-tune after pruning (the paper's results are one-shot, on larger
+score (gate value × output size, which needs the expert outputs, not just the trace), or a short fine-tune
+after pruning (the paper's results are one-shot, on larger
 models with more experts). None is cheap here.
 

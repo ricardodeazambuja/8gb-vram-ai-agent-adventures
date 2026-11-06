@@ -116,7 +116,7 @@ whether the router's second choices are good enough. Flint spreads its picks eve
 **Tried (2026-11-05):** frequency-pruned Qwen3.6 GGUFs, scored against the full model on a held-out task: keeping
 230 of 256 experts per layer already changes the top token 10.5% of the time (KL divergence 0.48), 192 13%, 128
 18% ([details](../bench/moe-cache/README.md)). Small per-layer losses compound over 40 layers. Parked unless
-REAP's own score, renormalized expert weights or a healing fine-tune can be tried cheaply.
+REAP's own score or a healing fine-tune can be tried cheaply.
 
 ## 🗣️ Voice agents: agents that talk to people
 
