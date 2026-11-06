@@ -118,6 +118,12 @@ whether the router's second choices are good enough. Flint spreads its picks eve
 18% ([details](../bench/moe-cache/README.md)). Small per-layer losses compound over 40 layers. Parked unless
 REAP's own score or a healing fine-tune can be tried cheaply.
 
+Removing whole layers instead ([ShortGPT](https://arxiv.org/abs/2403.03853),
+[Gromov et al.](https://arxiv.org/abs/2403.17887)) drops up to about half of some models' deeper layers with
+little loss on question-answering benchmarks, usually after a short LoRA "healing" run. Multi-step tool use
+tends to break first, so it's only worth trying on a dense model that almost fits, to get it fully on the GPU.
+Layer "stitching" (frankenmerges) goes the other way: it stacks copies of layers to make a model bigger.
+
 ## 🗣️ Voice agents: agents that talk to people
 
 Goal: a local agent you can talk to, which answers out loud and can still use tools. Two ways
@@ -377,6 +383,17 @@ already steer the small models. The cost is evaluations: 32 copies × 16 maze ru
 0.42 s is ~70 minutes per iteration, so it needs a fast task, batched requests, or fewer, longer
 iterations. A first test: ES on LFM3-1.7B's norm weights for multi-step maze driving, the long-horizon
 task where we skipped the GRPO step (item 13 above), against the gradient-trained norm-only adapter.
+
+### 🧱 Megakernels ([Hyperkernel](https://github.com/Hyperstitioncc/Hyperkernel), looked at 2026-11-05)
+
+Fusing a model's GPU kernels into one "megakernel" removes the gaps between kernel launches. Nothing to reuse
+here: Hyperkernel targets NVIDIA's B300 datacenter GPUs only, its kernel generator isn't published, and the repo
+(alpha, one commit) has nothing for Turing or llama.cpp. The idea also targets a bottleneck we probably don't
+have: our big MoE models spend decode waiting on the CPU and RAM (the expert cache helped by moving experts,
+not by faster kernels), and llama.cpp already runs CUDA graphs and fused kernels. The cheap first step is to
+measure: one Nsight Systems run (`nsys profile`) of ~200 decode tokens on Qwen3.6 with the cache, to see how
+much of each token is GPU work, GPU idle waiting on the CPU, PCIe copies and launch gaps. Only real GPU gaps or
+one slow kernel would justify kernel work in the fork.
 
 ### 🔬 Local autoresearch ([conglu1997/local-autoresearch](https://github.com/conglu1997/local-autoresearch), MIT)
 

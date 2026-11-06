@@ -132,6 +132,17 @@ first request; the Gemma 12B agentic model at `-ngl 99` OOMed with llama.cpp's d
 `--parallel 1` and a smaller batch (`NP=1 BATCH=512 UBATCH=512`), or one layer fewer on the GPU.
 And always test with an actual request, not just a successful load.
 
+### A size that fit at night runs out of memory in the daytime
+
+**What's going on:** the desktop's own VRAM use swings. With Chrome and a few apps open it took ~1.7 GB
+(2026-11-05); at night, with little open, 0.33–0.46 GB. The MoE cache sizes here were measured at night, and
+Nemotron Bolt's default placement ran out of VRAM at load next to the daytime desktop.
+
+**Fix:** check `nvidia-smi` before launching. `MOE_CACHE=auto` now shrinks the cache by however much more
+VRAM is in use than the size was measured with (`MOE_CACHE_ADAPT=0` turns that off), and refuses below
+1 GiB. For anything else, close the browser or lower `NCMOE`/`-ngl`. Speed with the shrunk caches is
+not measured yet.
+
 ### 128K "should fit" by the math, but runs out of memory
 
 **What's going on:** with a quantized KV cache, flash attention keeps an f16 copy of one layer's
