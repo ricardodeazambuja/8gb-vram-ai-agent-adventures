@@ -39,6 +39,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `thinkingcap-template.jinja` | ThinkingCap Gemma 4 26B's template, from its GGUF: different file (a `thinking_gate`), same `'\n<channel|>'` after the thinking. [`config/thinkingcap-gemma4-26b-nonl.jinja`](../../config/thinkingcap-gemma4-26b-nonl.jinja) drops it and also renders empty thoughts (below) |
 | `divergence2.py` | like `divergence.py`, with thinking off and on; found ThinkingCap's empty-thought bug |
 | `empty_thoughts.py FOLDER...` | tool-call turns without thinking in pibench transcripts; output in `logs/empty-thoughts.txt` |
+| `expert_usage.py TRACE...` | how concentrated the router's expert picks are per layer, and what keeping the top K% would miss on held-out tokens; output in `logs/expert-usage.txt` |
 | `gemma-empty.sh` | base Gemma 26B with the fixed `config/gemma4-26b-nonl.jinja`: `divergence2.py` and the agent loop, thinking off and on (uses `longctx/srv.sh`) |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
@@ -305,3 +306,28 @@ also runs the server with `-lv 4` now, so each log ends with the cache's hit rat
 (Qwen3.6 +59%, Gemma +26%, Flint +23%); Flint's prompt speed was 17% lower there, 4% in the test above.
 [How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
 has the table.
+
+## How concentrated is expert use? (`expert_usage.py`, 2026-11-05)
+
+A first look at whether [REAP](https://arxiv.org/abs/2510.13999)-style expert pruning
+([up next](../../docs/up-next.md)) could pay off here, from the traces
+the tuner already wrote (`tune/out-*/run-*.trace.xz`: every expert the router picked, 1034 tokens of one story
+prompt). Output in [`logs/expert-usage.txt`](logs/expert-usage.txt). Per layer, median over layers:
+
+| Model | Never picked | Experts covering 90% / 99% of picks | Keep the top 75%: held-out picks lost | Keep 50% |
+|---|---|---|---|---|
+| Qwen3.6 35B-A3B (256 experts, 8 per token) | 28% | 23% / 52% | 1.9% (worst layer 8.7%) | 4.4% (worst 25%) |
+| Gemma 4 26B-A4B (128, 8) | 14% | 43% / 70% | 7.4% (worst 21%) | 25% (worst 54%) |
+| Flint 40B-A2.5B (256, 6) | 1.6% | 63% / 89% | 13% (worst 19%) | 32% (worst 40%) |
+
+"Held-out": experts ranked on the first half of the tokens, picks counted on the second half. Qwen3.6 leans on
+a small set of experts, Flint spreads its picks almost evenly, and the cache hit rates agree (Qwen3.6 63% and
+Flint 33% in step 11). So Qwen3.6, and likely Qwen3.8 and Ornith, which share its architecture, are the
+candidates; Flint is not.
+
+What this doesn't show: one story prompt of ~1K tokens (about 32 picks per expert per layer, so "never picked"
+is partly chance), and both halves come from the same text, so it says nothing about an agent session yet.
+Frequency only: REAP also weighs the gate value and how much each expert changes the output, and a lost pick
+goes to the router's next choice rather than to nothing. The next step is a trace of real agent sessions:
+any cache run writes one with `LLAMA_MOE_CACHE_TRACE=FILE`.
+

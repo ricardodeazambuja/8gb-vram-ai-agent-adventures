@@ -91,6 +91,26 @@ Measured: see its [model page](models/locateanything-3b.md).
 Brought in from [`vibethinker_tests`](https://github.com/ricardodeazambuja/vibethinker_tests): see its
 [model page](models/vibethinker.md). To try: a bigger model plans and checks, and the 3B writes the code in one shot.
 
+## ✂️ Pruning experts from the MoE models (REAP)
+
+[REAP](https://arxiv.org/abs/2510.13999) (Cerebras, ICLR 2026; [code](https://github.com/CerebrasResearch/reap),
+Apache 2.0) deletes a MoE model's least useful experts in one shot, with no retraining. It scores each expert
+on a calibration set by its router gate values and the size of its output, so an expert that is rarely picked,
+or barely changes the output when it is, goes first. The paper reports it beating expert merging on generative
+tasks, and near-lossless code generation and tool calling at 50% on Qwen3-Coder-480B and Kimi-K2. Cerebras
+publishes pruned checkpoints (GLM-4.6 at 40%, MiniMax-M2 at 30%, GLM-4.5-Air at 25%). Their calibration mix
+for agent use: evol-codealpaca, Mixture-of-Thoughts, xlam function calling and SWE-smith trajectories.
+
+Why it fits here: our big MoE models keep every expert in RAM, so 25–40% fewer experts is several GB of RAM
+back (Bolt and Ornith are RAM-bound), and the same [VRAM cache](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
+holds a larger share of what's left, so the hit rate and decode speed go up.
+
+The catch: REAP works on Hugging Face checkpoints, and a 35B model in BF16 is ~70 GB, more than our 32 GB of
+RAM (its layer-wise mode, added 2026-03-30, may get around that; untested). The other route is to do it in
+GGUF: collect the scores with our llama.cpp fork on our own workload (pi sessions), then write a GGUF without
+the dropped experts and their router rows. Calibrate on what we actually run, and let pibench decide whether
+it still works. First look, from traces we already had: [expert use](../bench/moe-cache/README.md#how-concentrated-is-expert-use-expert_usagepy-2026-11-05).
+
 ## 🗣️ Voice agents: agents that talk to people
 
 Goal: a local agent you can talk to, which answers out loud and can still use tools. Two ways
