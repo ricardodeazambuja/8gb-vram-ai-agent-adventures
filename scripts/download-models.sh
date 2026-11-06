@@ -59,8 +59,8 @@
 #   mamba install -n llamacpp -c conda-forge huggingface_hub
 #
 # Usage:
-#   bash scripts/download-models.sh              # all three
-#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl)
+#   bash scripts/download-models.sh              # the default pair: qwen36 distill
+#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl | klein | kleinte | kleinvae | iris | iriste | sdxl | sdxlvae)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -170,7 +170,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl | klein | kleinte | kleinvae | iris | iriste | sdxl | sdxlvae)"; FAIL=1; }
 done
 
 exit "$FAIL"

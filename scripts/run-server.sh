@@ -24,11 +24,14 @@
 #   NCMOE      if set to N, keep only the first N layers' experts on CPU and put
 #              the rest on the GPU (faster, uses more VRAM). Empty = all on CPU.
 #   MOE_CACHE  opt-in: N MiB (or auto, below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every expert
-#              in RAM, NCMOE ignored. Needs our fork's moe-offload branch (upstream PR #30966).
+#              in RAM, NCMOE ignored. Upstream PR #30966.
 #              Measured +43% decode at 32K (MOE_CACHE=3267 vs NCMOE=22). docs/how-it-fits.md §12.
 #              auto = a size measured to fit, with KVQUANT=q8_0: 3267 at 32K, 3500 at 64K (2026-11-04: 4084,
 #              the expert bytes of NCMOE=20, ran out of memory at load; so did NCMOE=20 itself that day).
+#              With auto, a desktop using more than ~700 MiB of VRAM shrinks the cache by the difference
+#              (MOE_CACHE_ADAPT=0: keep the measured size). Needs our fork's moe-cache-max-batch build (the default).
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU, not copied over PCIe  (default: 0.95)
+#   PRINT_CONFIG  1 = print the resolved model, alias, context and projector, then exit
 #   HOST/PORT  bind address                   (default: 127.0.0.1 / 8080)
 #   ALIAS      model name the server reports    (default: gemma-4-26b-a4b-qat; set it
 #              when MODEL is another GGUF, e.g. a fine-tune)
@@ -107,6 +110,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# PRINT_CONFIG=1: print the resolved settings and exit (scripts/llm reads them; nothing starts).
+if [ "${PRINT_CONFIG:-0}" = 1 ]; then
+  printf '%s\n' "KIND=moe" "MODEL=$MODEL" "ALIAS=$ALIAS" "CTX=$CTX" "MMPROJ=${MMPROJ:-}"
+  exit 0
+fi
 command -v mamba >/dev/null 2>&1 || { echo "ERROR: 'mamba' not found on PATH."; exit 1; }
 [ -f "$MODEL" ] || { echo "ERROR: model not found: $MODEL"; echo "Run scripts/setup.sh first."; exit 1; }
 
@@ -155,6 +163,18 @@ elif [ -n "${MOE_CACHE:-}" ]; then
       65536/q8_0) MOE_CACHE=3500 ;;
       *) echo "ERROR: MOE_CACHE=auto has no measured size for CTX=$CTX KVQUANT=$KVQUANT; give MiB"; exit 1 ;;
     esac
+    # A busier desktop than these sizes leave room for (~700 MiB, an estimate from the 64K peak of 7.51 GB with
+    # a ~0.7 GB desktop): shrink the cache by the difference, as run-qwen.sh does. MOE_CACHE_ADAPT=0 keeps it.
+    _used="$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ' || true)"
+    if [ "${MOE_CACHE_ADAPT:-1}" = 1 ] && [ -n "$_used" ] && [ "$_used" -gt 700 ]; then
+      _shrunk=$(( MOE_CACHE - (_used - 700) ))
+      if [ "$_shrunk" -lt 1024 ]; then
+        echo "ERROR: the GPU already has $_used MiB in use; MOE_CACHE=auto would get only $_shrunk MiB (< 1024)."
+        echo "       Free some VRAM (browser, other servers) or give MOE_CACHE in MiB / use NCMOE."; exit 1
+      fi
+      echo ">> MoE cache: $_used MiB of VRAM already in use (the measured $MOE_CACHE MiB leaves room for ~700): using $_shrunk MiB"
+      MOE_CACHE=$_shrunk
+    fi
   fi
   MOE_ARGS=(--cpu-moe --moe-cache-mib "$MOE_CACHE" --moe-cache-cpu-share "${MOE_CACHE_SHARE:-0.95}")
   echo ">> MoE: all experts in RAM, $MOE_CACHE MiB GPU expert cache, CPU computes ${MOE_CACHE_SHARE:-0.95} of misses"

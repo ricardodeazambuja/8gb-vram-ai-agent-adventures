@@ -8,8 +8,8 @@
 #
 # A thin wrapper over scripts/start-qwen.sh with QMODEL=bonsai2 and pi's "medium" thinking
 # level (at the template's default it thinks for minutes per turn). The server settings come
-# from run-qwen.sh's bonsai2 defaults: all layers on the GPU, 16K context, f16 KV, our llama.cpp
-# fork (its `adventures` branch carries PrismML's PTQ1_0 support). Details and
+# from run-qwen.sh's bonsai2 defaults: all layers on the GPU, 32K context, q8_0 KV, our llama.cpp
+# fork (it carries PrismML's PTQ1_0 support). Details and
 # measurements: docs/models/bonsai2-27b.md. Every start-qwen.sh knob (CTX, PORT, STOP_ON_EXIT,
 # ...) still works if you set it; you never have to.
 #

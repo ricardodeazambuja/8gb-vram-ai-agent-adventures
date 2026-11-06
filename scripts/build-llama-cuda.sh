@@ -51,9 +51,10 @@ DET_ARCH="$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader 2>/dev/null
 CUDA_VER="${CUDA_VER:-$DRIVER_CUDA}"
 CUDA_ARCH="${CUDA_ARCH:-$DET_ARCH}"
 ENV_NAME="${ENV_NAME:-llamacpp-cuda}"
-# Default: our fork at the commit everything here was tested on, next to this repo.
+# Default: our fork at the commit everything here was tested on, next to this repo: branch
+# moe-cache-max-batch (the adventures branch + the MoE expert cache, --moe-cache-mib / --moe-cache-max-batch).
 ADV_REPO=https://github.com/ricardodeazambuja/llama.cpp
-ADV_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961
+ADV_REF=69ca796ddb1a9b62c342f047d50880bc43b3c023
 [ -z "${LLAMA_REPO:-}" ] && LLAMA_REF="${LLAMA_REF:-$ADV_REF}"
 SRC_DIR="${SRC_DIR:-$REPO_ROOT/../llama.cpp}"
 LLAMA_REPO="${LLAMA_REPO:-$ADV_REPO}"

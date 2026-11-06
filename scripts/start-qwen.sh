@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # start-qwen.sh — one command to bring up any model served by scripts/run-qwen.sh
-# (QMODEL=qwen36 | distill | flint | groot | ornith | lfm25 | bolt | e4b | bonsai2 | qwen3vl | dory | spark) and drop
-# you into pi, then offer to stop the server when pi exits. Download the models first
+# (any chat model: QMODEL=qwen36 | distill | flint | groot | ornith | lfm25 | bolt | e4b | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | lfm3 | lfm3vl | lfm25vl | vibe3b | vibe15 | twil)
+# and drop you into pi, then offer to stop the server when pi exits. Download the models first
 # with scripts/download-models.sh.
 #
 # Starts the server in the background (if nothing is serving on the port yet), waits
@@ -11,8 +11,9 @@
 # invoked this is always left alone).
 #
 # Server knobs (forwarded via env to run-qwen.sh — see its -h for all of them):
-#   QMODEL   qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25   (default qwen36)
-#   CTX      context window, in tokens    (default: 131072 MoE / 110592 spark / 65536 dory / 16384 bonsai2, qwen3vl)
+#   QMODEL   any chat model of run-qwen.sh (list above)   (default qwen36)
+#   CTX      context window, in tokens    (default: run-qwen.sh's per-model default; pi is synced to
+#            whatever the server reports)
 #   NCMOE    MoE: first N layers' experts on CPU, rest on GPU  (default: qwen36 32, distill 34, flint 42)
 #   KVQUANT  KV type both sides           (default q8_0)
 #   TEMP / TOP_P / TOP_K / PRESENCE_PENALTY  sampling (defaults per model card)
@@ -45,11 +46,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
 QMODEL="${QMODEL:-qwen36}"
-# Effective context, mirroring run-qwen.sh's defaults so pi gets synced to the same value.
-if [ -z "${CTX:-}" ]; then
-  case "$QMODEL" in spark) CTX=110592 ;; dory|e4b) CTX=65536 ;; bonsai2|qwen3vl) CTX=16384 ;; *) CTX=131072 ;; esac
-fi
-export CTX QMODEL
+# Context: run-qwen.sh owns the per-model default; only a CTX you set is passed on. pi is synced to
+# the context the server actually reports (/props), not to a guess made here.
+CTX="${CTX:-}"
+export QMODEL
+[ -n "$CTX" ] && export CTX
 SERVER_LOG="${SERVER_LOG:-/tmp/qwen-bakeoff-server.log}"
 STOP_ON_EXIT="${STOP_ON_EXIT:-}"
 SYNC_PI="${SYNC_PI:-1}"
@@ -82,7 +83,7 @@ if curl -fsS "http://$HOST:$PORT/health" >/dev/null 2>&1; then
   fi
 else
   echo ">> starting $QMODEL server in background (logs: $SERVER_LOG) ..."
-  echo "   QMODEL=$QMODEL CTX=$CTX PORT=$PORT"
+  echo "   QMODEL=$QMODEL CTX=${CTX:-model default} PORT=$PORT"
   # Own process group (setsid) so an abort can kill the whole tree: run-qwen.sh
   # exec's `mamba run … llama-server`, so llama-server is a grandchild.
   SRV_PGRP=0
@@ -145,7 +146,7 @@ else
     echo "ERROR: the server did not become healthy within ~10 min. Last log lines:"
     tail -20 "$SERVER_LOG"; server_start_hints; exit 1
   fi
-  echo ">> server up at http://$HOST:$PORT  (PID $SRV_PID · CTX=$CTX). Stop later: bash scripts/stop-server.sh"
+  echo ">> server up at http://$HOST:$PORT  (PID $SRV_PID). Stop later: bash scripts/stop-server.sh"
   STARTED_SERVER=1
 fi
 
@@ -166,7 +167,9 @@ echo ">> server is running: ${SERVED_ID:-unknown model} · n_ctx=${SERVED_CTX:-u
 # Keep pi's client context window in lockstep with the server's -c. pi silently caps
 # the context at its own configured contextWindow, so a 16K server + a 32K pi entry
 # would overrun the server. This also (re)registers the Qwen model ids in pi.
-if [ "$SYNC_PI" = 1 ]; then
+if [ "$SYNC_PI" = 1 ] && [ -z "$CTX" ]; then
+  echo ">> WARNING: could not read the server's context from /props; pi's context window left as it is."
+elif [ "$SYNC_PI" = 1 ]; then
   echo ">> syncing pi's context window to $CTX (edits ~/.pi/agent/models.json; SYNC_PI=0 to skip) ..."
   if CTX="$CTX" bash "$REPO_ROOT/scripts/configure-pi.sh" >/dev/null 2>&1; then
     echo ">> pi context window set to $CTX."

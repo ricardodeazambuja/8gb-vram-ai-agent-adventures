@@ -31,11 +31,12 @@
 #   d1         d1-2B Q8_0                     decisions (/v1/systemone)
 #   clefflash  Clef-Flash Q4_K_M              decisions (/v1/systemone), 7 GB
 #
-# Both MoE candidates are Qwen3.6-class hybrids (30 Gated DeltaNet + 10 full-attention
-# layers), so the KV cache is small: 128K ctx at q8_0 is ~1.4 GB. Qwen recommends at
-# least 128K for thinking, so that is the MoE default. The dense 27B has 16
-# full-attention layers with 2x the KV heads (~1.1 GB at 32K, q8_0) and has to share
-# the 8 GB card with its weights, so it defaults to 32K.
+# The easy way to run any of these is scripts/llm <name> (it uses the same names and adds the
+# measured MoE expert cache). This script is the building block underneath.
+#
+# MoE models default to 128K: their KV caches are small (the Qwen3.6 family's 30 Gated DeltaNet + 10
+# full-attention layers take ~1.4 GB at 128K, q8_0). Dense models default to what fits next to their
+# weights (the per-model CTX below).
 #
 # Config (override via env vars):
 #   QMODEL     qwen36 | distill | bonsai2 | bonsai2q2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | lfm3 | lfm3vl | lfm25vl | locate | lfm3audio | vibe3b | vibe15 | twil | eg2 | d1 | clefflash  (default: qwen36)
@@ -45,19 +46,21 @@
 #              projector fits next to the model, and on the CPU a 4K photo takes minutes)
 #   IMAGE_MAX_TOKENS  cap on tokens per image (dynamic-resolution models)  (default: model's own;
 #              qwen3vl 1024 — uncapped, a 4K photo is 4096 tokens and OOMs the GPU encoder)
-#   CTX        context window                          (default: 131072 MoE / 110592 spark / 65536 dory / 16384 bonsai2, qwen3vl)
+#   CTX        context window                          (default: 131072 MoE; dense per model: 110592 spark, 65536 dory
+#              and e4b, 40960 vibe*, 32768 bonsai2/lfm3vl/lfm25vl/default, 24576 twil, 16384 bonsai2q2/qwen3vl/lfm3audio,
+#              8192 locate/eg2/d1/clefflash, 131072 lfm3)
 #   NCMOE      MoE only: keep only the first N layers' experts on CPU, rest on GPU
 #              (faster, more VRAM). NCMOE= (empty) = all experts on CPU.
 #              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 25, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
 #   MOE_CACHE  MoE only, opt-in: N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
-#              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-offload branch (upstream
-#              PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
+#              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-cache-max-batch branch (the default
+#              build; upstream PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
 #              auto = qwen36 2900, flint 2168, ornith 2983 (each the VRAM its NCMOE default uses); distill 2770 with
 #              batch 2048 (+34% decode, long prompts 2.3x faster; room for a ~700 MiB desktop, see
 #              bench/moe-cache/README.md). See docs/how-it-fits.md §12.  (default: empty = off)
 #   MOE_CACHE_MAX_BATCH  batches up to N tokens go through the cache, bigger ones copy every expert they use
-#              (--moe-cache-max-batch; needs the fork's moe-cache-max-batch branch)
+#              (--moe-cache-max-batch)
 #              (default: empty = the binary's 32; with MOE_CACHE=auto, distill 256, qwen36 and flint 128)
 #   MOE_CACHE_ADAPT  1 = MOE_CACHE=auto shrinks the cache by however much more VRAM is in use at launch than its
 #              size leaves room for (qwen36 380, distill 700, flint 500, ornith 430 MiB); 0 = the measured size
@@ -82,8 +85,9 @@
 #              lfm25 0.1/1.0/50/0 + repeat-penalty 1.05)
 #   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot 1 / 2048 / 2048)
 #   EXTRA_ARGS any extra llama-server flags
+#   PRINT_CONFIG  1 = print the resolved model, alias, context and projector, then exit
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
-#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: our fork's adventures branch
+#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: our fork's moe-cache-max-batch branch
 #              in ../llama.cpp (ADV_LLAMA), for every model, and env llamacpp-cuda)
 #
 # Flags (CLI args, not env vars):
@@ -102,8 +106,8 @@ for _arg in "$@"; do case "$_arg" in
 esac; done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Our llama.cpp: our fork, branch `adventures` (upstream 2026-10-28 + LocateAnything PR
-# #24749 + Dory PR #30306 + PrismML's fork for Bonsai's PTQ1_0), cloned next to this repo.
+# Our llama.cpp: our fork, branch `moe-cache-max-batch` = `adventures` (upstream 2026-10-28 + LocateAnything
+# PR #24749 + Dory PR #30306 + PrismML's fork for Bonsai's PTQ1_0) + the MoE expert cache, next to this repo.
 # Override with ADV_LLAMA=/path/to/clone.
 ADV_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
 
@@ -537,6 +541,11 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+# PRINT_CONFIG=1: print the resolved settings and exit (scripts/llm reads them; nothing starts).
+if [ "${PRINT_CONFIG:-0}" = 1 ]; then
+  printf '%s\n' "KIND=$KIND" "MODEL=$MODEL" "ALIAS=$ALIAS" "CTX=$CTX" "MMPROJ=${MMPROJ:-}"
+  exit 0
+fi
 command -v mamba >/dev/null 2>&1 || { echo "ERROR: 'mamba' not found on PATH."; exit 1; }
 [ -x "$CUDA_BIN" ] || { echo "ERROR: CUDA build not found at $CUDA_BIN"; echo "Run scripts/build-llama-cuda.sh first (or set CUDA_BIN)."; exit 1; }
 [ -f "$MODEL" ] || { echo "ERROR: model not found: $MODEL"; echo "Run: bash scripts/download-models.sh $QMODEL"; exit 1; }
