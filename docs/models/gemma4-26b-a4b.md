@@ -55,6 +55,9 @@ re-rendered history stops matching the cache, and llama-server reprocesses the t
 743 and 1,147 tokens on two `write` turns, measured. Short `bash` calls survive (the sliding-window cache
 has ~512 tokens of slack). [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja)
 drops that `\n` and brings it to 14 tokens: `EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja"`.
+It also keeps the empty thought block of a tool call made with thinking off, which the stock template drops
+from the history, so each such turn was reprocessed whole; with the fix, 5 / 14 / 14 / 25 / 25 tokens per turn
+with thinking off or on.
 Method in [`bench/moe-cache/`](../../bench/moe-cache/README.md).
 
 ## Install & run

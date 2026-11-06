@@ -1,0 +1,40 @@
+### gemma-empty | 69ca796dd moe-cache : add --moe-cache-max-batch | build/bin/llama-server | gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf ctx=32768 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 3000 --moe-cache-cpu-share 0.95 --chat-template-file /tmp/claude-1000/-home-ricardodeazambuja-backup-GitStuff-llama-cpp/4aefea9c-6ebe-4f38-bd47-5d9195dd716b/scratchpad/gemma4-template-empty.jinja | env NO_WARM=
+    memcheck: gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf 13.3 GiB + 4 margin, MemAvailable 24.2 GiB -> ok
+    vram before: 1737 MiB
+    vram loaded: 7315 MiB
+== enable_thinking=False
+PROMPT TAIL: '. Then run the tests with bash.<turn|>\n<|turn>model\n<|channel>thought\n<channel|>'
+RAW HEAD   : '<|tool_call>call:write{content:<|"|>import json\nfrom typing import Dict, Any\n\nclass Inventory:\n    """A class to manage an inventory of items."""\n\n    def __ini'
+parsed: reasoning chars 0 content '' tool write
+raw gen len 2348 first difference 190 chars into the generation
+GENERATED : 'ry of items."""\n\n    def __init__(self):\n        # item_name -> {"quantity": int, "price": float}\n        self.items: Dict[str, Dict[str, Any]] = {}\n\n    def ad'
+RERENDERED: 'ry of items."""\n\n    def __init__(self):\n        # item_name: {"quantity": int, "price": float}\n        self.items: Dict[str, Dict[str, Any]] = {}\n\n    def add_'
+== enable_thinking=True
+PROMPT TAIL: 't tests using the write tool. Then run the tests with bash.<turn|>\n<|turn>model\n'
+RAW HEAD   : '<|channel>thought\nThe user wants me to create two files: `inventory.py` and `test_inventory.py`.\n`inventory.py` should contain an `Inventory` class with the fol'
+parsed: reasoning chars 605 content '' tool write
+raw gen len 2427 first difference 182 chars into the generation
+GENERATED : 'tain an `Inventory` class with the following methods:\n- `add_item(name, quantity, price)`\n- `remove_item(name, quantity)`\n- `restock_item(name, quantity)`\n- `to'
+RERENDERED: 'tain an `Inventory` class with the following methods:\n- `add(item_name, quantity, price)`\n- `remove(item_name, quantity)`\n- `restock(item_name, quantity)`\n- `to'
+-- agent loop, thinking off
+pi capture: system prompt 2692 chars, 4 tools
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0       1416    1411       5   657         418  write
+   1       2086    2072      14   736          57  write
+   2       2835    2821      14    35          40  bash
+   3       2894    2869      25   216         750  bash
+   4       3134    3109      25    92         287  bash
+-- agent loop, thinking on
+pi capture: system prompt 2692 chars, 4 tools
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0       1416    1411       5   803         649  write
+   1       2232    2218      14   846          37  write
+   2       3091    3077      14    50         107  bash
+   3       3165    3140      25   178         552  bash
+   4       3367    3342      25    72         192  bash
+    vram end: 6840 MiB
+    vram peak: 7608 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2999.00 MiB for 12251.25 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 1131605, misses = 375127 (355461 on the CPU), hit rate = 75.10%, uploaded = 62742.99 MiB
+    llama_moe_cache: ubatch  > 8: hits = 4522, misses = 4175 (3977 on the CPU), hit rate = 51.99%, uploaded = 631.71 MiB
+    llama_moe_cache: large batches: 8890 experts copied from the cache, 14181.46 MiB

@@ -126,6 +126,8 @@ for label in ("tcap-stock", "tcap-nonl", "tcap-think-stock", "tcap-think-nonl"):
     same(f"ThinkingCap reprocessed per turn, {label}", reprocessed(label)[2:], [1416, 443, 616, 48, 48])
 same("ThinkingCap reprocessed per turn, empty thoughts kept", reprocessed("tcap-empty")[4:],
      [2, 17, 17, 28, 28, 3, 17, 17, 28, 28])
+same("Gemma reprocessed per turn, empty thoughts kept (off, on)", reprocessed("gemma-empty")[4:],
+     [5, 14, 14, 25, 25, 5, 14, 14, 25, 25])
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))

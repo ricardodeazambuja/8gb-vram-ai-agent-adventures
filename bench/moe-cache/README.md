@@ -39,6 +39,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `thinkingcap-template.jinja` | ThinkingCap Gemma 4 26B's template, from its GGUF: different file (a `thinking_gate`), same `'\n<channel|>'` after the thinking. [`config/thinkingcap-gemma4-26b-nonl.jinja`](../../config/thinkingcap-gemma4-26b-nonl.jinja) drops it and also renders empty thoughts (below) |
 | `divergence2.py` | like `divergence.py`, with thinking off and on; found ThinkingCap's empty-thought bug |
 | `empty_thoughts.py FOLDER...` | tool-call turns without thinking in pibench transcripts; output in `logs/empty-thoughts.txt` |
+| `gemma-empty.sh` | base Gemma 26B with the fixed `config/gemma4-26b-nonl.jinja`: `divergence2.py` and the agent loop, thinking off and on (uses `longctx/srv.sh`) |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
@@ -76,9 +77,11 @@ transcripts): ThinkingCap made 33 of its 197 tool calls (17%) without thinking, 
 turn reprocessed. The base Gemma 26B template has the same `if thinking_text` guard, but the base model
 thought before 435 of its 436 tool calls across two batches, so with pi (thinking on) it hardly ever hits it.
 With thinking *off* it hits it on every turn: the generation prompt ends with the empty block and the history
-drops it (`divergence2.py` on base Gemma, `logs/gemma-step2e.log`). The same two-line change would apply to
-`config/gemma4-26b-nonl.jinja` (its guard is at line 239) but isn't tested there yet, so it isn't in that
-file. (In that log's thinking-on half, the difference 182 characters in is inside the reasoning: the raw and
+drops it (`divergence2.py` on base Gemma, `logs/gemma-step2e.log`). The same two-line change is now in
+`config/gemma4-26b-nonl.jinja` (lines 239–240), tested with `gemma-empty.sh` ([`logs/gemma-step4.log`](logs/gemma-step4.log)):
+reprocessing is 5 / 14 / 14 / 25 / 25 with thinking off and the same with it on. In that run's divergence
+check both modes first differ 182–190 characters into the generation, inside the code or the reasoning,
+where the raw and the chat call wrote different text. (In step 2e's thinking-on half, the difference 182 characters in is inside the reasoning: the raw and
 the chat call wrote different text at temperature 0, which says nothing about the template.) Use the fix with
 `EXTRA_ARGS="--chat-template-file config/thinkingcap-gemma4-26b-nonl.jinja"`.
 
