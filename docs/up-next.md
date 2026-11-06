@@ -384,6 +384,23 @@ already steer the small models. The cost is evaluations: 32 copies × 16 maze ru
 iterations. A first test: ES on LFM3-1.7B's norm weights for multi-step maze driving, the long-horizon
 task where we skipped the GRPO step (item 13 above), against the gradient-trained norm-only adapter.
 
+### 🪨 Strata, an engine built for big MoE models on gaming PCs ([Niko1221/Strata](https://github.com/Niko1221/Strata), MIT, read 2026-11-06)
+
+Built with parts of llama.cpp/ggml, around the same idea as our fork's cache: attention and the shared layers on the
+GPU, an expert cache that fills the rest of VRAM and adapts while you chat, every expert in RAM computed by the CPU in
+parallel, plus the model's own MTP layer drafting 2–3 tokens (docs/HOW_IT_WORKS.md). RTX 20 (Turing) is listed as
+supported; 12 GB of VRAM is "recommended, as for every card".
+
+- **Qwen3.8-Flash-Next (125B), its main model: doesn't fit.** The smallest pack (Q2_0) needs 37.6 GB of RAM + VRAM;
+  the Coder pack runs in ~32 GB of RAM only with a 12–16 GB card; with a small card most experts come from the SSD,
+  "much slower" (docs/MODELS.md). Still in the graveyard.
+- **Qwen3.6-35B-A3B: worth an A/B.** Its docs (docs/QWEN36.md, Strata 0.1.45) measure 64.0 vs 41.1 tok/s against
+  stock llama.cpp (`-ncmoe 28`) on an RTX 3060 12 GB with MTP off, and MTP on gave another 1.6x on a 32 GB card.
+  Our cache gives 1.58x over static offload, so the engines may be close without MTP, and MTP is what we lack.
+  Catches: it only runs Unsloth's MTP GGUFs, the smallest being UD-Q4_K_XL (22.9 GB, setup plans 32 GB of RAM, which
+  is all we have; ours is the 17.7 GB UD-IQ4_XS); its numbers are its own; it's a whole app with a downloaded engine,
+  so: a source build (docs/SOURCE_INSTALL.md), the GGUF security routine, and a container with no network.
+
 ### 🧱 Megakernels ([Hyperkernel](https://github.com/Hyperstitioncc/Hyperkernel), looked at 2026-11-05)
 
 Fusing a model's GPU kernels into one "megakernel" removes the gaps between kernel launches. Nothing to reuse

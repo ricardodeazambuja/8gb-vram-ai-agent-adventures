@@ -168,7 +168,8 @@ Both are in [Can LFM3-VL do more than look?](fine-tuning.md#can-lfm3-vl-do-more-
 Checked and skipped on paper, so you don't have to:
 
 - **Qwen3.8-Flash-Next** (REAP-288 / GSQ-RCO builds): the smallest files are 58–66 GB+, more than
-  32 GB RAM + 8 GB VRAM.
+  32 GB RAM + 8 GB VRAM. [Strata](up-next.md) runs it on gaming PCs, but its smallest pack needs 37.6 GB of RAM + VRAM
+  and a 12 GB card; on less, experts come from the SSD and it's much slower (checked 2026-11-06).
 - **Qwen3.8-Whittle-16B:** its own card calls it a "non-starter for agent and long multi-turn use:
   repetition looping".
 - **Whittle-Qwen-3.8-35B-A3B:** a one-person research preview trained on 4K-token rows whose own
