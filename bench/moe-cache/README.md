@@ -40,7 +40,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `divergence2.py` | like `divergence.py`, with thinking off and on; found ThinkingCap's empty-thought bug |
 | `empty_thoughts.py FOLDER...` | tool-call turns without thinking in pibench transcripts; output in `logs/empty-thoughts.txt` |
 | `expert_usage.py TRACE...` | how concentrated the router's expert picks are per layer, and what keeping the top K% would miss on held-out tokens; output in `logs/expert-usage.txt` |
-| `experts/` | expert use on real agent sessions: `trace-qwen36.sh` (the run), `replay_sessions.py` (in the folder above), `agent_experts.py` (the analysis), logs |
+| `experts/` | expert use on real agent sessions: `trace-qwen36.sh` (the run), `replay_sessions.py` (in the folder above), `agent_experts.py` (the analysis), logs |; `prune-eval.sh` with `make_rank.py` and `prune_gguf.py` (pruned GGUFs, KL divergence)
 | `gemma-empty.sh` | base Gemma 26B with the fixed `config/gemma4-26b-nonl.jinja`: `divergence2.py` and the agent loop, thinking off and on (uses `longctx/srv.sh`) |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
@@ -379,4 +379,33 @@ a task it never saw, a quarter 7.6%, half 24%. So frequency-based pruning of Qwe
 of the experts (1.4–3.5 GiB of the 14.1 GiB they take in RAM), and only if the router's second choices are nearly
 as good, which only a pruned model can answer. REAP's own claims are for models with more experts, and its
 score weighs each expert's output, not just how often it's picked.
+
+### Pruned Qwen3.6: even 10% fewer experts changes one top token in ten (`experts/prune-eval.sh`, 2026-11-05)
+
+`experts/prune-eval.sh` ranks each layer's experts on five tasks (the replay counts; layers 34, 38 and 39 from a
+`llama-perplexity` pass with 16-token batches, which their 142-slot cache group traces), writes pruned GGUFs with
+`prune_gguf.py` (each layer's experts and router rows dropped, `expert_count` set), and compares each one's
+next-token distributions with the full model's on the held-out sixth task, feature-inventory (3 sessions,
+5 × 4096-token chunks, ~10K scored tokens; `llama-perplexity --kl-divergence`). Logs in [`experts/logs/`](experts/logs/).
+
+| Experts kept per layer | File | Mean KL divergence | Same top token | Picks lost per layer on an unseen task (mean of 6) |
+|---|---|---|---|---|
+| 256 (the writer, nothing dropped) | 17.7 GB | 0.000 | 100% | 0 |
+| 230 (−10%), ranked | 16.2 GB | 0.48 | 89.5% | 2.0% |
+| 230 (−10%), at random | 16.2 GB | 0.93 | 83.6% | |
+| 192 (−25%), ranked | 13.9 GB | 0.70 | 86.8% | 7.6% |
+| 128 (−50%), ranked | 10.1 GB | 1.06 | 82.2% | 24% |
+
+The ranking halves the damage of a random cut, but a 10% cut already changes the top token one time in ten:
+a model that wrote different code. The reason is compounding: losing 2% of picks per layer is 6.5 of each
+token's 320 picks (8 per layer × 40 layers) going to a second choice, so only 0.14% of tokens are untouched.
+llama.cpp also doesn't renormalize Qwen3.6's 8 expert weights (`expert_weights_norm` is false for qwen35moe),
+so a pruned router's softmax has a smaller denominator for every token, not just the rerouted ones; how much
+that adds is untested. Perplexity is no help here: `llama-perplexity` compares against the stored, rounded base
+log-probs and reads 1.037 for the identical model, and it moves the wrong way (keep 128 reads 0.89).
+
+So frequency pruning without healing is a dead end for Qwen3.6 on this machine. What might change that: REAP's
+score (gate value × output size, which needs the expert outputs, not just the trace), renormalizing the
+remaining experts' weights, or a short fine-tune after pruning (the paper's results are one-shot, on larger
+models with more experts). None is cheap here.
 

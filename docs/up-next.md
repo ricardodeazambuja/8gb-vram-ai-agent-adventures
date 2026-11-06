@@ -113,6 +113,10 @@ it still works. Measured so far ([expert use](../bench/moe-cache/README.md#how-c
 on 18 real pi sessions Qwen3.6 picks every expert, and a ranking from other tasks keeping the top 90% / 75%
 misses 2% / 7.6% of a new task's picks. So 10–25% at most, and only a pruned model's pibench score can say
 whether the router's second choices are good enough. Flint spreads its picks even more evenly.
+**Tried (2026-11-05):** frequency-pruned Qwen3.6 GGUFs, scored against the full model on a held-out task: keeping
+230 of 256 experts per layer already changes the top token 10.5% of the time (KL divergence 0.48), 192 13%, 128
+18% ([details](../bench/moe-cache/README.md)). Small per-layer losses compound over 40 layers. Parked unless
+REAP's own score, renormalized expert weights or a healing fine-tune can be tried cheaply.
 
 ## 🗣️ Voice agents: agents that talk to people
 

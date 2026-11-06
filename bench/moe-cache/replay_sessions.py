@@ -7,6 +7,7 @@ chat template renders the history differently (Qwen3.6's drops the thinking of e
     replay_sessions.py OUT.json PI_JSONL...    env: URL (http://127.0.0.1:8090), PI_CAPTURE (system prompt + tools)
 
 Writes, in order, each session's name and the number of prompt tokens the server read, which splits the trace.
+With RENDER_DIR set, it only writes each rendered session to RENDER_DIR/TASK-RUN.txt (for llama-perplexity).
 """
 import json
 import os
@@ -59,6 +60,12 @@ def main():
     done = []
     for path in sys.argv[2:]:
         prompt = post("/apply-template", {"messages": messages(path), "tools": tools})["prompt"]
+        if os.environ.get("RENDER_DIR"):
+            name = "-".join(path.split("/")[-3:-1])
+            with open(os.path.join(os.environ["RENDER_DIR"], name + ".txt"), "w") as f:
+                f.write(prompt)
+            print(f"{len(prompt):>8} chars  {name}", flush=True)
+            continue
         t = post("/completion", {"prompt": prompt, "n_predict": 1, "cache_prompt": False})["timings"]
         done.append({"session": path, "prompt_n": t["prompt_n"], "prompt_ms": t["prompt_ms"]})
         print(f"{t['prompt_n']:>7} tokens {t['prompt_n'] / t['prompt_ms'] * 1000:7.1f} t/s  {path}", flush=True)
