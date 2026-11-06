@@ -353,6 +353,24 @@ are done. What follows is in [Faster and better fine-tuning](#faster-and-better-
 
 ## Ideas to borrow
 
+### 🧬 Evolution strategies instead of GRPO ([blog post](https://qiyaoliang.com/blog/es-vs-pg-long-horizon/), 2026-11-04)
+
+Liang et al. (Cognizant AI Lab) compare evolution strategies with policy gradient (GRPO) for agent training.
+ES adds Gaussian noise to the weights, scores each noisy copy of the model with the task's pass/fail
+reward, and moves the weights toward the copies that scored well: forward passes only, no backprop, no
+per-token credit. Policy gradient wins on short tasks; ES should win as episodes get longer, because filler
+tokens add noise to the gradient but not to ES. Preliminary: Qwen3.5-4B on Terminal-Bench 2.1 went from
+12.1% to 21.1% with plain ES (population 32, σ 0.0005, 200 iterations on H200s), against 18.2% for a policy
+gradient checkpoint. The method: [ES at Scale](https://arxiv.org/abs/2509.24372).
+
+Why it fits here: it needs only inference, which is what this laptop does well, and the reward we already
+have (pibench's verifiers, the maze harness) is exactly an outcome-only score. Noise over a few thousand
+numbers is far easier for ES than over billions, and our norm-only and IA3 adapters are that size and
+already steer the small models. The cost is evaluations: 32 copies × 16 maze runs × 20 decisions at
+0.42 s is ~70 minutes per iteration, so it needs a fast task, batched requests, or fewer, longer
+iterations. A first test: ES on LFM3-1.7B's norm weights for multi-step maze driving, the long-horizon
+task where we skipped the GRPO step (item 13 above), against the gradient-trained norm-only adapter.
+
 ### 🔬 Local autoresearch ([conglu1997/local-autoresearch](https://github.com/conglu1997/local-autoresearch), MIT)
 
 A local model improves a small program one experiment at a time: it gets the best solver so far
