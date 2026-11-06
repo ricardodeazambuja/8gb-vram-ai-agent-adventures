@@ -1,0 +1,290 @@
+#!/usr/bin/env bash
+#
+# llm — start any local model by name, with its tested settings. No env vars to remember.
+#
+#   scripts/llm list                     the models, what each is for, size, downloaded or not
+#   scripts/llm groot                    chat/agent models: start the server (if needed) and open pi
+#   scripts/llm groot -p "explain @README.md"    pi one-shot (any pi arguments go after the name)
+#   scripts/llm lfm3vl                   vision and helper models: start the server, print its URL
+#   scripts/llm d1 serve                 serve any model without pi;  scripts/llm lfm3vl pi = the reverse
+#   scripts/llm qwen36 serve --fg        in the foreground (Ctrl-C stops it), log on the screen
+#   scripts/llm status                   what is serving on :8080, its context, VRAM in use
+#   scripts/llm stop                     stop the server llm started (--force: whatever holds the port)
+#
+# Options after the name: serve | pi, --fg (foreground), --image (add the vision projector to a chat
+# model), --static (MoE: the classic per-layer expert split instead of the expert cache).
+#
+# What it adds on top of scripts/run-qwen.sh and scripts/run-server.sh, which hold every per-model
+# setting (llm only picks the backend and a few defaults):
+#   * the MoE expert cache (MOE_CACHE=auto) where we measured it: qwen36, distill, flint, ornith and
+#     gemma, 9-62% faster decode at the same VRAM; it shrinks itself for a busy desktop and refuses
+#     below 1 GB with a clear message (use --static then, or close the browser);
+#   * vision models start with their projector; Gemma and ThinkingCap get the template fix that
+#     stops prompt reprocessing in agent loops (docs/models/gemma4-26b-a4b.md);
+#   * the server runs in its own systemd user scope (llm-<name>), so if memory runs out only the
+#     server is killed, not your terminal; big models are refused when RAM is short, and stopped
+#     if memory pressure climbs past 30 while they load;
+#   * one model at a time: a different model already on the port is never replaced silently.
+# Any run-qwen.sh / run-server.sh knob still works if you set it (CTX=65536 scripts/llm flint).
+#
+#   PORT      server port (default 8080)        LLM_LOG  server log (default /tmp/llm-<name>.log)
+#
+set -euo pipefail
+
+REPO="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+PORT="${PORT:-8080}"
+HOST=127.0.0.1
+export PORT HOST
+
+usage() { sed -n '2,/^[^#]/{/^#/s/^# \?//p}' "$(readlink -f "${BASH_SOURCE[0]}")"; }
+die() { echo "llm: $*" >&2; exit 1; }
+
+NAMES="groot flint gemma qwen36 bonsai2 distill ornith thinkingcap bolt lfm25 spark dory lfm3 e4b twil vibe3b vibe15
+qwen3vl lfm3vl lfm25vl locate eg2 d1 clefflash lfm3audio"
+
+# model <name>: sets BACKEND (qwen | gemma), JOB, ACTION (pi | serve), DESC, DL (download names),
+# ENVS (KEY=VALUE defaults; a value you already exported wins) and PI_DEFAULT (pi flags the model needs,
+# the same as its start_*.sh; dropped when you pass your own --thinking).
+model() {
+  BACKEND=qwen; JOB=agent; ACTION=pi; ENVS=(); IMAGE=0; DL="$1"; PI_DEFAULT=()
+  case "$1" in
+    groot)    DESC="Groot-19B-A3B: the everyday coding agent, fastest of the big ones (pibench 18/18)" ;;
+    flint)    DESC="Flint 40B MoE: the careful coder (18/18)"; ENVS=(MOE_CACHE=auto) ;;
+    gemma)    BACKEND=gemma; DL="(scripts/setup.sh)"
+              DESC="Gemma 4 26B-A4B: agent that also sees (18/18, vision 100%)"
+              ENVS=(BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto
+                    "EXTRA_ARGS=--chat-template-file $REPO/config/gemma4-26b-nonl.jinja") ;;
+    qwen36)   DESC="Qwen3.6-35B-A3B: our yardstick, agent + vision (16/18, vision 100%)"; ENVS=(MOE_CACHE=auto) ;;
+    bonsai2)  DESC="Bonsai 2 27B ternary: big brain in 6 GB, 32K context (16/18)"
+              PI_DEFAULT=(--thinking medium) ;;   # at the template's default it thinks for minutes a turn
+    distill)  DESC="Qwen3.8 35B-A3B distill: quick jobs (16/18)"; ENVS=(MOE_CACHE=auto) ;;
+    ornith)   DESC="Ornith-1.5-35B-A3B: Qwen3.6 that trained on its own tasks (14/18)"; ENVS=(MOE_CACHE=auto) ;;
+    thinkingcap) BACKEND=gemma; DL=tcgemma
+              DESC="ThinkingCap Gemma 4 26B: Gemma told to think less (17/18)"
+              ENVS=(BACKEND=cuda "MODEL=$REPO/models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf"
+                    ALIAS=thinkingcap-gemma-4-26b-a4b CTX=65536 KVQUANT=q8_0 NCMOE=23
+                    "EXTRA_ARGS=--chat-template-file $REPO/config/thinkingcap-gemma4-26b-nonl.jinja") ;;
+    bolt)     DESC="Nemotron 3.5 Bolt 74B: the biggest, slow and thoughtful (15/18)" ;;
+    lfm25)    DESC="LFM2.5-24B-A2B: not a Qwen, trained in agent harnesses (10/18)" ;;
+    spark)    DESC="Spark-X2.6-4B: small and fast (14/18)"
+              PI_DEFAULT=(--thinking high) ;;     # it rejects pi's default "medium" (HTTP 400)
+    dory)     DESC="Dory1.0-4B looped: Spark's score at 4B (14/18)" ;;
+    lfm3)     DESC="LFM3-1.7B: tiny, 106 tok/s, good at chores (12/18)" ;;
+    e4b)      DESC="Nemotron 3.5 Bolt E4B: voice-assistant model (7/18)" ;;
+    twil)     ACTION=serve   # not through pibench yet: its first shell access belongs in the sandbox (docs/security.md)
+              DESC="TwIL-8B: math and code reasoner, not measured yet (serve only until pibench)" ;;
+    vibe3b)   DESC="VibeThinker 3B: one-shot code and math (pi through a tool-call shim)" ;;
+    vibe15)   DESC="VibeThinker 1.5B: one-shot math and code (pi through a tool-call shim)" ;;
+    qwen3vl)  JOB=vision; ACTION=serve; IMAGE=1; DESC="Qwen3-VL-8B: reads an image in 5 s" ;;
+    lfm3vl)   JOB=vision; ACTION=serve; IMAGE=1; DESC="LFM3-VL-2B: one picture, one decision (144/150); examples/look.py" ;;
+    lfm25vl)  JOB=vision; ACTION=serve; IMAGE=1; DESC="LFM2.5-VL-450M: tiny vision model for fine-tuning" ;;
+    locate)   JOB=vision; ACTION=serve; IMAGE=1; DESC="LocateAnything-3B: boxes for what you describe; examples/locate.py" ;;
+    eg2)      JOB=helper; ACTION=serve; DESC="EmbeddingGemma 2: search over code and docs; examples/search.py" ;;
+    d1)       JOB=helper; ACTION=serve; DESC="d1-2B: yes/no and pick-one decisions in 27 ms; examples/decide.py" ;;
+    clefflash) JOB=helper; ACTION=serve; DESC="Clef-Flash: the same, bigger and better (7 GB); examples/decide.py" ;;
+    lfm3audio) JOB=helper; ACTION=serve; DESC="LFM3-Audio-2B: hears and speaks; examples/listen.py" ;;
+    *) return 1 ;;
+  esac
+}
+
+# The backend's resolved settings (MODEL, ALIAS, CTX, KIND), with the model's defaults applied.
+# extra args: more KEY=VALUE to apply.
+config() {
+  local name=$1; shift
+  local script=run-qwen.sh envs=()
+  [ "$BACKEND" = gemma ] && script="run-server.sh"
+  [ "$BACKEND" = qwen ] && envs+=("QMODEL=$name")
+  local kv
+  for kv in "${ENVS[@]}" "$@"; do unset_in_env "$kv" && envs+=("$kv"); done
+  env "${envs[@]}" PRINT_CONFIG=1 bash "$REPO/scripts/$script"
+}
+
+# true if KEY=VALUE's KEY is not set by the user (their own export wins over llm's default)
+unset_in_env() { local key=${1%%=*}; [ -z "${!key:-}" ]; }
+
+# drop the MoE cache from ENVS (--static, and llm list, which only wants paths)
+drop_cache() { local e kept=(); for e in "${ENVS[@]}"; do [[ $e == MOE_CACHE=* ]] || kept+=("$e"); done; ENVS=("${kept[@]}"); }
+
+listening() { ss -ltnH "sport = :$PORT" 2>/dev/null | grep -q .; }
+served_id() { curl -fsS --max-time 3 "http://$HOST:$PORT/v1/models" 2>/dev/null |
+  python3 -c 'import sys,json; print(json.load(sys.stdin)["data"][0]["id"])' 2>/dev/null || true; }
+healthy() { curl -fsS --max-time 3 "http://$HOST:$PORT/health" >/dev/null 2>&1; }
+our_units() { systemctl --user list-units --type=scope --state=active --no-legend --plain 'llm-*' 2>/dev/null |
+  awk '{print $1}'; }
+psi() { awk '/^some/ {split($2, a, "="); print int(a[2])}' /proc/pressure/memory 2>/dev/null || echo 0; }
+vram() { nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ' || true; }
+
+cmd_list() {
+  local n job size have model_path
+  printf '%-12s %-7s %-8s %s\n' NAME JOB SIZE WHAT
+  for n in $NAMES; do
+    model "$n"
+    drop_cache   # paths only: no MoE-cache preflight here
+    model_path=$(config "$n" 2>/dev/null | sed -n 's/^MODEL=//p')
+    if [ -f "$model_path" ]; then size=$(du -Lh "$model_path" | cut -f1); have=""; else size="-"; have="  [not downloaded: scripts/download-models.sh $DL]"; fi
+    job=$JOB; printf '%-12s %-7s %-8s %s%s\n' "$n" "$job" "$size" "$DESC" "$have"
+  done
+  echo
+  echo "Pictures: scripts/imagine --list.   Examples for the helpers: examples/README.md"
+}
+
+cmd_status() {
+  local u id ctx
+  if listening; then
+    id=$(served_id)
+    ctx=$(curl -fsS --max-time 3 "http://$HOST:$PORT/props" 2>/dev/null |
+      python3 -c 'import sys,json; print(json.load(sys.stdin)["default_generation_settings"]["n_ctx"])' 2>/dev/null || true)
+    if [ -n "$id" ]; then echo "serving: $id on http://$HOST:$PORT/v1  (context ${ctx:-?})"
+    else echo "port $PORT: a server is loading (or not llama-server)"; fi
+  else
+    echo "nothing on port $PORT"
+  fi
+  u=$(our_units | tr '\n' ' ')
+  echo "started by llm: ${u:-none}"
+  echo "GPU memory in use: $(vram) MiB;  memory pressure (some avg10): $(psi)"
+}
+
+cmd_stop() {
+  local units u
+  units=$(our_units)
+  if [ -n "$units" ]; then
+    for u in $units; do echo ">> stopping $u"; systemctl --user stop "$u"; done
+    return 0
+  fi
+  if listening; then
+    if [ "${1:-}" = --force ]; then bash "$REPO/scripts/stop-server.sh"; return 0; fi
+    die "port $PORT is served by something llm didn't start ($(served_id || true)). If it's yours: scripts/llm stop --force"
+  fi
+  echo ">> nothing to stop"
+}
+
+start_server() { # name fg
+  local name=$1 fg=$2 cfg model alias ctx size avail id unit log pid
+  local extra=()
+  [ "$IMAGE" = 1 ] && extra+=(--image)
+  if ! cfg=$(config "$name"); then
+    echo "$cfg" >&2
+    if grep -q "MOE_CACHE=auto" <<<"$cfg"; then
+      die "the expert cache doesn't fit next to what is on the GPU now. Close the browser, or run without the
+     cache (slower, may still run out of memory with a busy desktop): scripts/llm $name --static"
+    fi
+    die "$name can't start with these settings (see above)"
+  fi
+  model=$(sed -n 's/^MODEL=//p' <<<"$cfg"); alias=$(sed -n 's/^ALIAS=//p' <<<"$cfg"); ctx=$(sed -n 's/^CTX=//p' <<<"$cfg")
+  [ -f "$model" ] || die "$name is not downloaded ($model). Get it: bash scripts/download-models.sh $DL"
+  grep -q '^>> MoE cache:' <<<"$cfg" && grep '^>> MoE cache:' <<<"$cfg"
+
+  # One model at a time on the port.
+  if listening; then
+    id=$(served_id)
+    if [ "$id" = "$alias" ]; then echo ">> $name is already running on :$PORT; using it"; STARTED=0; wait_ready "$name" ""; return 0; fi
+    if [ -z "$id" ] && systemctl --user is-active --quiet "llm-$name.scope"; then
+      echo ">> $name is already loading; waiting"; STARTED=0; wait_ready "$name" ""; return 0
+    fi
+    die "port $PORT already serves ${id:-a model that is still loading}. Stop it first: scripts/llm stop"
+  fi
+  unit="llm-$name"
+  if systemctl --user is-active --quiet "$unit.scope"; then die "$unit.scope is active but not listening; stop it: scripts/llm stop"; fi
+  systemctl --user reset-failed "$unit.scope" >/dev/null 2>&1 || true
+
+  # Memory: the experts of the big models live in RAM. Refuse when it is short or already under pressure.
+  size=$(stat -Lc %s "$model"); avail=$(awk '/MemAvailable/ {print $2 * 1024}' /proc/meminfo)
+  if [ "$size" -gt $((8 << 30)) ] && [ "$avail" -lt $((size + (3 << 30))) ]; then
+    die "$name needs ~$((size >> 30)) GB of RAM plus room; only $((avail >> 30)) GB is available. Close something first."
+  fi
+  [ "$(psi)" -le 10 ] || die "memory is already under pressure (some avg10 = $(psi)); a big job is running? Try again later."
+
+  local run=(systemd-run --user --scope --quiet --collect -p TimeoutStopSec=15 "--unit=$unit")
+  local script=run-qwen.sh envs=(PORT="$PORT" HOST="$HOST")
+  [ "$BACKEND" = gemma ] && script="run-server.sh"
+  [ "$BACKEND" = qwen ] && envs+=("QMODEL=$name")
+  local kv
+  for kv in "${ENVS[@]}"; do unset_in_env "$kv" && envs+=("$kv"); done
+  echo ">> starting $name ($(numfmt --to=iec "$size")B, context $ctx) in scope $unit"
+  if [ "$fg" = 1 ]; then
+    exec "${run[@]}" env "${envs[@]}" bash "$REPO/scripts/$script" "${extra[@]}"
+  fi
+  log="${LLM_LOG:-/tmp/llm-$name.log}"
+  setsid nohup "${run[@]}" env "${envs[@]}" bash "$REPO/scripts/$script" "${extra[@]}" >"$log" 2>&1 &
+  pid=$!
+  STARTED=1
+  wait_ready "$name" "$pid" "$log" "$size"
+}
+
+wait_ready() { # name pid log size
+  local name=$1 pid=$2 log=${3:-} size=${4:-0} t0=$SECONDS last=$SECONDS
+  until healthy; do
+    if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+      echo "llm: the server exited while loading. Last lines of $log:" >&2; tail -15 "$log" >&2
+      exit 1
+    fi
+    if [ "$size" -gt $((8 << 30)) ] && [ "$(psi)" -gt 30 ]; then
+      systemctl --user stop "llm-$name.scope" 2>/dev/null || true
+      die "memory pressure reached $(psi) while loading $name; stopped it before the system had to. Free RAM and retry."
+    fi
+    if [ $((SECONDS - t0)) -gt 900 ]; then die "$name did not become ready in 15 min; see ${log:-the server log}"; fi
+    if [ $((SECONDS - last)) -ge 15 ]; then echo "   ... loading ($((SECONDS - t0)) s)"; last=$SECONDS; fi
+    sleep 2
+  done
+  echo ">> $name ready at http://$HOST:$PORT/v1  ($(curl -fsS "http://$HOST:$PORT/props" 2>/dev/null |
+    python3 -c 'import sys,json; print("context", json.load(sys.stdin)["default_generation_settings"]["n_ctx"])' 2>/dev/null || true))"
+  [ -n "$log" ] && echo "   log: $log"
+  echo "   stop: scripts/llm stop"
+  return 0
+}
+
+main() {
+  [ $# -gt 0 ] || { usage; exit 0; }
+  case "$1" in
+    -h|--help|help) usage; exit 0 ;;
+    list|ls) cmd_list; exit 0 ;;
+    status) cmd_status; exit 0 ;;
+    stop) shift; cmd_stop "$@"; exit 0 ;;
+  esac
+  local name=$1; shift
+  model "$name" || die "unknown model '$name'. See: scripts/llm list"
+  local action=$ACTION fg=0 pi_args=()
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      serve) action=serve ;;
+      pi) action=pi ;;
+      --fg) fg=1; action=serve ;;
+      --image) IMAGE=1 ;;
+      --static) drop_cache ;;
+      --) shift; pi_args+=("$@"); break ;;
+      *) pi_args+=("$1") ;;
+    esac
+    shift
+  done
+  [ "$action" = pi ] && [ "$JOB" = helper ] && die "$name is not a chat model; it has an API, see examples/README.md"
+  [ "$action" = serve ] && [ ${#pi_args[@]} -gt 0 ] && die "unexpected arguments for serve: ${pi_args[*]}"
+
+  if [ "$action" = pi ] && [[ $name == vibe* ]]; then
+    # VibeThinker needs its tool-call shim between the server and pi; its own launcher handles both.
+    SIZE=$([ "$name" = vibe3b ] && echo 3B || echo 1.5B) exec bash "$REPO/scripts/start_vibethinker.sh" "${pi_args[@]}"
+  fi
+  STARTED=0
+  start_server "$name" "$fg"
+  [ "$action" = pi ] || exit 0
+
+  command -v pi >/dev/null 2>&1 || die "pi is not installed (npm i -g @mariozechner/pi-coding-agent); the server keeps running"
+  local rc=0
+  local oneshot=0 arg
+  for arg in "${pi_args[@]}"; do case "$arg" in -p|--print) oneshot=1 ;; --thinking|--thinking=*) PI_DEFAULT=() ;; esac; done
+  pi_args=("${PI_DEFAULT[@]}" "${pi_args[@]}")
+  if [ "$oneshot" = 1 ]; then   # pi -p waits for stdin that never comes unless it is closed
+    QMODEL="$name" STOP_ON_EXIT=0 bash "$REPO/scripts/start-qwen.sh" "${pi_args[@]}" </dev/null || rc=$?
+  else
+    QMODEL="$name" STOP_ON_EXIT=0 bash "$REPO/scripts/start-qwen.sh" "${pi_args[@]}" || rc=$?
+  fi
+  if [ "$STARTED" = 1 ] && [ -t 0 ]; then
+    local ans=""
+    read -r -p $'\n>> pi exited. Stop the '"$name"$' server too? [Y/n] ' ans || ans=n
+    [[ $ans =~ ^[Nn] ]] || cmd_stop
+  elif [ "$STARTED" = 1 ]; then
+    echo ">> $name is still running (no terminal to ask); stop it with: scripts/llm stop"
+  fi
+  exit "$rc"
+}
+
+main "$@"

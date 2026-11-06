@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+"""imagine: make pictures with the local image models (stable-diffusion.cpp's sd-cli), no flags to remember.
+
+  scripts/imagine "a red fox in the snow"                      FLUX.2 Klein, 1024x1024, a random seed
+  scripts/imagine "a shop sign that says OPEN" -m iris         Iris-3B Turbo: best with text in the picture
+  scripts/imagine "an oil painting of a harbour" -m sdxl       SDXL (slower; the one we trained styles on)
+  scripts/imagine "a castle" -n 4 --seed 7 --size 768x1344     four pictures, seeds 7, 8, 9, 10
+  scripts/imagine "a fox" -- --sampling-method euler          anything after -- goes to sd-cli as is
+  scripts/imagine "the same street at night" -i in.png         change a picture (img2img; --strength 0.7)
+  scripts/imagine "a red door" -i in.png --mask m.png          redraw only the mask's white part (inpaint)
+  scripts/imagine "the cat wearing a hat" -r cat.png           reference edit, Klein only
+  scripts/imagine "a portrait, <style>" -m sdxl --lora models/image-gen/style-runs/x/pytorch_lora_weights.safetensors
+  scripts/imagine --list                                       the models, their files, speed and memory
+
+Pictures go to models/image-gen/out/ (or -o DIR), each with a .json next to it holding the prompt, the
+seed and the exact sd-cli command; the paths are printed at the end. The defaults per model are the
+measured ones from bench/imagegen/run_gen.py (docs/image-generation.md). The text encoder runs on the
+CPU and the VAE in tiles, so all three fit next to a desktop on the 8 GB GPU, but not next to a
+llama-server: imagine refuses while one is serving on :8080 (stop it with scripts/llm stop) unless
+--force. sd-cli runs in its own systemd scope, so a memory kill takes only it, not your terminal.
+"""
+import argparse
+import json
+import os
+import random
+import shlex
+import shutil
+import struct
+import subprocess
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent.parent
+M = REPO / "models" / "image-gen"
+SD = Path(os.environ.get("SD_CLI", REPO.parent / "stable-diffusion.cpp" / "build" / "bin" / "sd-cli"))
+OUT = M / "out"
+COMMON = ["--backend", "te=cpu", "--vae-tiling"]
+MODELS = {
+    "klein": {
+        "what": "FLUX.2 Klein 4B: the everyday pick", "speed": "~23 s at 1024x1024", "memory": "3.5 GB",
+        "download": "klein kleinte kleinvae", "steps": 4, "cfg": 1.0, "ref": True,
+        "files": {"--diffusion-model": M / "flux2-klein/flux-2-klein-4b-Q4_0.gguf",
+                  "--vae": M / "flux2-klein/split_files/vae/flux2-vae.safetensors",
+                  "--llm": M / "flux2-klein/Qwen3-4B-Q4_K_M.gguf"}},
+    "iris": {
+        "what": "Iris-3B Turbo: readable text in pictures", "speed": "~33 s", "memory": "7.3 GB",
+        "download": "iris iriste", "steps": 4, "cfg": 1.0, "ref": False,
+        "files": {"--diffusion-model": M / "iris-3b/turbo/model.safetensors",
+                  "--llm": M / "iris-3b/Qwen3VL-4B-Instruct-Q4_K_M.gguf"}},
+    "sdxl": {
+        "what": "SDXL base 1.0: trainable (LoRA, learned words)", "speed": "~47 s", "memory": "5.8 GB",
+        "download": "sdxl sdxlvae", "steps": 25, "cfg": 7.0, "ref": False,
+        "extra": ["--sampling-method", "dpm++2m"],
+        "files": {"-m": M / "sdxl/sd_xl_base_1.0.safetensors", "--vae": M / "sdxl/sdxl_vae.safetensors"}},
+}
+
+
+def die(msg):
+    sys.exit(f"imagine: {msg}")
+
+
+def show_list():
+    for name, m in MODELS.items():
+        ok = all(p.exists() for p in m["files"].values())
+        print(f"{name:6s} {m['what']}\n       {m['speed']}, {m['memory']} of GPU memory, {m['steps']} steps, cfg {m['cfg']}"
+              f"\n       {'downloaded' if ok else 'missing: bash scripts/download-models.sh ' + m['download']}")
+    print(f"\nsd-cli: {SD} ({'found' if SD.exists() else 'NOT BUILT, see docs/image-generation.md'})")
+
+
+def png_size(path):
+    with open(path, "rb") as f:
+        head = f.read(24)
+    if head[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    return struct.unpack(">II", head[16:24])
+
+
+def size_arg(text):
+    try:
+        w, h = (int(v) for v in text.lower().split("x")) if "x" in text.lower() else (int(text),) * 2
+    except ValueError:
+        raise argparse.ArgumentTypeError("use WxH, e.g. 1024x768, or one number for a square") from None
+    if w % 64 or h % 64 or not 256 <= w <= 2048 or not 256 <= h <= 2048:
+        raise argparse.ArgumentTypeError("width and height must be multiples of 64, 256-2048")
+    return w, h
+
+
+GPU_TOTAL = 7787  # MiB on the RTX 2070 Max-Q
+NEED_MIB = {"klein": 3600, "iris": 7300, "sdxl": 5900}  # measured peaks, docs/image-generation.md
+
+
+def gpu_use():
+    """VRAM in use (MiB) and the compute processes holding it, or (None, '') without nvidia-smi."""
+    try:
+        used = subprocess.run(["nvidia-smi", "--query-gpu=memory.used", "--format=csv,noheader,nounits"],
+                              capture_output=True, text=True, check=True).stdout.split()[0]
+        apps = subprocess.run(["nvidia-smi", "--query-compute-apps=process_name,used_memory",
+                               "--format=csv,noheader"], capture_output=True, text=True, check=True).stdout
+    except (OSError, subprocess.CalledProcessError, IndexError):
+        return None, ""
+    names = [f"{Path(line.split(',')[0]).name} {line.split(',')[1].strip()}" for line in apps.splitlines() if "," in line]
+    return int(used), ", ".join(names)
+
+
+def server_busy():
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8080/v1/models", timeout=2) as r:
+            return json.load(r)["data"][0]["id"]
+    except Exception:  # noqa: BLE001 - nothing serving
+        return None
+
+
+def main():
+    ap = argparse.ArgumentParser(prog="imagine", description=__doc__.split("\n\n")[0],
+                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="Run with -h for this help; the module docstring has more examples.")
+    ap.add_argument("prompt", nargs="?", help="what to draw")
+    ap.add_argument("-m", "--model", choices=list(MODELS), default="klein")
+    ap.add_argument("-n", "--count", type=int, default=1, help="how many pictures (seeds seed, seed+1, ...)")
+    ap.add_argument("-s", "--seed", type=int, help="default: random")
+    ap.add_argument("--size", type=size_arg, help="WxH, default 1024x1024 (or the -i picture's size)")
+    ap.add_argument("--steps", type=int, help="default: the model's (Klein/Iris 4, SDXL 25)")
+    ap.add_argument("--cfg", type=float, help="guidance, default: the model's (Klein/Iris 1.0, SDXL 7.0)")
+    ap.add_argument("--negative", default="", help="negative prompt (SDXL; the 4-step models ignore it at cfg 1)")
+    ap.add_argument("-i", "--init", type=Path, help="start from this picture (img2img)")
+    ap.add_argument("--strength", type=float, help="how much of -i to redraw, 0-1 (default 0.7, 0.9 with --mask)")
+    ap.add_argument("--mask", type=Path, help="with -i: redraw only the white part of this picture")
+    ap.add_argument("-r", "--ref", type=Path, action="append", help="reference picture to edit from (Klein only)")
+    ap.add_argument("--lora", help="a LoRA .safetensors file, optionally FILE:weight (tested on SDXL)")
+    ap.add_argument("-o", "--out", type=Path, default=OUT, help=f"output folder (default {OUT.relative_to(REPO)})")
+    ap.add_argument("--force", action="store_true", help="run even if a llama-server holds the GPU")
+    ap.add_argument("--dry-run", action="store_true", help="print the sd-cli command and stop")
+    ap.add_argument("--list", action="store_true", help="list the models and whether they are downloaded")
+    argv = sys.argv[1:]
+    extra = argv[argv.index("--") + 1:] if "--" in argv else []  # after --: extra sd-cli flags
+    a = ap.parse_args(argv[:argv.index("--")] if "--" in argv else argv)
+
+    if a.list:
+        return show_list()
+    if not a.prompt:
+        ap.error("give a prompt, e.g.: scripts/imagine \"a red fox in the snow\"")
+    m = MODELS[a.model]
+    missing = [str(p) for p in m["files"].values() if not p.exists()]
+    if missing and not a.dry_run:
+        die(f"{a.model} is not downloaded ({missing[0]}).\n  bash scripts/download-models.sh {m['download']}")
+    if not SD.exists() and not a.dry_run:
+        die(f"sd-cli not found at {SD}; build it (docs/image-generation.md) or set SD_CLI")
+    if a.ref and not m["ref"]:
+        die(f"-r (reference edit) only works with Klein; {a.model} would silently ignore it")
+    if a.mask and not a.init:
+        die("--mask needs -i (the picture to redraw)")
+    for p in [a.init, a.mask, *(a.ref or [])]:
+        if p and not p.exists():
+            die(f"no such file: {p}")
+    if a.count < 1:
+        die("-n must be at least 1")
+
+    w, h = a.size or (png_size(a.init) if a.init else None) or (1024, 1024)
+    if a.init and not a.size and (w % 64 or h % 64):
+        w, h = w // 64 * 64, h // 64 * 64
+        print(f"imagine: using {w}x{h} (the -i picture's size rounded down to a multiple of 64)", file=sys.stderr)
+    seed = a.seed if a.seed is not None else random.randint(0, 2**31 - 1)
+    prompt = a.prompt
+    cmd = [str(SD)]
+    for flag, path in m["files"].items():
+        cmd += [flag, str(path)]
+    cmd += ["--cfg-scale", str(a.cfg if a.cfg is not None else m["cfg"]),
+            "--steps", str(a.steps or m["steps"]), *m.get("extra", []), *COMMON,
+            "-H", str(h), "-W", str(w), "-s", str(seed)]
+    if a.negative:
+        cmd += ["-n", a.negative]
+    if a.init:
+        cmd += ["-i", str(a.init), "--strength", str(a.strength if a.strength is not None else (0.9 if a.mask else 0.7))]
+    if a.mask:
+        cmd += ["--mask", str(a.mask)]
+    for r in a.ref or []:
+        cmd += ["-r", str(r)]
+    if a.lora:
+        file, _, weight = a.lora.partition(":")
+        lp = Path(file)
+        if not lp.exists() and not a.dry_run:
+            die(f"no such LoRA file: {lp}")
+        cmd += ["--lora-model-dir", str(lp.parent)]
+        prompt += f" <lora:{lp.stem}:{weight or 1}>"
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    cmd += ["-p", prompt, *extra]
+    jobs = []  # one sd-cli run per picture, so every file's seed is exactly the one in its .json
+    for i in range(a.count):
+        out = a.out / f"{stamp}-{a.model}-s{seed + i}.png"
+        job = [*cmd, "-o", str(out)]
+        job[job.index("-s") + 1] = str(seed + i)
+        jobs.append((seed + i, out, job))
+
+    if a.dry_run:
+        for _, _, job in jobs:
+            print(shlex.join(job))
+        return None
+    busy = server_busy()
+    if busy and not a.force:
+        die(f"a llama-server ({busy}) is using the GPU on :8080; they don't both fit in 8 GB.\n"
+            "  Stop it first: scripts/llm stop   (or pass --force)")
+    used, apps = gpu_use()
+    if used is not None and used > GPU_TOTAL - NEED_MIB[a.model] and not a.force:
+        die(f"the GPU has {used} MiB in use ({apps or 'desktop'}); {a.model} needs ~{NEED_MIB[a.model]} MiB of "
+            f"the {GPU_TOTAL}.\n  Close something (a browser frees ~1 GB) or pass --force to try anyway.")
+    a.out.mkdir(parents=True, exist_ok=True)
+    print(f">> {a.model}, {w}x{h}, seed {seed}{f' to {seed + a.count - 1}' if a.count > 1 else ''}: {a.prompt}",
+          file=sys.stderr)
+    made = []
+    for s, out, job in jobs:
+        run = job
+        if shutil.which("systemd-run"):
+            run = ["systemd-run", "--user", "--scope", "--quiet", "--collect", f"--unit=imagine-{stamp}-{s}", *job]
+        t = time.perf_counter()
+        rc = subprocess.run(run, check=False).returncode
+        secs = round(time.perf_counter() - t, 1)
+        if rc != 0 or not out.exists():
+            die(f"sd-cli failed (exit {rc}); the command was:\n  {shlex.join(job)}")
+        meta = {"prompt": a.prompt, "model": a.model, "seed": s, "size": f"{w}x{h}", "seconds": secs,
+                "command": shlex.join(job)}
+        out.with_suffix(".json").write_text(json.dumps(meta, indent=1) + "\n")
+        made.append((out, secs))
+    print(f">> done ({', '.join(f'{x} s' for _, x in made)}):", file=sys.stderr)
+    for out, _ in made:
+        print(out)
+    return None
+
+
+if __name__ == "__main__":
+    main()
