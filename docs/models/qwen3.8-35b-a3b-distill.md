@@ -37,7 +37,7 @@ layers, with the CPU computing 95% of the misses. At the same ~7.2 GB as `NCMOE=
 decode, 34.0 vs 30.8 after a 30K-token prompt. With batch 2048 (and a smaller cache to pay for it) long prompts
 run 2.3× faster (~500 vs ~215 tok/s) for ~3% of decode, so turns that read a file or start a session get much
 shorter. `QMODEL=distill MOE_CACHE=auto` sets both: 2770 MiB, batch 2048, which leaves room for a desktop
-using up to ~700 MiB of VRAM (give a smaller MiB number if yours uses more). It also lets batches of up to
+using up to ~700 MiB of VRAM (the launcher shrinks the cache if more is in use at launch). It also lets batches of up to
 256 tokens use the cache (`--moe-cache-max-batch 256`), which cuts the prompt time of 48–200-token turns by
 30–43%. Needs our fork's `moe-cache-max-batch` build
 ([how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch));

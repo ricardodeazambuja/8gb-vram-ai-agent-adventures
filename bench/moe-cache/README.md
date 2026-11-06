@@ -174,9 +174,10 @@ card gives CUDA about 7687 MiB (the tuner saw 7353 MiB free with 334 MiB in use)
 for the cuBLAS workspace and first-request buffers (Ornith's cache run failed on its first request). So a
 setting is safe while server + desktop peak + 300 ≤ 7687 MiB. For Qwen3.8 at batch 512, `NCMOE=31` and the
 3661 MiB cache both take ~6820 MiB, so the desktop must stay under ~570 MiB. `NCMOE=34` takes ~5500–5600 and
-leaves ~1.8 GB. Each 100 MiB less cache buys 100 MiB of desktop. `MOE_CACHE=auto` in the launchers uses
-fixed measured sizes, not the VRAM free at launch, so it won't adapt to a busy desktop: give a smaller number
-in MiB instead. Groot's cache run had
+leaves ~1.8 GB. Each 100 MiB less cache buys 100 MiB of desktop. `MOE_CACHE=auto` in `run-qwen.sh` starts
+from the measured size and, since 2026-11-05, shrinks it by however much more VRAM is in use at launch than that
+size leaves room for (`MOE_CACHE_ADAPT=0` keeps the measured size; below 1024 MiB it refuses to start). A
+number in MiB is used as given. Groot's cache run had
 128 MiB more VRAM, so its gain is slightly flattering. The tuner's picks: Groot 3264 MiB / share 0.9, LFM2.5
 3968 / 0.95.
 
@@ -273,6 +274,12 @@ which leaves ~380 MiB; Flint at 2168, ~6883, ~500; Qwen3.8 at 2900 (batch 2048),
 The cache sizes match the VRAM of each model's `NCMOE` default, and those defaults are as tight (Qwen3.6's
 `NCMOE=32` ended the long-prompt test at 7335 MiB with 331 already in use, ~7000 of its own). With a busier
 desktop, give a smaller `MOE_CACHE` in MiB, or a larger `NCMOE`.
+
+That busier desktop is the daytime one: base Gemma's template run (`gemma-empty.sh`) started with 1737 MiB
+already in use, against 334 at night, and peaked at 7608 MiB. So `run-qwen.sh` now does the arithmetic at
+launch: `MOE_CACHE=auto` subtracts the excess from its size (with 1650 MiB in use, Qwen3.6 gets 1632 MiB and
+Qwen3.8 1822), and any other MoE launch warns when more than 600 MiB is in use. The smaller caches are untested
+for speed.
 
 **This queue made systemd-oomd kill the terminal** (03:17, 03:30, 03:31). The tuner reads the whole GGUF into
 the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,

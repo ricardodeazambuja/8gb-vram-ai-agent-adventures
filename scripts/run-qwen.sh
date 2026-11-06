@@ -58,6 +58,9 @@
 #   MOE_CACHE_MAX_BATCH  batches up to N tokens go through the cache, bigger ones copy every expert they use
 #              (--moe-cache-max-batch; needs the fork's moe-cache-max-batch branch)
 #              (default: empty = the binary's 32; with MOE_CACHE=auto, distill 256)
+#   MOE_CACHE_ADAPT  1 = MOE_CACHE=auto shrinks the cache by however much more VRAM is in use at launch than its
+#              size leaves room for (qwen36 380, distill 700, flint 500, ornith 430 MiB); 0 = the measured size
+#              as is  (default: 1)
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU instead of copied over PCIe
 #              (--moe-cache-cpu-share)  (default: 0.95)
 #   NGL        dense only: transformer layers on GPU   (default: bonsai2, qwen3vl 99 = all;
@@ -113,7 +116,7 @@ case "$QMODEL" in
     ALIAS=qwen3.6-35b-a3b
     _ngl=30; _ctx=; _minp=0; _bin=
     _ncmoe=32
-    _moecache=2900
+    _moecache=2900; _moecache_desk=380   # desk: desktop VRAM (MiB) this size leaves room for, measured
     _temp=0.6 ;;
   distill)
     KIND=moe
@@ -126,7 +129,7 @@ case "$QMODEL" in
     # MOE_CACHE=auto: batch 2048 + 2770 MiB. Measured at 2900: 6820 MiB own peak (desktop <= ~570 MiB);
     # 130 MiB less leaves room for a ~700 MiB desktop. Cache-path batch limit 256: 48-200-token turns
     # read 30-43% faster. bench/moe-cache/experimental/logs/step10.log, step11.log.
-    _moecache=2770; _moecache_batch=2048; _moecache_maxbatch=256
+    _moecache=2770; _moecache_batch=2048; _moecache_maxbatch=256; _moecache_desk=700
     _temp=0.6 ;;
   bonsai2)
     # Qwen3.8-27B in ternary weights (5.95 GB) — fits fully on an 8 GB GPU. PTQ1_0 and the
@@ -231,7 +234,7 @@ case "$QMODEL" in
     _ngl=99; _ctx=; _minp=0
     _bin="$ADV_BIN"
     _ncmoe=42
-    _moecache=2168
+    _moecache=2168; _moecache_desk=500
     _batch=2048
     _temp=1.0 ;;
   bolt)
@@ -307,7 +310,7 @@ case "$QMODEL" in
     _ncmoe=34
     # MOE_CACHE=auto: 2983 MiB = the VRAM of NCMOE=34 (7.2 GB); decode 40.4 vs 33.9 tok/s, own peak 6943 MiB
     # (desktop <= ~430 MiB). bench/moe-cache/models/step12-ornith.sh
-    _moecache=2983
+    _moecache=2983; _moecache_desk=430
     _batch=2048
     _temp=1.0 ;;
   lfm25)
@@ -453,12 +456,32 @@ IMAGE_MAX_TOKENS="${IMAGE_MAX_TOKENS:-${_imgmax:-}}"
 if [ "$KIND" = moe ]; then CTX="${CTX:-131072}"; else CTX="${CTX:-${_ctx:-32768}}"; fi
 NCMOE="${NCMOE-$_ncmoe}"   # unset -> per-model default; set-but-empty -> all on CPU
 MOE_CACHE="${MOE_CACHE:-}"
+gpu_used_mib() { command -v nvidia-smi >/dev/null 2>&1 &&
+  nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits 2>/dev/null | head -1 | tr -d ' ' || true; }
 if [ "$MOE_CACHE" = auto ]; then
   MOE_CACHE="${_moecache:-}"
   [ -n "$MOE_CACHE" ] || { echo "ERROR: MOE_CACHE=auto has no measured size for QMODEL=$QMODEL; give MiB"; exit 1; }
   # the size was measured at this batch; a bigger batch needs more VRAM besides the cache
   [ -n "${_moecache_batch:-}" ] && _batch=$_moecache_batch
   MOE_CACHE_MAX_BATCH="${MOE_CACHE_MAX_BATCH:-${_moecache_maxbatch:-}}"
+  # The size leaves room for a desktop of _moecache_desk MiB (server peak + desktop + 300 <= ~7687 MiB).
+  # A busier desktop now: shrink the cache by the difference (MOE_CACHE_ADAPT=0 keeps the measured size).
+  _used=$(gpu_used_mib)
+  if [ "${MOE_CACHE_ADAPT:-1}" = 1 ] && [ -n "$_used" ] && [ -n "${_moecache_desk:-}" ] && [ "$_used" -gt "$_moecache_desk" ]; then
+    _shrunk=$(( MOE_CACHE - (_used - _moecache_desk) ))
+    if [ "$_shrunk" -lt 1024 ]; then
+      echo "ERROR: the GPU already has $_used MiB in use; MOE_CACHE=auto would get only $_shrunk MiB (< 1024)."
+      echo "       Free some VRAM (browser, other servers) or give MOE_CACHE in MiB / use NCMOE."; exit 1
+    fi
+    echo ">> MoE cache: $_used MiB of VRAM already in use (the measured $MOE_CACHE MiB leaves room for $_moecache_desk): using $_shrunk MiB"
+    MOE_CACHE=$_shrunk
+  fi
+elif [ "$KIND" = moe ]; then
+  _used=$(gpu_used_mib)
+  if [ -n "$_used" ] && [ "$_used" -gt 600 ]; then
+    echo ">> WARNING: $_used MiB of VRAM already in use. The NCMOE defaults were sized with ~0.33-0.6 GB in use and"
+    echo "   leave only ~0.4-0.7 GB for the desktop; if this runs out of memory, raise NCMOE or lower MOE_CACHE."
+  fi
 fi
 MOE_CACHE_MAX_BATCH="${MOE_CACHE_MAX_BATCH:-}"
 MOE_CACHE_SHARE="${MOE_CACHE_SHARE:-0.95}"

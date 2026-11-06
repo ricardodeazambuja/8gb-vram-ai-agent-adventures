@@ -301,7 +301,7 @@ prompt. The method,
 scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
 
 ```bash
-QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model; or a MiB number
+QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model, smaller if the desktop uses more VRAM than measured; or a MiB number
 QMODEL=distill MOE_CACHE=auto bash scripts/run-qwen.sh  # Qwen3.8: 2770 MiB, batch 2048, cache batch limit 256
 BACKEND=cuda KVQUANT=q8_0 MOE_CACHE=3267 bash scripts/run-server.sh   # Gemma 4 26B at 32K
 ```

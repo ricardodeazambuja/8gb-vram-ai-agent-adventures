@@ -107,7 +107,7 @@ Prompt reading is about half of Groot's (887 tok/s): more of each layer's expert
 as a cache of the most recently used ones, with the CPU computing 95% of the misses. At the same ~7.2 GB as
 `NCMOE=34`: **40.4 vs 33.9 tok/s** decode, 29.7 vs 28.5 after a 30K-token prompt, prompt reading unchanged
 (457 vs 461 tok/s). Both peak at ~6.95 GB of the server's own, so the desktop must stay under ~430 MiB of VRAM;
-give a smaller MiB number if yours uses more. Needs our fork's `moe-offload` build; measurements in
+the launcher shrinks the cache if more is in use at launch. Needs our fork's `moe-offload` build; measurements in
 [`bench/moe-cache/`](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05).
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
