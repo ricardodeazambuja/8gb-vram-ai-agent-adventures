@@ -52,7 +52,7 @@
 #   MOE_CACHE  MoE only, opt-in: N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
 #              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-offload branch (upstream
 #              PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
-#              auto = qwen36 2900, flint 2168 (each the VRAM its NCMOE default uses); distill 2770 with
+#              auto = qwen36 2900, flint 2168, ornith 2983 (each the VRAM its NCMOE default uses); distill 2770 with
 #              batch 2048 (+34% decode, long prompts 2.3x faster; room for a ~700 MiB desktop, see
 #              bench/moe-cache/README.md). See docs/how-it-fits.md §12.  (default: empty = off)
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU instead of copied over PCIe
@@ -301,6 +301,9 @@ case "$QMODEL" in
     _ngl=99; _ctx=; _minp=0
     _bin="$ADV_BIN"
     _ncmoe=34
+    # MOE_CACHE=auto: 2983 MiB = the VRAM of NCMOE=34 (7.2 GB); decode 40.4 vs 33.9 tok/s, own peak 6943 MiB
+    # (desktop <= ~430 MiB). bench/moe-cache/models/step12-ornith.sh
+    _moecache=2983
     _batch=2048
     _temp=1.0 ;;
   lfm25)

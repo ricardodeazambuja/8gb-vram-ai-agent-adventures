@@ -1,0 +1,32 @@
+### ornith2-ncmoe34 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Ornith-1.5-35B-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 34 | env NO_WARM=
+    memcheck: Ornith-1.5-35B-Q4_K_M.gguf 20.2 GiB + 4 margin, MemAvailable 28.0 GiB -> ok
+    vram before: 334 MiB
+    vram loaded: 7219 MiB
+ornith2-ncmoe34              vram  7219 MiB  prefill  6236 tok   463.4 t/s   decode 400 tok  34.40 t/s
+ornith2-ncmoe34              vram  7219 MiB  prefill  6236 tok   463.5 t/s   decode 400 tok  34.21 t/s
+req1: prompt 33806 tok (0 cached) 441.0 t/s | decode 600 tok 28.51 t/s | per 100:  29.1  28.7  28.5  28.5  28.3  28.2 | CPU +87.0°C -> +92.0°C
+req2: prompt 4 tok (33802 cached) 31.5 t/s | decode 600 tok 28.14 t/s | per 100:  28.6  28.2  28.2  28.2  28.0  28.0 | CPU +92.0°C -> +94.0°C
+    vram end: 7287 MiB
+    vram peak: 7287 MiB (1-s samples)
+### ornith2-cache2983 | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Ornith-1.5-35B-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2983 --moe-cache-cpu-share 0.95 | env NO_WARM=
+    memcheck: Ornith-1.5-35B-Q4_K_M.gguf 20.2 GiB + 4 margin, MemAvailable 28.1 GiB -> ok
+    vram before: 334 MiB
+    vram loaded: 7223 MiB
+ornith2-cache2983            vram  7223 MiB  prefill  6236 tok   447.7 t/s   decode 400 tok  39.98 t/s
+ornith2-cache2983            vram  7223 MiB  prefill  6236 tok   466.3 t/s   decode 400 tok  40.88 t/s
+req1: prompt 33806 tok (0 cached) 438.8 t/s | decode 600 tok 29.67 t/s | per 100:  28.4  29.9  30.3  30.4  29.6  29.7 | CPU +91.0°C -> +93.0°C
+req2: prompt 4 tok (33802 cached) 29.0 t/s | decode 600 tok 29.59 t/s | per 100:  29.7  29.9  31.2  30.0  28.7  28.5 | CPU +93.0°C -> +93.0°C
+    vram end: 7277 MiB
+    vram peak: 7277 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2982.54 MiB for 18600.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 337035, misses = 307316 (290401 on the CPU), hit rate = 52.31%, uploaded = 30856.12 MiB
+    llama_moe_cache: ubatch  > 8: hits = 1589, misses = 4231 (3777 on the CPU), hit rate = 27.30%, uploaded = 842.44 MiB
+    llama_moe_cache: large batches: 105096 experts copied from the cache, 63431.25 MiB
+### ornith2-ncmoe34-b | 3a72c57be llama-graph : extract the CPU share condition into | build/bin/llama-server | Ornith-1.5-35B-Q4_K_M.gguf ctx=131072 batch=2048 kv=q8_0 | -ncmoe 34 | env NO_WARM=
+    memcheck: Ornith-1.5-35B-Q4_K_M.gguf 20.2 GiB + 4 margin, MemAvailable 28.1 GiB -> ok
+    vram before: 334 MiB
+    vram loaded: 7219 MiB
+ornith2-ncmoe34-b            vram  7219 MiB  prefill  6236 tok   459.8 t/s   decode 400 tok  33.48 t/s
+ornith2-ncmoe34-b            vram  7219 MiB  prefill  6236 tok   458.8 t/s   decode 400 tok  33.41 t/s
+    vram end: 7271 MiB
+    vram peak: 7271 MiB (1-s samples)

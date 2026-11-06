@@ -286,9 +286,10 @@ every miss, the cache gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of m
 | Qwen3.6-35B-A3B (128K) | 24.9 tok/s (`NCMOE=32`) | **39.4 tok/s** (2900 MiB) | +58% |
 | Gemma 4 26B-A4B (32K) | 21.0 tok/s (`NCMOE=22`) | **30.0 tok/s** (3267 MiB) | +43% |
 | Flint (128K) | 26.9 tok/s (`NCMOE=42`) | **32.1 tok/s** (2168 MiB) | +19% |
+| Ornith 1.5 35B-A3B (128K) | 33.9 tok/s (`NCMOE=34`) | **40.4 tok/s** (2983 MiB) | +19% |
 
-Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512, Flint 2048); baseline, cache, baseline
-again, two 400-token runs each; the table compares the first baseline. Prompt speed didn't change. VRAM
+Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512, Flint and Ornith 2048); baseline, cache, baseline
+again, two 400-token runs each; the table compares the first baseline (Ornith, a later run: the mean of both). Prompt speed didn't change. VRAM
 in use was 86–186 MiB lower for Qwen3.6 and within 10 MiB for the other two. The cache also held up over a 2,500-token answer: 33–37
 tok/s, while `NCMOE=32` sank to 18–21 tok/s as the CPU package hit 100 °C (83 °C with the cache). Flint's
 gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.

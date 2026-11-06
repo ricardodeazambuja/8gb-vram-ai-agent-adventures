@@ -103,6 +103,13 @@ The default leaves ~0.9 GB of VRAM free on purpose: [Groot](groot-19b-a3b.md) at
 of memory during pibench with a browser open. `NCMOE=33` is 1 tok/s faster if your desktop is lean.
 Prompt reading is about half of Groot's (887 tok/s): more of each layer's experts live in RAM.
 
+**Faster, same VRAM (2026-11-05, opt-in):** `MOE_CACHE=auto` puts all experts in RAM and uses 2983 MiB of VRAM
+as a cache of the most recently used ones, with the CPU computing 95% of the misses. At the same ~7.2 GB as
+`NCMOE=34`: **40.4 vs 33.9 tok/s** decode, 29.7 vs 28.5 after a 30K-token prompt, prompt reading unchanged
+(457 vs 461 tok/s). Both peak at ~6.95 GB of the server's own, so the desktop must stay under ~430 MiB of VRAM;
+give a smaller MiB number if yours uses more. Needs our fork's `moe-offload` build; measurements in
+[`bench/moe-cache/`](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05).
+
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **1,401 and 1,813 tokens**: half of Qwen3.6's 3,558 for the
 same architecture, and fewer than Groot (2.3K–3.0K).

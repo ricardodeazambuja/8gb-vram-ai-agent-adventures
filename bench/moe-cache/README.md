@@ -43,7 +43,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
-| `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), logs and tuner output |
+| `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), reruns at matched VRAM `step5-qwen38.sh` and `step12-ornith.sh`, logs and tuner output |
 | `experimental/` | the fork's local `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`, logs) |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
@@ -147,7 +147,7 @@ long-prompt check for the first two. All logs in [`models/logs/`](models/logs/),
 | Groot 19B-A3B (2048) | `NCMOE=27` | 3321 MiB | 7205 / 7333 MiB | 41.0 → **47.6** (+16%) | 30.9 → 32.7 (+6%) | 790 → 741 (−6%) |
 | LFM2.5 24B-A2B (2048) | `NCMOE=27` | 4212 MiB | 7521 / 7512 MiB | 34.0 → **48.5** (+42%) | 29.2 → 37.9 (+30%) | 992 → 920 (−7%) |
 | Qwen3.8 distill (512) | `NCMOE=31` | 3661 MiB | 7230 / 7227 MiB | 39.3 → **52.7** (+34%) | 30.8 → 34.0 (+10%) | 220 → 212 (−4%) |
-| Ornith 1.5 35B (2048) | `NCMOE=34` | 3486 MiB | 7219 / 7722 MiB | the cache ran out of VRAM on the first request; redo at ~2980 MiB | | |
+| Ornith 1.5 35B (2048) | `NCMOE=34` | 2983 MiB | 7219 / 7223 MiB | 33.9 → **40.4** (+19%) | 28.5 → 29.7 (+4%) | 461 → 457 (−1%) |
 | Bolt 74B-A9B | | | | not run: the tuner ran out of VRAM (1299 MiB compute buffer at 128K, batch 2048) | | |
 
 Old-split numbers are the mean of both old runs (the long check: the first only). The Qwen3.8 row is `models/step5-qwen38.sh`
@@ -155,6 +155,12 @@ Old-split numbers are the mean of both old runs (the long check: the first only)
 cache that had 827 MiB more. It compares the best of each at the same VRAM. The cache needs ~3.5 GB besides
 itself (`-cmoe` + cache C loads at ~3489 + C MiB), against ~5.9 GB at `NCMOE=34` plus 408 MiB per layer fewer.
 Share 0.8 was slower (46.4 tok/s) despite a higher hit rate (75% vs 65%).
+
+The Ornith row is `models/step12-ornith.sh` ([`step12.log`](models/logs/step12.log)). Its first try in step 3
+gave the cache 3486 MiB, which loaded at 7722 MiB and ran out of VRAM on the first request; 2983 MiB matches
+`NCMOE=34`. Peak VRAM (1-s samples) was 7287 MiB for `NCMOE=34` and 7277 for the cache, with 334 in use by the
+desktop: by the rule below both leave room for a desktop of ~430 MiB. Hit rate 52%. `QMODEL=ornith MOE_CACHE=auto`
+now uses 2983 MiB.
 
 These sizes were measured with 0.33–0.41 GB of VRAM already in use by the desktop. Qwen3.8's model page measured
 `NCMOE=34` at 7.2–7.3 GB and `NCMOE=32` out of memory, likely with a heavier desktop; so `NCMOE=31` and a
