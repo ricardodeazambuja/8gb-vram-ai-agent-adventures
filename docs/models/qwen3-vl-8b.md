@@ -4,14 +4,15 @@
 >
 > | | |
 > |---|---|
-> | Size on disk | 5.03 GB (`Q4_K_M`) + 0.75 GB vision projector (`Q8_0`) |
+> | On disk | 5.03 GB (`Q4_K_M`) + 0.75 GB vision projector (`Q8_0`) |
 > | Where it lives | everything on the GPU, projector included (~7.4 GB used) |
 > | Context | 16K |
 > | Generation | ~38 tok/s (26 tok/s with the context full) |
 > | Prompt processing | ~830–900 tok/s |
 > | [pibench](../pibench.md) | 1/18 (2026-11-02) |
 > | [Vision probe](../vision-probe.md) | **89%**, perfect OCR, ~5 s per image |
-> | Launch | `bash scripts/start_qwen3vl.sh` |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm qwen3vl` (server) · `scripts/llm qwen3vl pi` (chat in pi) |
 
 ## What is it?
 
@@ -41,25 +42,27 @@ settings are the defaults for this model. See [How it fits](../how-it-fits.md).
 
 ## Install & run
 
-It uses our llama.cpp fork in `../llama.cpp` from
-[Getting started](../getting-started.md). Then:
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 # 1. Download the model + projector (5.8 GB), pinned revision, sha256-checked
 bash scripts/download-models.sh qwen3vl
 
 # 2. Serve it (vision on) and open pi
-bash scripts/start_qwen3vl.sh
+scripts/llm qwen3vl pi
 
 # One question about an image, no chat:
-bash scripts/start_qwen3vl.sh -p "describe @photo.jpg" --no-session </dev/null
+scripts/llm qwen3vl pi -p "describe @photo.jpg" --no-session </dev/null
 
 # Server only, OpenAI-compatible API on :8080:
-QMODEL=qwen3vl bash scripts/run-qwen.sh --image
+scripts/llm qwen3vl
 
 # Done? Free the GPU:
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
+
+(The building block: `bash scripts/start_qwen3vl.sh`, or `QMODEL=qwen3vl bash scripts/run-qwen.sh --image` for the
+server alone; every knob in [Knobs](#knobs) below still applies.)
 
 In pi, attach an image with `@file.png`. That works because the repo's pi model entry for
 `qwen3-vl-8b` says `"input": ["text", "image"]`; without it, pi treats the model as text-only,

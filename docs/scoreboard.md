@@ -14,27 +14,30 @@ Two health warnings before the numbers:
 
 | Model | Shape | File | Context | Speed | Prompt speed ¹ | pibench | Vision | Launcher |
 |---|---|---|---:|---:|---:|---:|---:|---|
-| [Gemma 4 26B-A4B](models/gemma4-26b-a4b.md) | MoE, 4B active | UD-Q4_K_XL, ~14 GB | 32K (128K fits) | 23.5 t/s ² | — | **18/18** | **100%** | `scripts/start.sh` |
-| [ThinkingCap Gemma 4 26B](models/thinkingcap-gemma4-26b-a4b.md) | MoE, 4B active | IQ4_XS, 13.6 GB | 64K | 17.4 t/s | 352 t/s | 17/18 | not run | `MODEL=… scripts/run-server.sh` |
-| [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | MoE, 3B active | UD-IQ4_XS, 17.7 GB | 128K | 22.8 t/s | 221 t/s | 16/18 | **100%** | `QMODEL=qwen36 scripts/start-qwen.sh` |
-| [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | MoE, 3B active | IQ4_XS, 19.6 GB | 128K | 26.2 t/s | 167 t/s | 16/18 | 88% | `QMODEL=distill scripts/start-qwen.sh` |
-| [Flint](models/flint.md) | MoE, 2.5B active | UD-Q3_K_XL, 18.5 GB | 128K | 24.3 t/s | 542 t/s | **18/18** | text only | `scripts/start_flint.sh` |
-| [Groot-19B-A3B](models/groot-19b-a3b.md) | MoE, 3B active | Q4_K_M, 11.7 GB | 128K | **39.5 t/s** | **887 t/s** | **18/18** | 74% | `QMODEL=groot scripts/start-qwen.sh` |
-| [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) | conv/attention MoE, 2B active | Q4_0 (QAD), 13.6 GB | 128K | 31.5 t/s | ~940 t/s | 10/18 | text only | `QMODEL=lfm25 scripts/start-qwen.sh` |
-| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | MoE, 3B active | Q4_K_M, 21.7 GB | 128K | ~31 t/s | ~490 t/s | 14/18 | 97% | `QMODEL=ornith scripts/start-qwen.sh` |
-| [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | hybrid MoE, 9B active | IQ2 (QAD), 22.0 GB | 128K | 14.0 t/s | 310 t/s | 15/18 | 91% | `scripts/start_bolt.sh` |
-| [Bonsai 2 27B](models/bonsai2-27b.md) | dense 27B, ternary | PTQ1_0, 5.95 GB | 32K | 38.0 t/s | 277 t/s | 16/18 | 98% | `scripts/start_bonsai2.sh` |
-| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | dense 8B + vision | Q4_K_M + projector | 16K | ~38 t/s | 830–900 t/s | 1/18 | 89% | `scripts/start_qwen3vl.sh` |
-| [Dory1.0-4B](models/dory1.0-4b.md) | dense 4B, looped | Q5_K_M | 64K (128K ³) | 29.3 t/s | 852 t/s | 14/18 | text only | `scripts/start_dory.sh` |
-| [Spark-X2.6-4B](models/spark-x2.6-4b.md) | dense 4B | Q8_0, 4.4 GB | 108K | 48–50 t/s | 1,450–1,620 t/s | 14/18 | text only | `scripts/start_spark.sh` |
-| [LFM3-1.7B](models/lfm3-1.7b.md) | dense 1.7B, conv + attention | Q8_0, 1.85 GB | 128K | **106 t/s** | **4,802 t/s** | 12/18 | text only | `QMODEL=lfm3 scripts/start-qwen.sh` |
-| [LFM3-VL-2B](models/lfm3-vl-2b.md) | dense 2B + vision | Q8_0, 1.85 GB + projector | 32K | 106 t/s | 4,875 t/s | 0/18 | 91% | `QMODEL=lfm3vl scripts/start-qwen.sh --image` |
-| [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | dense 8B (4B eff.) | Q4_K_M, 6.2 GB | 64K | 52 t/s | 1,531 t/s | 7/18 | text only | `scripts/start_e4b.sh` |
+| [Gemma 4 26B-A4B](models/gemma4-26b-a4b.md) | MoE, 4B active | UD-Q4_K_XL, ~14 GB | 32K (128K fits) | 23.5 tok/s ² | — | **18/18** | **100%** | `scripts/llm gemma` |
+| [ThinkingCap Gemma 4 26B](models/thinkingcap-gemma4-26b-a4b.md) | MoE, 4B active | IQ4_XS, 13.6 GB | 64K | 17.4 tok/s | 352 tok/s | 17/18 | not run | `scripts/llm thinkingcap` |
+| [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | MoE, 3B active | UD-IQ4_XS, 17.7 GB | 128K | 22.8 tok/s | 221 tok/s | 16/18 | **100%** | `scripts/llm qwen36` |
+| [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | MoE, 3B active | IQ4_XS, 19.6 GB | 128K | 26.2 tok/s | 167 tok/s | 16/18 | 88% | `scripts/llm distill` |
+| [Flint](models/flint.md) | MoE, 2.5B active | UD-Q3_K_XL, 18.5 GB | 128K | 24.3 tok/s | 542 tok/s | **18/18** | text only | `scripts/llm flint` |
+| [Groot-19B-A3B](models/groot-19b-a3b.md) | MoE, 3B active | Q4_K_M, 11.7 GB | 128K | **39.5 tok/s** | **887 tok/s** | **18/18** | 74% | `scripts/llm groot` |
+| [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) | conv/attention MoE, 2B active | Q4_0 (QAD), 13.6 GB | 128K | 31.5 tok/s | ~940 tok/s | 10/18 | text only | `scripts/llm lfm25` |
+| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) | MoE, 3B active | Q4_K_M, 21.7 GB | 128K | ~31 tok/s | ~490 tok/s | 14/18 | 97% | `scripts/llm ornith` |
+| [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | hybrid MoE, 9B active | IQ2 (QAD), 22.0 GB | 128K | 14.0 tok/s | 310 tok/s | 15/18 | 91% | `scripts/llm bolt` |
+| [Bonsai 2 27B](models/bonsai2-27b.md) | dense 27B, ternary | PTQ1_0, 5.95 GB | 32K | 38.0 tok/s | 277 tok/s | 16/18 | 98% | `scripts/llm bonsai2` |
+| [Qwen3-VL-8B](models/qwen3-vl-8b.md) | dense 8B + vision | Q4_K_M + projector | 16K | ~38 tok/s | 830–900 tok/s | 1/18 | 89% | `scripts/llm qwen3vl` |
+| [Dory1.0-4B](models/dory1.0-4b.md) | dense 4B, looped | Q5_K_M | 64K (128K ³) | 29.3 tok/s | 852 tok/s | 14/18 | text only | `scripts/llm dory` |
+| [Spark-X2.6-4B](models/spark-x2.6-4b.md) | dense 4B | Q8_0, 4.4 GB | 108K | 48–50 tok/s | 1,450–1,620 tok/s | 14/18 | text only | `scripts/llm spark` |
+| [LFM3-1.7B](models/lfm3-1.7b.md) | dense 1.7B, conv + attention | Q8_0, 1.85 GB | 128K | **106 tok/s** | **4,802 tok/s** | 12/18 | text only | `scripts/llm lfm3` |
+| [LFM3-VL-2B](models/lfm3-vl-2b.md) | dense 2B + vision | Q8_0, 1.85 GB + projector | 32K | 106 tok/s | 4,875 tok/s | 0/18 | 91% | `scripts/llm lfm3vl` |
+| [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | dense 8B (4B eff.) | Q4_K_M, 6.2 GB | 64K | 52 tok/s | 1,531 tok/s | 7/18 | text only | `scripts/llm e4b` |
 
 ¹ Processing a ~14–17K-token prompt, which is what a coding agent's first turn costs. "—" = not
-measured the same way.
-² 27 t/s at 128K with a q8_0 KV cache ([how it fits](how-it-fits.md)).
-³ With `CTX=131072 LOOP_KV=last_loop`: 30.1 t/s.
+measured the same way. Speeds are with the experts split by layer (`NCMOE`); `scripts/llm` runs Qwen3.6, the
+distill, Flint, Ornith and Gemma with the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
+instead, measured 19–58% faster decode at the same VRAM next to a quiet desktop (Qwen3.6 39.4, Gemma 30.0,
+Flint 32.1, Ornith 40.4 tok/s), 9–13% less than that next to a busy one.
+² 27 tok/s at 128K with a q8_0 KV cache ([how it fits](how-it-fits.md)).
+³ With `CTX=131072 LOOP_KV=last_loop`: 30.1 tok/s.
 
 **pibench** = our six-chore agentic benchmark, solved attempts out of 18
 ([details](pibench.md)). **Vision** = our 12-image probe, overall score
@@ -109,7 +112,7 @@ lighter.
 
 | Model | Speed | Prompt speed | Context | Code-check tokens | SWE-bench Verified | Terminal-Bench 2.1 | LiveCodeBench v6 | GPQA Diamond |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| **Qwen3.6-35B-A3B** (baseline) | 22.8 t/s | 221 t/s | 128K | 3,558 | 73.4 | 43–45 | 80.4 | 86.0 |
+| **Qwen3.6-35B-A3B** (baseline) | 22.8 tok/s | 221 tok/s | 128K | 3,558 | 73.4 | 43–45 | 80.4 | 86.0 |
 | Gemma 4 26B-A4B | 1.03× | — | 0.25× ¹ | — | −56.0 (Qwen) / −16.0 (NVIDIA) | −8.0 | −3.3 | −3.7 |
 | Qwen3.8 distill | 1.15× | 0.76× | 1.00× | **0.16×** | — | — | — | — |
 | **Flint** | 1.07× | **2.45×** | 1.00× | 0.43× | **+0.8** | **+10.0** | −0.1 | — |
@@ -120,7 +123,7 @@ lighter.
 | Spark 4B | 2.11× | 6.58× | 0.84× | 1.32× | −10.6 † | — | — | −8.9 † |
 | Nemotron Bolt E4B | **2.28×** | **6.93×** | 0.50× | — | — | — | — | — |
 
-¹ At the launcher's 32K default; Gemma 4 26B also runs 128K (27 t/s with a q8_0 KV cache).
+¹ At the launcher's 32K default; Gemma 4 26B also runs 128K (27 tok/s with a q8_0 KV cache).
 ᴮ From NVIDIA's own table, which includes Qwen3.6 (BF16) next to the 2-bit Bolt.
 
 "Code-check tokens" comes from a small sanity test (write `merge_intervals`, check it against

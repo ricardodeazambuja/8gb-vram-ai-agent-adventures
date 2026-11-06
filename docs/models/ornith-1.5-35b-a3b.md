@@ -13,7 +13,7 @@
 > | [pibench](../pibench.md) | 14/18 solved (94% of hidden tests), **2.2 min** median per run, the quickest of the big models |
 > | [Vision probe](../vision-probe.md) | **97%** overall: OCR, understanding and CAD perfect, boxes 87% |
 > | [Security audit](../security.md) | clean |
-> | Launch | `QMODEL=ornith bash scripts/start-qwen.sh` |
+> | Launch | `scripts/llm ornith` |
 
 ## What is it?
 
@@ -37,30 +37,26 @@ whole terminal; load it on a quiet machine.
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# 1. Our llama.cpp (fork, adventures branch, pinned; upstream of 2026-10-28)
-#    (skip if you already built it for another model)
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
-# 2. Download + sha256-check (~22.6 GB with the projector), then audit it
+# 1. Download + sha256-check (~22.6 GB with the projector), then audit it
 bash scripts/download-models.sh ornith
 bash utils/audit-gguf.sh models/ornith-1.5-35b-a3b/Ornith-1.5-35B-Q4_K_M.gguf
 
-# 3. Server + pi (close the browser first: ~18 GB of RAM)
-QMODEL=ornith bash scripts/start-qwen.sh
+# 2. Server + pi (close the browser first: ~18 GB of RAM; expert cache on, --static for the per-layer split)
+scripts/llm ornith
 
 # ...with images
-QMODEL=ornith bash scripts/start-qwen.sh --image
+scripts/llm ornith --image
 
 # Stop it
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
 
-Server only, for any OpenAI-compatible client: `QMODEL=ornith bash scripts/run-qwen.sh`.
+Server only, for any OpenAI-compatible client: `scripts/llm ornith serve`. (The building block:
+`QMODEL=ornith bash scripts/run-qwen.sh`; every knob in [Knobs](#knobs) below still applies, e.g.
+`CTX=65536 scripts/llm ornith`.)
 
 ## Official numbers
 
@@ -103,11 +99,12 @@ The default leaves ~0.9 GB of VRAM free on purpose: [Groot](groot-19b-a3b.md) at
 of memory during pibench with a browser open. `NCMOE=33` is 1 tok/s faster if your desktop is lean.
 Prompt reading is about half of Groot's (887 tok/s): more of each layer's experts live in RAM.
 
-**Faster, same VRAM (2026-11-05, opt-in):** `MOE_CACHE=auto` puts all experts in RAM and uses 2983 MiB of VRAM
+**Faster, same VRAM (2026-11-05, the default in `scripts/llm ornith`):** `MOE_CACHE=auto` puts all experts in RAM and uses 2983 MiB of VRAM
 as a cache of the most recently used ones, with the CPU computing 95% of the misses. At the same ~7.2 GB as
 `NCMOE=34`: **40.4 vs 33.9 tok/s** decode, 29.7 vs 28.5 after a 30K-token prompt, prompt reading unchanged
 (457 vs 461 tok/s). Both peak at ~6.95 GB of the server's own, so the desktop must stay under ~430 MiB of VRAM;
-the launcher shrinks the cache if more is in use at launch. Needs our fork's `moe-offload` build; measurements in
+the launcher shrinks the cache if more is in use at launch. `scripts/llm ornith` turns it on (`--static`: the classic
+`NCMOE=34` split); it needs our fork's `moe-cache-max-batch` build, the default build; measurements in
 [`bench/moe-cache/`](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05).
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
@@ -160,11 +157,12 @@ quickly.
 
 ## Knobs
 
-Env vars for `scripts/start-qwen.sh` / `scripts/run-qwen.sh` with `QMODEL=ornith`.
+Env vars for `scripts/llm ornith` / `scripts/run-qwen.sh` with `QMODEL=ornith`.
 
 | Knob | Default | What it does |
 |---|---|---|
 | `NCMOE` | 34 | layers whose experts stay in RAM (33 at batch 2048 and 32 at batch 512 also fit, with less headroom) |
+| `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `BATCH` / `UBATCH` | 2048 / 2048 | 512 costs nothing in generation but reads prompts ~2.8× slower |
 | `CTX` | 131072 | context window |
 | `KVQUANT` | q8_0 | KV cache type |

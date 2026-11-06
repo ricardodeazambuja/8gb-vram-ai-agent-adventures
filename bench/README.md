@@ -50,7 +50,7 @@ docker network create --subnet 172.30.0.0/24 --gateway 172.30.0.1 \
   -o com.docker.network.bridge.name=br-pibench pibench
 sudo sh bench/firewall.sh add                 # once per boot; `remove` undoes it
 bash scripts/stop-server.sh                   # the benchmark needs the GPU to itself
-bash bench/run-bench.sh                       # all models, ~6–12 h; resumable
+bash bench/run-bench.sh                       # the default six: flint qwen36 distill spark gemma26b bonsai2, ~6–12 h; resumable
 MODELS="flint qwen36" REPEATS=1 bash bench/run-bench.sh   # a subset
 python3 bench/summarize.py                    # -> bench/results/summary.md, results.csv
 ```
@@ -65,5 +65,23 @@ the final `/work`, `junit.xml`, `score.json`); those are git-ignored, the summar
 
 Six tasks are a smoke test, not a leaderboard: 3 runs per task give each model 18 attempts, so
 a difference of one or two solved runs is noise. The tasks are small (minutes, not hours) and
-favour careful, test-checking agents over raw knowledge. Every model gets the same plain pi;
-the Gemma-tuned pi extensions this repo ships are not used.
+favour careful, test-checking agents over raw knowledge. Every model gets the same plain pi,
+with no extensions.
+
+## The other benchmarks in `bench/`
+
+pibench is the big one; the rest each have their own folder and README, and
+[Reproducing our results](../docs/reproduce.md) lists the command behind every number.
+
+| Folder | What it measures |
+|---|---|
+| [`vision/`](vision/README.md) | the vision probe: OCR, boxes, charts, counting, CAD drawings |
+| [`visual-control/`](visual-control/) | look, decide, call a tool ([docs](../docs/visual-control.md)) |
+| [`moe-cache/`](moe-cache/README.md) | the MoE expert cache: decode, prompts, agent loops, daytime sizes |
+| [`smoke/`](smoke/README.md) | quick checks for the helper models (decisions, embeddings, boxes) |
+| [`voice/`](voice/README.md) | LFM3-Audio: speech in, speech out, spoken tool calls, realtime |
+| [`recheck/`](recheck/README.md) | every chat model launches: speed, a tool call, the code check |
+| [`bonsai-ctx/`](bonsai-ctx/README.md) | how much context Bonsai 2 fits |
+| [`gemma12-probe/`](gemma12-probe/README.md) | why the Gemma 12B models failed: the models or our setup |
+| [`cactus/`](cactus/README.md) | Cactus's Mirage, offline, on the visual control scenes |
+| `finetune/`, `imagegen/`, `steering/`, `retrieval/`, `grading/`, `relaxed/`, `beyond-vision/` | fine-tuning, pictures, steering vectors, search, judging transcripts, relaxed speculative acceptance; see [fine-tuning](../docs/fine-tuning.md), [making pictures](../docs/image-generation.md) and [reproduce.md](../docs/reproduce.md) |

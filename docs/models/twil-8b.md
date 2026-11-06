@@ -10,7 +10,7 @@
 > | Speed | not measured yet |
 > | [Security audit](../security.md) | clean |
 > | Licence | webAI Non-Commercial 1.0: non-commercial research and education only |
-> | Launch | `QMODEL=twil bash scripts/run-qwen.sh` |
+> | Launch | `scripts/llm twil serve` (server only until it has run in pibench's sandbox) |
 
 ## What is it?
 
@@ -29,10 +29,16 @@ Where it could fit here: the code writer in the "bigger model plans, small model
 
 ## Install & run
 
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
+
 ```bash
 bash scripts/download-models.sh twil      # pinned revision 58d49f0, sha256 checked
-QMODEL=twil bash scripts/run-qwen.sh      # port 8080, 24K, q4_0 KV, temp 1.0, top-p 0.95
+scripts/llm twil serve                    # port 8080, 24K, q4_0 KV, temp 1.0, top-p 0.95
 ```
+
+(The building block: `QMODEL=twil bash scripts/run-qwen.sh`; its knobs still apply. `scripts/llm twil` serves it
+without pi for now: pi has shell tools, and per [security.md](../security.md) a new model's first shell access is
+in pibench's sandbox.)
 
 **Memory.** The KV cache costs 160 KiB a token in f16, 85 in q8_0 and 45 in q4_0 (40 layers x 8 KV heads x
 128). Next to 5.0 GiB of weights, 24K at q4_0 (~1.1 GB) leaves room for a ~0.7 GB desktop by estimate;
@@ -40,7 +46,7 @@ QMODEL=twil bash scripts/run-qwen.sh      # port 8080, 24K, q4_0 KV, temp 1.0, t
 first run measures the compute buffer. With a daytime desktop (~1.8 GB with Chrome open) it does not fit on the
 GPU at all.
 
-## Results
+## Our numbers
 
 Not run yet. Next: the tool-less speed test (`scripts/qwen-bench.py`), then code checks in the sandbox
 (`scripts/qwen-codecheck.py`).

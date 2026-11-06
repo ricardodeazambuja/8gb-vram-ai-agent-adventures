@@ -11,7 +11,8 @@
 > | Prompt processing | 221 tok/s (15.6K-token prompt) |
 > | [pibench](../pibench.md) | 16/18 solved (96% of hidden tests) |
 > | [Vision probe](../vision-probe.md) | 100% overall |
-> | Launch | `bash scripts/start-qwen.sh` |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm qwen36` |
 
 ## What is it?
 
@@ -37,49 +38,45 @@ of the 40 layers in RAM and puts the other 8 on the GPU, for 7.6 GB of VRAM. Bec
 of the 40 layers keep a KV cache (2 KV heads × 256), 128K of context at q8_0 costs just
 1.42 GB. The general idea is explained in [how-it-fits.md](../how-it-fits.md).
 
-**Faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts instead of
+**Faster, same VRAM (2026-11-04, the default in `scripts/llm qwen36`):** a GPU cache of the most recently used experts instead of
 fixed layers, with the CPU computing 95% of the misses: **39.4 vs 24.9 tok/s** decode (A/B/A), prompt speed
 unchanged. In a full pibench batch: 17/18 solved, decode 32.9 vs 20.7 tok/s, median run 2.6 vs 3.4 min.
 `MOE_CACHE=auto` (2900 MiB, less if the desktop uses more than ~380 MiB of VRAM) on our fork's
-`moe-cache-max-batch` build, which also sends batches of up to 128 tokens through the cache: tool-call turns of
+`moe-cache-max-batch` build (the default build), which also sends batches of up to 128 tokens through the cache: tool-call turns of
 48–128 new tokens are read 11–17% faster (2026-11-05;
-[step 14](../../bench/moe-cache/README.md)). See
+[step 14](../../bench/moe-cache/README.md)). `scripts/llm qwen36` turns it on; `scripts/llm qwen36 --static`
+gives the classic per-layer split above. See
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 
 ## Install & run
 
 You need the basics from [getting-started.md](../getting-started.md) first (mamba, an NVIDIA
-driver, pi). Then:
+driver, pi). Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# 1. The pinned build toolchain (CUDA 12.2, gcc 12) as a conda env
-mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
-
-# 2. Build our llama.cpp fork into ../llama.cpp, ~10–20 min
-CUDA_VER=12.2 bash scripts/build-llama-cuda.sh
-
-# 3. A small env with the Hugging Face CLI (the download script insists the `hf` CLI
+# 1. A small env with the Hugging Face CLI (the download script insists the `hf` CLI
 #    lives in this env, not just somewhere on your PATH)
 mamba create -y -n llamacpp -c conda-forge huggingface_hub
 
-# 4. Download + sha256-check the model and its vision projector (~18.6 GB)
+# 2. Download + sha256-check the model and its vision projector (~18.6 GB)
 bash scripts/download-models.sh qwen36
 
-# 5. Server + pi in one go (qwen36 is start-qwen.sh's default)
-bash scripts/start-qwen.sh
+# 3. Server + pi in one go (expert cache on; add --static for the per-layer split)
+scripts/llm qwen36
 
 # ...with images enabled (projector runs on the CPU by default)
-bash scripts/start-qwen.sh --image
+scripts/llm qwen36 --image
 
 # One-shot question, leaves the server up
-bash scripts/start-qwen.sh -p "explain @README.md"
+scripts/llm qwen36 -p "explain @README.md"
 
 # Done for the day
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
 
-Prefer your own client? `QMODEL=qwen36 bash scripts/run-qwen.sh` starts just the server, an
-OpenAI-compatible API on `http://127.0.0.1:8080/v1`.
+Prefer your own client? `scripts/llm qwen36 serve` starts just the server, an
+OpenAI-compatible API on `http://127.0.0.1:8080/v1`. (The building block: `QMODEL=qwen36 bash scripts/run-qwen.sh`;
+every knob in [Knobs](#knobs) below still applies, e.g. `CTX=65536 scripts/llm qwen36`.)
 
 ## Official numbers
 
@@ -150,11 +147,12 @@ projector chewing on the CPU.
 
 ## Knobs
 
-All are env vars for `scripts/start-qwen.sh` / `scripts/run-qwen.sh` (`-h` lists everything).
+All are env vars for `scripts/llm qwen36` / `scripts/run-qwen.sh` (`-h` lists everything).
 
 | Knob | Default | What it does |
 |---|---|---|
 | `NCMOE` | 32 | layers whose experts stay in RAM; lower = faster, more VRAM; empty = all in RAM (~4.5 GB VRAM) |
+| `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `CTX` | 131072 | context window |
 | `KVQUANT` | q8_0 | KV cache type |
 | `TEMP` / `TOP_P` / `TOP_K` | 0.6 / 0.95 / 20 | sampling, from the card |

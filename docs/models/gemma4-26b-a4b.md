@@ -4,14 +4,15 @@
 >
 > | | |
 > |---|---|
-> | File | `gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf`, ~14 GB (13.26 GiB) |
+> | On disk | `gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf`, ~14 GB (13.26 GiB) |
 > | Where it lives | attention + KV cache on the GPU, most MoE experts in system RAM |
 > | Context | 32K by default; 64K for free; up to 128K with a quantized KV cache |
 > | Generation | **~23.5 tok/s** (CUDA) · ~4.9 tok/s (Vulkan) · ~1.9 tok/s (CPU only) |
 > | Prompt processing | ~63 tok/s (llama-bench, CUDA) |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), median 4.8 min per run |
 > | [Vision probe](../vision-probe.md) | **100%** overall (OCR, boxes, understanding, CAD), ~70 s per image |
-> | Launch | `BACKEND=cuda bash scripts/start.sh` |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm gemma` |
 
 ## What is it?
 
@@ -42,11 +43,12 @@ token. Then `--n-cpu-moe N` (the `NCMOE` knob) moves some experts back to the GP
 layer's experts cost ~0.45 GB, and at 32K context about 8 layers fit (`NCMOE=22`). The full story,
 with numbers, is in [How it fits](../how-it-fits.md).
 
-**Faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts instead of
+**Faster, same VRAM (2026-11-04, the default in `scripts/llm gemma`):** a GPU cache of the most recently used experts instead of
 fixed layers, with the CPU computing 95% of the misses: **30.0 vs 21.0 tok/s** at 32K (A/B/A). In a full
 pibench batch at 64K: 17/18 (the miss passed 5 of 6 hidden tests), decode 32.3 vs 25.6 tok/s, model time
 75 vs 93 min for all 18 runs.
-`KVQUANT=q8_0 MOE_CACHE=3267` (3500 at pibench's 64K) on our fork's `moe-offload` build;
+`KVQUANT=q8_0 MOE_CACHE=3267` (3500 at pibench's 64K; both are `MOE_CACHE=auto`) on our fork's `moe-cache-max-batch`
+build, the default build. `scripts/llm gemma` turns it on; `scripts/llm gemma --static` gives the classic `NCMOE` split;
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 
 **Its chat template wastes prompt processing in agent loops.** The GGUF's template renders the thinking
@@ -71,8 +73,8 @@ BACKEND=cuda bash scripts/setup.sh
 # 2. Register the local server with pi (once)
 bash scripts/configure-pi.sh
 
-# 3. Server + pi, in one go
-BACKEND=cuda bash scripts/start.sh
+# 3. Server + pi, in one go (32K, q8_0 KV, expert cache on, the template fix below; --static for the NCMOE split)
+scripts/llm gemma
 ```
 
 Don't want to build anything? `bash scripts/setup.sh` (Vulkan, the default) works on any driver,
@@ -81,14 +83,15 @@ it's just ~5× slower. More on that below.
 Other ways in:
 
 ```bash
-bash scripts/start.sh --menu                        # guided setup: backend, context, KV quant, images
-bash scripts/start.sh -p "summarize @README.md"     # one-shot; extra args go to pi
-CTX=131072 KVQUANT=q8_0 bash scripts/start.sh       # long context with a quantized KV cache
-bash scripts/start.sh --image                       # accept images (needs the projector, below)
-bash scripts/stop-server.sh                         # stop the server when you're done
+scripts/llm gemma -p "summarize @README.md"         # one-shot; extra args go to pi
+scripts/llm gemma --image                           # accept images (needs the projector, below)
+scripts/llm stop                                    # stop the server when you're done
 ```
 
-When `pi` exits, `start.sh` offers to stop the server it started (`STOP_ON_EXIT=1` always stops,
+The building block, `BACKEND=cuda bash scripts/start.sh` (the classic `NCMOE` split, no template fix), still works;
+every knob in [Knobs](#knobs) below still applies to both, e.g. `CTX=65536 scripts/llm gemma`. It adds a guided
+setup (`bash scripts/start.sh --menu`: backend, context, KV quant, images) and long context with a quantized KV
+cache (`CTX=131072 KVQUANT=q8_0 bash scripts/start.sh`). When `pi` exits, `start.sh` offers to stop the server it started (`STOP_ON_EXIT=1` always stops,
 `0` never does). On the first launch it can also **auto-tune** the expert split for your GPU and
 remember the result.
 
@@ -143,10 +146,14 @@ the Vulkan MoE path on Turing is simply slow. Moral: measure your backends.
 
 | Config | Context | Speed |
 |---|---:|---:|
-| `NCMOE=22` (default) | 32K | ~23 tok/s |
+| `NCMOE=22` | 32K | ~23 tok/s |
 | `NCMOE=20`, `KVQUANT=q8_0` | 64K | 30.5 tok/s |
 | `NCMOE=22`, `KVQUANT=q8_0` | 128K | 27.0 tok/s |
 | `--cpu-moe` (all experts in RAM), f16 KV | 128K | slower |
+
+`NCMOE=20` at 64K has since run out of memory at load (2026-11-04, recorded in `scripts/run-server.sh`'s header),
+so treat that row as a past measurement, not a safe setting. `run-server.sh`'s own default is no `NCMOE` (all
+experts in RAM); `start.sh` can auto-tune a value. See [Knobs](#knobs).
 
 A q8_0 KV cache frees ~1 GB at 64K and ~2 GB at 128K, which buys a faster expert split. Below
 ~64K it isn't worth it. Thanks to sliding-window attention, 64K decodes about as fast as 32K.
@@ -207,14 +214,15 @@ think for 4–7K tokens each.
 
 ## Knobs
 
-All are env vars for `scripts/start.sh` (forwarded to `scripts/run-server.sh`; `-h` lists them all).
+All are env vars for `scripts/llm gemma` and `scripts/start.sh` (both end in `scripts/run-server.sh`; `-h` lists them all).
 
 | Knob | What it does | Default |
 |---|---|---|
 | `BACKEND` | `cuda` \| `vulkan` \| `cpu` | auto (CUDA if built) |
 | `CTX` | context window in tokens | 32768 |
 | `NCMOE` | expert layers kept in RAM; lower = faster, more VRAM | all (or the auto-tuned value) |
-| `KVQUANT` | KV cache type: `q8_0` for long context | f16 (off) |
+| `KVQUANT` | KV cache type: `q8_0` for long context | f16 (off); q8_0 in `scripts/llm` |
+| `MOE_CACHE` | VRAM cache of the experts instead of `NCMOE`'s fixed layers | auto in `scripts/llm` (off with `--static` or in `start.sh`) |
 | `TEMP` / `TOP_P` / `TOP_K` | sampling (Unsloth's recommendation) | 1.0 / 0.95 / 64 |
 | `MTP` / `NMAX` | speculative decoding with the MTP head; draft length | off / 2 |
 | `AUTOTUNE` | measure the fastest `NCMOE` for your GPU (`1` force, `0` never) | ask once |

@@ -11,7 +11,8 @@
 > | Prompt processing | 167 tok/s (15.6K-token prompt) |
 > | [pibench](../pibench.md) | 16/18 solved (98% of hidden tests), **2.5 min per run** |
 > | [Vision probe](../vision-probe.md) | 88% overall |
-> | Launch | `QMODEL=distill bash scripts/start-qwen.sh` |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm distill` |
 
 ## What is it?
 
@@ -32,46 +33,45 @@ of 34 of the 40 layers in RAM. `NCMOE=32` runs out of VRAM at load (a 545 MiB `c
 fails). The KV cache is identical to the base model: 128K at q8_0 is about 1.42 GB. More in
 [how-it-fits.md](../how-it-fits.md).
 
-**Faster, same VRAM (2026-11-05, opt-in):** a GPU cache of the most recently used experts instead of fixed
+**Faster, same VRAM (2026-11-05, the default in `scripts/llm distill`):** a GPU cache of the most recently used experts instead of fixed
 layers, with the CPU computing 95% of the misses. At the same ~7.2 GB as `NCMOE=31`: **52.7 vs 39.3 tok/s**
 decode, 34.0 vs 30.8 after a 30K-token prompt. With batch 2048 (and a smaller cache to pay for it) long prompts
 run 2.3× faster (~500 vs ~215 tok/s) for ~3% of decode, so turns that read a file or start a session get much
 shorter. `QMODEL=distill MOE_CACHE=auto` sets both: 2770 MiB, batch 2048, which leaves room for a desktop
 using up to ~700 MiB of VRAM (the launcher shrinks the cache if more is in use at launch). It also lets batches of up to
 256 tokens use the cache (`--moe-cache-max-batch 256`), which cuts the prompt time of 48–200-token turns by
-30–43%. Needs our fork's `moe-cache-max-batch` build
+30–43%. `scripts/llm distill` turns it on (`--static`: the classic `NCMOE=34` split); it needs our fork's
+`moe-cache-max-batch` build, the default build
 ([how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch));
 measurements in [`bench/moe-cache/`](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05).
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# 1. Build toolchain + our llama.cpp fork (skip if you already have it)
-mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
-CUDA_VER=12.2 bash scripts/build-llama-cuda.sh
-
-# 2. Hugging Face CLI env for the download script (it wants `hf` inside this env)
+# 1. Hugging Face CLI env for the download script (it wants `hf` inside this env)
 mamba create -y -n llamacpp -c conda-forge huggingface_hub
 
-# 3. Download + sha256-check (~20.5 GB with the projector)
+# 2. Download + sha256-check (~20.5 GB with the projector)
 bash scripts/download-models.sh distill
 
-# 4. Server + pi
-QMODEL=distill bash scripts/start-qwen.sh
+# 3. Server + pi (expert cache on; add --static for the per-layer split)
+scripts/llm distill
 
 # ...with images
-QMODEL=distill bash scripts/start-qwen.sh --image
+scripts/llm distill --image
 
 # One-shot, leaves the server running
-QMODEL=distill bash scripts/start-qwen.sh -p "explain @README.md"
+scripts/llm distill -p "explain @README.md"
 
 # Stop it
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
 
-Server only, for any OpenAI-compatible client: `QMODEL=distill bash scripts/run-qwen.sh`.
+Server only, for any OpenAI-compatible client: `scripts/llm distill serve`. (The building block:
+`QMODEL=distill bash scripts/run-qwen.sh`; every knob in [Knobs](#knobs) below still applies, e.g.
+`CTX=65536 scripts/llm distill`.)
 
 ## Official numbers
 
@@ -137,11 +137,12 @@ The author also drove it by hand in pi for a while. Verdict: "not bad".
 
 ## Knobs
 
-Env vars for `scripts/start-qwen.sh` / `scripts/run-qwen.sh` with `QMODEL=distill`.
+Env vars for `scripts/llm distill` / `scripts/run-qwen.sh` with `QMODEL=distill`.
 
 | Knob | Default | What it does |
 |---|---|---|
 | `NCMOE` | 34 | layers whose experts stay in RAM (32 runs out of VRAM) |
+| `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `CTX` | 131072 | context window |
 | `KVQUANT` | q8_0 | KV cache type |
 | `TEMP` / `TOP_P` / `TOP_K` | 0.6 / 0.95 / 20 | sampling |

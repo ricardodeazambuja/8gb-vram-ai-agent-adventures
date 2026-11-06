@@ -271,7 +271,7 @@ symptoms like this live in [troubleshooting](troubleshooting.md).
 `--n-cpu-moe` (§1) puts *fixed* layers' experts on the GPU, whether or not the next token uses them. The
 GPU expert cache picks experts by use instead. Every expert lives in RAM (`--cpu-moe`), and llama.cpp keeps
 the recently used ones in a VRAM cache of a size you choose (`--moe-cache-mib`; upstream PRs
-[#29887](https://github.com/ggml-org/llama.cpp/pull/29887) and #30637, so already in our `adventures` build).
+[#29887](https://github.com/ggml-org/llama.cpp/pull/29887) and #30637, merged upstream).
 Consecutive tokens reuse many of the same experts: with 20% of Qwen3.6's experts in the cache, 77%
 of lookups hit.
 
@@ -302,18 +302,22 @@ Qwen3.6's is still 62% faster than static offload at the same VRAM. The method,
 scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
 
 ```bash
+scripts/llm qwen36            # scripts/llm turns the cache on for qwen36, distill, flint, ornith and gemma
+scripts/llm qwen36 --static   # the classic NCMOE split instead
+# the building blocks underneath:
 QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model, smaller if the desktop uses more VRAM than measured; or a MiB number
 QMODEL=distill MOE_CACHE=auto bash scripts/run-qwen.sh  # Qwen3.8: 2770 MiB, batch 2048, cache batch limit 256
-BACKEND=cuda KVQUANT=q8_0 MOE_CACHE=3267 bash scripts/run-server.sh   # Gemma 4 26B at 32K
+BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto bash scripts/run-server.sh   # Gemma 4 26B at 32K (3267 MiB)
 ```
 
-The flag isn't in upstream llama.cpp yet. Build our fork's
-[`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) branch:
-`LLAMA_REF=69ca796ddb1a9b62c342f047d50880bc43b3c023 bash scripts/build-llama-cuda.sh`. It is the
+`--moe-cache-cpu-share` and `--moe-cache-max-batch` aren't in upstream llama.cpp yet. Our default build has
+them: `bash scripts/build-llama-cuda.sh` builds our fork's
+[`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) branch
+(`69ca796dd`). It is the
 [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch (`adventures` +
 PR #30966's 8 commits, `3a72c57be`, on which the numbers above were measured) plus one commit that adds
-`--moe-cache-max-batch N` (default 32, so nothing else changes). Without it, `MOE_CACHE` fails at startup
-with an unknown flag; `moe-offload` alone works for every model except `QMODEL=distill MOE_CACHE=auto`.
+`--moe-cache-max-batch N` (default 32, so nothing else changes). An older build (the `adventures` branch)
+fails at startup with an unknown flag; `moe-offload` alone works for every model except `QMODEL=distill MOE_CACHE=auto`.
 
 **In real agent sessions too.** A full [pibench](pibench.md) batch with `MOE_CACHE=auto` (2026-11-04,
 18 attempts per model, same 64K/128K contexts as the scored batch) against the scored batch from 2026-10-23.

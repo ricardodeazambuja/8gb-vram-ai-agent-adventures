@@ -53,7 +53,7 @@ waiting. Weights only: every other file matches the base model.
 
 | Model | GGUF that fits | Fit here | Why test it |
 |---|---|---|---|
-| [ThinkingCap gemma-4-26B-A4B-it](https://huggingface.co/bottlecapai/ThinkingCap-gemma-4-26B-A4B-it-GGUF) | IQ4_XS 13.6 GB (Q4_K_M 17.0) + mmproj 1.2 | like our [Gemma 4 26B](models/gemma4-26b-a4b.md) | **First pick.** A clean A/B against a model we know well (18/18 on pibench): same score, shorter jobs? Ours is Google's QAT build (UD-Q4_K_XL); theirs starts from the regular one, so compare IQ4_XS vs QAT and keep that in mind. |
+| [ThinkingCap gemma-4-26B-A4B-it](https://huggingface.co/bottlecapai/ThinkingCap-gemma-4-26B-A4B-it-GGUF) | IQ4_XS 13.6 GB (Q4_K_M 17.0) + mmproj 1.2 | like our [Gemma 4 26B](models/gemma4-26b-a4b.md) | **Done:** [17/18 on pibench](models/thinkingcap-gemma4-26b-a4b.md), about half the thinking of the base (`scripts/llm thinkingcap`). |
 | [ThinkingCap Nemotron-3.5-Lightning-30B-A3B](https://huggingface.co/bottlecapai/ThinkingCap-NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF) | Q4_K_M 25.4 GB (only that or f16) | experts in RAM; bigger than Ornith, so browser closed | A new family for the lineup; LFM2.5's card benchmarks against its base. |
 | [ThinkingCap Qwen3.8-27B RCO-4.2bpw](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF-RCO-4.2bpw) | 14.3 GB + mmproj 0.9 | dense 27B, mostly on the CPU | Low priority: the plain 27B ran at 2.5 tok/s ([graveyard](graveyard.md)); shorter thinking won't rescue that. Check that llama.cpp reads RCO first. |
 | ThinkingCap Qwen3.8-Flash-Next | ≥ 100 GB at IQ4_XS | no | Same reason as the base in the graveyard. |
@@ -69,11 +69,11 @@ models (1.7–2.2B) on a new "tri-hybrid" architecture (24 layers: 13 gated shor
 Q4_K_M. Same license as [LFM2.5](models/lfm2.5-24b-a2b.md): commercial use only below $10M
 annual revenue.
 
-**Needs a new llama.cpp build:** support was merged on 2026-10-27
+Support was merged upstream on 2026-10-27
 ([#31252](https://github.com/ggml-org/llama.cpp/pull/31252) LFM3-1.7B + VL,
-[#31257](https://github.com/ggml-org/llama.cpp/pull/31257) Audio + Omni); our
-`vendor/flint-llama.cpp` (Oct 21) has no `lfm3` arch. Video input is still an open PR (#31283).
-One rebuild covers this and the RPATH chore below.
+[#31257](https://github.com/ggml-org/llama.cpp/pull/31257) Audio + Omni) and is in our build. Video input
+is still an open PR (#31283). Measured: [LFM3-1.7B](models/lfm3-1.7b.md), [LFM3-VL-2B](models/lfm3-vl-2b.md),
+[LFM3-Audio-2B](models/lfm3-audio-2b.md) and [d1-2B](models/d1-2b.md); the table is what we expected going in.
 
 | Model | What it is | Why test it |
 |---|---|---|
@@ -306,7 +306,8 @@ years ago, but it's no longer the best fit for this laptop. Sizes in the candida
 Hugging Face, and its speed and VRAM figures are vendor or blog claims.
 
 Measured so far: **[Making pictures on 8 GB](image-generation.md)**. FLUX.2 Klein 4B is the everyday pick
-(23 s, 3.5 GB). The rest of this section is the plan.
+(23 s, 3.5 GB); Iris-3B and SDXL are measured there too, and `scripts/imagine` runs all three. The rest of
+this section is the original plan; the other candidates are untested.
 
 **Runner:** [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), the llama.cpp of
 image models: ggml, CUDA, GGUF, and every model below is on its list. That keeps our "everything in
@@ -436,7 +437,7 @@ What it needs before it runs here:
 - **Fewer workers.** Eight slots × 64K context is a 48 GB Mac's budget. Here: 2–4 slots and a
   smaller context, then measure whether the extra slots still buy throughput when the experts
   live in RAM.
-- Use it as a pinned, reviewed checkout under `vendor/`, not `pip install` from the repo.
+- Use it as a pinned, reviewed checkout next to this repo, not `pip install` from the repo.
 
 ## Chores
 

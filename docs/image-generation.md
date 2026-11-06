@@ -64,12 +64,29 @@ mamba run -n llamacpp-cuda bash -c 'cd ../stable-diffusion.cpp && \
   cmake -B build -DSD_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DCMAKE_BUILD_TYPE=Release && \
   cmake --build build -j6'
 
-bash scripts/download-models.sh klein kleinte kleinvae        # ~5.3 GB
-python3 bench/imagegen/run_gen.py klein --quick               # one picture
+bash scripts/download-models.sh klein kleinte kleinvae        # ~5.3 GB (iris iriste, sdxl sdxlvae for the others)
 python3 bench/imagegen/run_gen.py klein iris sdxl             # the table above
 ```
 
-Pictures land in `models/image-gen/out/`, timings in [`bench/imagegen/results/`](../bench/imagegen/results/).
+For your own pictures, [`scripts/imagine`](../scripts/imagine) wraps `sd-cli` with each model's measured
+settings and prints the path of what it made:
+
+```bash
+scripts/imagine "a red fox in the snow"                       # Klein, 1024x1024, random seed
+scripts/imagine "a shop sign that says OPEN" -m iris          # Iris-3B Turbo: the cleanest text
+scripts/imagine "an oil painting of a harbour" -m sdxl        # SDXL, 25 steps
+scripts/imagine "a castle" -n 4 --seed 7 --size 768x1344      # four pictures, seeds 7-10
+scripts/imagine "the same street at night" -i in.png          # img2img (--strength 0.7)
+scripts/imagine "a red door" -i in.png --mask mask.png        # inpaint: white = redraw
+scripts/imagine "the cat wearing a hat" -r cat.png            # reference edit, Klein only
+scripts/imagine "a portrait, sks style" -m sdxl --lora path/to/pytorch_lora_weights.safetensors
+scripts/imagine "..." --dry-run                               # just print the sd-cli command
+```
+
+Each picture gets a `.json` next to it with the prompt, the seed and the exact command. `imagine`
+refuses while a llama-server holds the GPU (`scripts/llm stop` first) and runs `sd-cli` in its own
+systemd scope. Pictures land in `models/image-gen/out/`, benchmark timings in
+[`bench/imagegen/results/`](../bench/imagegen/results/).
 All the downloads are pinned and sha256-checked, and their audits are in
 [Security](security.md#audits-so-far).
 

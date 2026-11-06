@@ -10,7 +10,7 @@
 > | [Visual control](../visual-control.md#locateanything-3b-boxes-instead-of-tool-calls) | pick 30/30, click 24/24, real web pages 42/48 |
 > | [Security audit](../security.md) | clean |
 > | Licence | academic and non-profit research only |
-> | Launch | `QMODEL=locate bash scripts/run-qwen.sh --image` |
+> | Launch | `scripts/llm locate` · [`examples/locate.py`](../../examples/locate.py) |
 
 ## What is it?
 
@@ -33,8 +33,11 @@ It needs our [llama.cpp fork](../reproduce.md#setup), which carries the projecto
 
 ```bash
 bash scripts/download-models.sh locate
-QMODEL=locate bash scripts/run-qwen.sh --image     # server on port 8080, with --special
+scripts/llm locate                                 # server on port 8080, projector and --special on
 ```
+
+[`examples/locate.py`](../../examples/locate.py) asks it for boxes. (The building block:
+`QMODEL=locate bash scripts/run-qwen.sh --image`.)
 
 Send an image and one of two prompts to `/v1/chat/completions`:
 
@@ -77,7 +80,7 @@ IoU >= 0.5, mean IoU 0.94, 0.2 s each (2.4 s for the first query on a new image,
 The detect-all prompt (`circle</c>square</c>triangle</c>star`) found 15/15, 0.6–0.8 s per image,
 and answers `<box>None</box>` for a class that isn't there. Output is 0–1000 normalised
 `x1 y1 x2 y2`. So the GGUF port's Q/K order is right. The port now lives in our llama.cpp fork (see
-Chores), and `QMODEL=locate bash scripts/run-qwen.sh --image` starts it (with `--special`).
+Chores), and `scripts/llm locate` starts it (with `--special`).
 
 **Click, pick and real pages (2026-10-30):** results in the
 [visual control probe](../visual-control.md#locateanything-3b-boxes-instead-of-tool-calls). Finds what

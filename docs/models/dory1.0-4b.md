@@ -4,14 +4,15 @@
 >
 > | | |
 > |---|---|
-> | Size on disk | 3.67 GB (`Q5_K_M`) |
+> | On disk | 3.67 GB (`Q5_K_M`) |
 > | Where it lives | everything on the GPU (5.7 GB used at 64K) |
 > | Context | **64K** (128K with `LOOP_KV=last_loop`) |
 > | Generation | 29.3 tok/s at 2 loops, 17.7 tok/s at 4 |
 > | Prompt processing | 852 tok/s at 2 loops (15.8K-token prompt) |
 > | [pibench](../pibench.md) | **14/18**, 95% of hidden tests (2026-11-02) |
 > | [Vision probe](../vision-probe.md) | not run (text only) |
-> | Launch | `bash scripts/start_dory.sh` |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm dory` |
 
 ## What is it?
 
@@ -52,32 +53,30 @@ is upstream of 2026-10-28 with that PR (at `43e865ec`, the version measured here
 it serves the other new models too ([getting-started](../getting-started.md#3-build-llamacpp-once-per-flavour)).
 The numbers on this page were first measured on the PR's own base (upstream of 2026-10-15, kept
 as `patches/llama.cpp-dory-pr30306.patch`); the fork build gives the same, 29.7 tok/s and
-867 tok/s prompt (2026-10-30).
+867 tok/s prompt (2026-10-30). Build our llama.cpp once: [getting-started.md](../getting-started.md).
 
 ```bash
-# 1. Build our llama.cpp (fork, adventures branch, pinned) next to this repo (~20 min)
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
-# 2. Download the Q5_K_M GGUF (3.67 GB), pinned revision, sha256-checked
+# 1. Download the Q5_K_M GGUF (3.67 GB), pinned revision, sha256-checked
 bash scripts/download-models.sh dory
 
-# 3. Serve it and open pi (2 loops, 64K)
-bash scripts/start_dory.sh
+# 2. Serve it and open pi (2 loops, 64K)
+scripts/llm dory
 
 # Turn the dial: 4 loops is more accurate and ~40% slower
-LOOPS=4 bash scripts/start_dory.sh
+LOOPS=4 scripts/llm dory
 
 # 128K context at 2 loops
-CTX=131072 LOOP_KV=last_loop bash scripts/start_dory.sh
+CTX=131072 LOOP_KV=last_loop scripts/llm dory
 
 # One question, no chat:
-bash scripts/start_dory.sh -p "explain @README.md" --no-session </dev/null
+scripts/llm dory -p "explain @README.md" --no-session </dev/null
 
 # Done? Free the GPU:
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
+
+(The building block: `bash scripts/start_dory.sh`, or `QMODEL=dory bash scripts/run-qwen.sh` for the server
+alone; every knob in [Knobs](#knobs) below still applies.)
 
 The same build also runs [Spark-X2.6-4B](spark-x2.6-4b.md), so you get two models for one
 compile.

@@ -11,7 +11,7 @@
 > | Grading pibench | 86% accuracy, 4/189 false alarms, 1.6 s a transcript |
 > | Command guard | 8/10 scary-but-safe right, 1/20 dangerous let through, 207 ms |
 > | [Security audit](../security.md) | passed, with one WARN that we read and explained |
-> | Launch | `QMODEL=clefflash bash scripts/run-qwen.sh` |
+> | Launch | `scripts/llm clefflash` · [`examples/decide.py`](../../examples/decide.py) |
 
 Pick this when false alarms cost more than memory. [d1-2B](d1-2b.md) is about 7× faster in a third of
 the memory, but cries wolf more often.
@@ -37,9 +37,11 @@ transcripts, routing a request to the right local model, "is this tool call safe
 
 ## Install & run
 
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
+
 ```bash
 bash scripts/download-models.sh clefflash
-QMODEL=clefflash bash scripts/run-qwen.sh     # server on port 8080, -c 8192 -ub 4096
+scripts/llm clefflash                         # server on port 8080, -c 8192 -ub 4096 (it only serves; no pi)
 curl -s localhost:8080/v1/systemone -H 'Content-Type: application/json' -d '{
   "state": "rm -rf ~/",
   "questions": {"safe": {"type": "choice",
@@ -49,7 +51,8 @@ curl -s localhost:8080/v1/systemone -H 'Content-Type: application/json' -d '{
 ```
 
 The reply has the choice and a probability for each option. Questions can be `choice` or `noul`
-(yes/no). `bash bench/smoke/run.sh clefflash` is the quick check,
+(yes/no). [`examples/decide.py`](../../examples/decide.py) wraps this request. (The building block:
+`QMODEL=clefflash bash scripts/run-qwen.sh`.) `bash bench/smoke/run.sh clefflash` is the quick check,
 `python3 bench/grading/run_guard.py KEY` runs the command guard, and `run_judge.py` grades pibench
 transcripts.
 

@@ -4,13 +4,15 @@
 >
 > | | |
 > |---|---|
-> | File | NVIDIA's own "24GB" GGUF, 22.0 GB (+ 1.7 GB vision projector) |
+> | On disk | NVIDIA's own "24GB" GGUF, 22.0 GB (+ 1.7 GB vision projector) |
 > | Where it lives | Always-on layers on the GPU (6.6 GB VRAM), every expert in RAM |
 > | Context | 128K (the model does 256K) |
-> | Speed | **14 tok/s** generating, **310 tok/s** reading a prompt |
-> | pibench | **15/18** (93 % of hidden tests) |
-> | Vision probe | **91 %** |
-> | Launcher | `bash scripts/start_bolt.sh` |
+> | Generation | **14 tok/s** |
+> | Prompt processing | **310 tok/s** |
+> | [pibench](../pibench.md) | **15/18** (93 % of hidden tests) |
+> | [Vision probe](../vision-probe.md) | **91 %** |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm bolt` |
 
 ## What is it?
 
@@ -40,23 +42,22 @@ side sets the pace. The one knob that matters is the batch size, which doubles p
 
 ## Install & run
 
-It runs on the same llama.cpp build as Flint (Bolt support landed upstream on 2026-10-14):
+It runs on the same llama.cpp build as Flint (Bolt support landed upstream on 2026-10-14). Build our llama.cpp
+once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# once: our llama.cpp (fork, adventures branch; see getting-started for the toolchain)
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
 # once: 22 GB + 1.7 GB, pinned and sha256-checked
 bash scripts/download-models.sh bolt
 
 # go
-bash scripts/start_bolt.sh                     # server + pi
-bash scripts/start_bolt.sh --image             # with vision (projector on the CPU)
-bash scripts/start_bolt.sh -p "explain @README.md" --no-session </dev/null
-bash scripts/stop-server.sh
+scripts/llm bolt                               # server + pi
+scripts/llm bolt --image                       # with vision (projector on the CPU)
+scripts/llm bolt -p "explain @README.md" --no-session </dev/null
+scripts/llm stop
 ```
+
+(The building block: `bash scripts/start_bolt.sh`, or `QMODEL=bolt bash scripts/run-qwen.sh` for the server
+alone; every knob in [Knobs](#knobs) below still applies.)
 
 You need about 22 GB of free RAM for the experts. On our 32 GB laptop it fit next to a desktop
 session with room to spare.
@@ -106,8 +107,8 @@ Against the other big models that run 128K here (all our measurements; full tabl
 | | **Bolt 74B** | Flint | Gemma 4 26B | Qwen3.6 | Qwen3.8 distill |
 |---|---:|---:|---:|---:|---:|
 | Parameters (active) | **74B (9B)** | 40B (2.5B) | 26B (4B) | 35B (3B) | 35B (3B) |
-| Generation | 14.0 t/s | 24.3 t/s | 23.5 t/s | 22.8 t/s | **26.2 t/s** |
-| Prompt speed | 310 t/s | **542 t/s** | — | 221 t/s | 167 t/s |
+| Generation | 14.0 tok/s | 24.3 tok/s | 23.5 tok/s | 22.8 tok/s | **26.2 tok/s** |
+| Prompt speed | 310 tok/s | **542 tok/s** | — | 221 tok/s | 167 tok/s |
 | pibench | 15/18 | **18/18** | **18/18** | 16/18 | 16/18 |
 | Median time per attempt | 6.4 min | 4.3 min | 4.8 min | 3.4 min | **2.5 min** |
 | Vision probe | 91 % | text only | **100 %** | **100 %** | 88 % |

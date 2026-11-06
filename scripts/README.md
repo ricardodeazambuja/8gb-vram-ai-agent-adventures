@@ -7,6 +7,17 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 > in [getting started](../docs/getting-started.md). This file is what you reach for once you want
 > to change a knob.
 
+## Start here
+
+| Script | What it does |
+|---|---|
+| **`llm`** | **Any model by name, with its tested settings.** `scripts/llm list` shows them all; `scripts/llm groot` starts the server and opens pi; `scripts/llm lfm3vl` starts a vision or helper server and prints its URL; `serve`, `pi`, `--fg`, `--image`, `--static`; `scripts/llm status`, `scripts/llm stop`. It turns on the [MoE expert cache](../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch) for qwen36, distill, flint, ornith and gemma, runs the server in its own systemd scope (`llm-<name>`), refuses a big model when RAM is short and stops it if memory pressure climbs while it loads, and never replaces a different model already on the port. Every knob below still works (`CTX=65536 scripts/llm flint`). |
+| **`imagine`** | **Pictures**, from the command line: `scripts/imagine "a red fox" [-m klein\|iris\|sdxl] [-n 4] [--seed N] [--size WxH] [-i in.png [--mask m.png]] [-r ref.png] [--lora FILE[:w]] [--dry-run]`. Each model's measured settings, a `.json` with the prompt, seed and command next to every picture, refuses while a llama-server holds the GPU. `scripts/imagine --list` shows the models. |
+| [`../examples/`](../examples/README.md) | The helper models from Python: `search.py`, `decide.py`, `look.py`, `locate.py`, `listen.py`, `speak.py`, `chat.py`. |
+
+The rest of this page is the machinery underneath: `llm` calls `run-qwen.sh` / `run-server.sh` (they hold
+every per-model setting; `PRINT_CONFIG=1` prints what they resolved) and `start-qwen.sh` for pi.
+
 ## Once
 
 | Script | What it does |
@@ -22,9 +33,10 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 |---|---|
 | `start.sh` | **Gemma 4 26B**, all-in-one: server + wait + pi, cleans up on exit. `--menu` walks you through every knob; first launch offers to auto-tune. Knobs below. |
 | `run-server.sh` | **Gemma 4 26B**, server only (`--cpu-moe`, 32K, port 8080). `--image` loads the vision projector. |
-| `start-qwen.sh` / `run-qwen.sh` | **Every other MoE and small model**, picked with `QMODEL=qwen36 \| distill \| flint \| bolt \| e4b \| bonsai2 \| qwen3vl \| lfm3vl \| lfm25vl \| dory \| spark`: server + pi, or server only. Per-model defaults (context, offload, KV type, sampling, build) are in `run-qwen.sh -h`. |
-| `start_flint.sh`, `start_bolt.sh`, `start_e4b.sh`, `start_bonsai2.sh`, `start_spark.sh`, `start_dory.sh`, `start_qwen3vl.sh` | One-word launchers for those models: `start-qwen.sh` with the right `QMODEL` and pi flags, refusing to start if another model already holds the port. |
-| `run-qwen.sh` with `QMODEL=lfm3audio \| eg2 \| d1 \| clefflash` | **The helpers**, server only: speech, embeddings and decision models. Their [pages](../docs/models/) show how to call them. |
+| `start-qwen.sh` / `run-qwen.sh` | **Every other model**, picked with `QMODEL=` (the same names as `scripts/llm`: qwen36, distill, flint, groot, ornith, lfm25, bolt, e4b, bonsai2, bonsai2q2, qwen3vl, dory, spark, lfm3, lfm3vl, lfm25vl, locate, vibe3b, vibe15, twil): server + pi, or server only. Per-model defaults (context, offload, KV type, sampling) are in `run-qwen.sh -h`. `MOE_CACHE=auto` turns on the expert cache (the measured size per model, shrunk for a busy desktop); `scripts/llm` sets it for you. |
+| `start_flint.sh`, `start_bolt.sh`, `start_e4b.sh`, `start_bonsai2.sh`, `start_spark.sh`, `start_dory.sh`, `start_qwen3vl.sh` | The older one-word launchers: `start-qwen.sh` with the right `QMODEL` and pi flags, refusing to start if another model already holds the port. `scripts/llm` covers them all. |
+| `start_vibethinker.sh`, `vibethinker-toolshim.py` | VibeThinker as a pi agent: the server, a shim that turns its own tool-call formats into OpenAI ones (port 8088), then pi. `scripts/llm vibe3b` uses it. `test-toolshim.py` + `vibethinker-toolshim-fixtures.json` test the shim offline. |
+| `run-qwen.sh` with `QMODEL=lfm3audio \| eg2 \| d1 \| clefflash \| locate` | **The helpers**, server only: speech, embeddings, decisions and boxes. [`../examples/`](../examples/README.md) shows how to call them. |
 | `run-pi.sh` | Opens pi against whatever is serving on port 8080. |
 | `stop-server.sh` | Stops the server listening on the port (default 8080). |
 
@@ -48,7 +60,8 @@ For the other models, run `bash scripts/run-qwen.sh -h` and see their [model pag
 ## Useful overrides
 
 ```bash
-NCMOE=22    bash scripts/run-server.sh    # FASTEST on 8 GB: 8 expert layers on GPU (default is all-CPU experts)
+CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto bash scripts/run-server.sh   # FASTEST: the expert cache, 30.0 vs 21.0 tok/s (what scripts/llm gemma runs)
+NCMOE=22    bash scripts/run-server.sh    # the classic split: 8 expert layers on GPU (default is all-CPU experts)
 CTX=65536   bash scripts/run-server.sh    # bigger context (see the ceiling table below)
 BACKEND=cuda bash scripts/run-server.sh   # force native CUDA backend (auto-selected once built)
 BACKEND=cpu bash scripts/run-server.sh    # no GPU offload — slow, benchmark baseline only

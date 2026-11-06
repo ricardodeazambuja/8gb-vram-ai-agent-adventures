@@ -45,7 +45,11 @@ everything here was tested on. Build only what you need
 
 | Build | For | Command |
 |---|---|---|
-| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306 + [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) for `PTQ1_0`) | Bonsai 2 27B, Gemma 4 26B, Qwen3.6, the Qwen3.8 distill, Qwen3-VL, Dory, Spark, Flint, Nemotron Bolt 74B and E4B, Groot, Ornith, LFM2.5-24B, LFM3, LFM3-VL, LocateAnything, Clef-Flash | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
+| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) at `69ca796dd`: the [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) branch (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306 + [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) for `PTQ1_0`) + the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch) | every model in `scripts/llm list` | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
+| `../llama.cpp`, extra target | text to speech with LFM3-Audio ([`examples/speak.py`](../examples/speak.py)) | `(cd ../llama.cpp && cmake --build build --target llama-tts)` |
+
+The script treats `../llama.cpp` as its own checkout: if you already have a clone there with a branch
+checked out, it refuses to touch it. Build that one in place, or pass `SRC_DIR=/somewhere/else`.
 
 `CUDA_VER=12.2` matters: without it the script picks your driver's CUDA version for the
 toolkit. The GPU architecture is auto-detected (override with `CUDA_ARCH=86` and friends).
@@ -69,10 +73,12 @@ you get the very bytes we tested. A file that fails the check is deleted, becaus
 load fine and still be corrupt (we learned this the [hard way](troubleshooting.md)).
 
 ```bash
-bash scripts/setup.sh                                  # Gemma 4 26B-A4B (~14 GB) + the llamacpp env
-bash scripts/download-models.sh flint            # or any of: qwen36 distill bonsai2 qwen3vl dory spark flint bolt e4b
+bash scripts/setup.sh                       # Gemma 4 26B-A4B (~14 GB) + the llamacpp env
+bash scripts/download-models.sh groot       # any name from `scripts/llm list`; several at once is fine
+bash scripts/download-models.sh -h          # the full list, including the picture models
 ```
 
+`scripts/llm list` shows which models are downloaded, and the download command for the rest.
 
 ## 6. Install pi and point it at your laptop
 
@@ -88,28 +94,46 @@ The launchers keep pi's context window in sync with the server, so you only do t
 
 ## 7. Go
 
-Every model has a one-word launcher that starts the server, waits for it, and opens pi:
+One launcher for every model. It starts the server with the model's tested settings, waits for it,
+and opens pi (chat models) or prints the server's URL (vision and helper models):
 
 ```bash
-BACKEND=cuda bash scripts/start.sh     # Gemma 4 26B-A4B
-bash scripts/start_flint.sh            # Flint
-QMODEL=qwen36 bash scripts/start-qwen.sh
+scripts/llm list                       # what's here and what each one is for
+scripts/llm gemma                      # Gemma 4 26B-A4B + pi
+scripts/llm groot                      # Groot + pi
+scripts/llm lfm3vl                     # a vision model: just the server, on http://127.0.0.1:8080/v1
+scripts/llm status                     # what's running
+scripts/llm stop                       # stop it
 ```
 
-The full list is in the [README](../README.md#the-lineup). One model at a time: they all
-listen on port 8080 and each one wants the whole GPU. When you're done:
+One model at a time: they all listen on port 8080 and each one wants the whole GPU, so `scripts/llm`
+refuses to start a second one. Want a one-shot answer instead of a chat? Any pi flag passes through:
 
 ```bash
-bash scripts/stop-server.sh
+scripts/llm flint -p "explain @README.md" --no-session
 ```
 
-Want a one-shot answer instead of a chat? Any pi flag passes through:
+The older launchers (`scripts/start.sh`, `start_flint.sh`, `QMODEL=... start-qwen.sh`) still work; they
+are what `scripts/llm` builds on. [`scripts/README.md`](../scripts/README.md) has every knob.
+
+## 8. Pictures (optional)
+
+The image models run on [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), built
+next to this repo with the same toolchain: the commands are in
+[Making pictures](image-generation.md#run-it-yourself). Then:
 
 ```bash
-bash scripts/start_flint.sh -p "explain @README.md" --no-session </dev/null
+bash scripts/download-models.sh klein kleinte kleinvae      # FLUX.2 Klein, ~5.3 GB
+scripts/imagine "a red fox in the snow"                    # prints the path of the picture
 ```
 
-(The `</dev/null` is not decoration: without it `pi -p` waits for input that never comes.)
+`scripts/imagine -h` has every option (other models, sizes, seeds, img2img, inpainting, reference edits).
+
+## 9. The helpers from Python
+
+[`examples/`](../examples/README.md) has a short script per helper model: search with EmbeddingGemma,
+decisions with d1 or Clef-Flash, pictures in and tool calls out with LFM3-VL, boxes with LocateAnything,
+speech in and out with LFM3-Audio. Each starts its model with `scripts/llm` and stops it afterwards.
 
 ## Something went sideways?
 

@@ -11,9 +11,9 @@
 > | Prompt processing | **~940 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 3.1K–3.3K tokens |
 > | [pibench](../pibench.md) | 10/18 solved (86% of hidden tests), 4.2 min median per run |
-> | Vision | none (text only) |
+> | [Vision probe](../vision-probe.md) | none (text only) |
 > | [Security audit](../security.md) | clean |
-> | Launch | `QMODEL=lfm25 bash scripts/start-qwen.sh` |
+> | Launch | `scripts/llm lfm25` |
 
 ## What is it?
 
@@ -48,27 +48,23 @@ the speed gap (1.25) roughly.
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# 1. Our llama.cpp (fork, adventures branch, pinned; upstream of 2026-10-28)
-#    (skip if you already built it for another model)
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
-# 2. Download + sha256-check (~13.6 GB), then audit it
+# 1. Download + sha256-check (~13.6 GB), then audit it
 bash scripts/download-models.sh lfm25
 bash utils/audit-gguf.sh models/lfm2.5-24b-a2b/LFM2.5-24B-A2B-QAD-Q4_0.gguf
 
-# 3. Server + pi
-QMODEL=lfm25 bash scripts/start-qwen.sh
+# 2. Server + pi
+scripts/llm lfm25
 
 # Stop it
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
 
-Server only, for any OpenAI-compatible client: `QMODEL=lfm25 bash scripts/run-qwen.sh`.
+Server only, for any OpenAI-compatible client: `scripts/llm lfm25 serve`. (The building block:
+`QMODEL=lfm25 bash scripts/run-qwen.sh`; every knob in [Knobs](#knobs) below still applies, e.g.
+`CTX=65536 scripts/llm lfm25`.)
 
 ## Official numbers
 
@@ -148,7 +144,7 @@ times may be a little high.)
 
 ## Knobs
 
-Env vars for `scripts/start-qwen.sh` / `scripts/run-qwen.sh` with `QMODEL=lfm25`.
+Env vars for `scripts/llm lfm25` / `scripts/run-qwen.sh` with `QMODEL=lfm25`.
 
 | Knob | Default | What it does |
 |---|---|---|

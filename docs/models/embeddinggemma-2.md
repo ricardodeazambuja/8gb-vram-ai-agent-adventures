@@ -10,7 +10,7 @@
 > | Speed | 270–280 short passages/s; 49 doc chunks/s |
 > | Repo search | 80% top hit on docs; 93% top hit on code when fused with BM25 |
 > | [Security audit](../security.md) | clean |
-> | Launch | `QMODEL=eg2 bash scripts/run-qwen.sh` |
+> | Launch | `scripts/llm eg2` · [`examples/search.py`](../../examples/search.py) |
 
 ## What is it?
 
@@ -28,9 +28,11 @@ enough to share the GPU (or run on the CPU). llama.cpp: arch `gemma-embedding2`;
 
 ## Install & run
 
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
+
 ```bash
 bash scripts/download-models.sh eg2
-QMODEL=eg2 bash scripts/run-qwen.sh     # server on port 8080, 4 slots
+scripts/llm eg2                         # server on port 8080, 4 slots (it only serves; no pi)
 curl -s localhost:8080/v1/embeddings -H 'Content-Type: application/json' \
   -d '{"input":["task: search result | query: how do I stop the server?"]}'
 ```
@@ -38,6 +40,7 @@ curl -s localhost:8080/v1/embeddings -H 'Content-Type: application/json' \
 Use the task prefixes: `task: search result | query: ...` for questions and
 `title: none | text: ...` for documents. `python3 bench/retrieval/run_retrieval.py embed KEY` scores
 repo search, and `bash bench/smoke/run.sh eg2` is the quick check.
+[`examples/search.py`](../../examples/search.py) searches with it. (The building block: `QMODEL=eg2 bash scripts/run-qwen.sh`.)
 
 ## Our numbers
 

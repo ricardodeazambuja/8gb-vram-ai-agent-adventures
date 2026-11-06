@@ -8,7 +8,7 @@
 > | Where it lives | entirely on the GPU (1.5 GB VRAM at 32K context) |
 > | Per decision | 0.1 s once tuned |
 > | [Security audit](../security.md) | clean |
-> | Launch | `QMODEL=lfm25vl bash scripts/run-qwen.sh --image` |
+> | Launch | `scripts/llm lfm25vl` |
 
 ## What is it?
 
@@ -20,8 +20,10 @@ are on the [fine-tuning page](../fine-tuning.md).
 
 ```bash
 bash scripts/download-models.sh lfm25vl
-QMODEL=lfm25vl bash scripts/run-qwen.sh --image
+scripts/llm lfm25vl          # the server, with its projector; `scripts/llm lfm25vl pi` to chat
 ```
+
+(The building block: `QMODEL=lfm25vl bash scripts/run-qwen.sh --image`.)
 
 It uses our [llama.cpp fork](../reproduce.md#setup), which has the one-line fix that makes tools work.
 To run a tuned model, point `MODEL` at the baked file:

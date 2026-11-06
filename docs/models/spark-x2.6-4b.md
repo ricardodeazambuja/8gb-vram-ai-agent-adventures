@@ -4,14 +4,15 @@
 >
 > | | |
 > |---|---|
-> | Size on disk | 4.07 GiB (`Q8_0`) |
+> | On disk | 4.07 GiB (`Q8_0`) |
 > | Where it lives | everything on the GPU (~7.4 GB used) |
 > | Context | **108K** (110,592 tokens) |
 > | Generation | **~48–50 tok/s**, behind only LFM3 (106) and the Nemotron Bolt E4B (52) |
 > | Prompt processing | ~1,450–1,620 tok/s |
 > | [pibench](../pibench.md) | 14/18 solved, 3.3 min median per run |
 > | [Vision probe](../vision-probe.md) | not run (text only) |
-> | Launch | `bash scripts/start_spark.sh` |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm spark` |
 
 ## What is it?
 
@@ -42,30 +43,28 @@ the measured fit, with ~0.3 GB to spare. See [How it fits](../how-it-fits.md).
 Spark's architecture is in upstream llama.cpp (since PR #27868, 2026-09-06). The repo runs it on
 our llama.cpp fork's `adventures` branch (upstream of 2026-10-28 plus two PRs; see
 [getting-started](../getting-started.md#3-build-llamacpp-once-per-flavour)), the same build as
-[Dory](dory1.0-4b.md). If you already built it, skip step 1. (First measured on upstream of
+[Dory](dory1.0-4b.md). Build our llama.cpp once: [getting-started.md](../getting-started.md). (First measured on upstream of
 2026-10-15; the fork build gives 49.8 tok/s and 1,641 tok/s prompt, 2026-10-30.)
 
 ```bash
-# 1. Build our llama.cpp (fork, adventures branch, pinned) next to this repo (~20 min)
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
-# 2. Download the official Q8_0 GGUF, pinned revision, sha256-checked
+# 1. Download the official Q8_0 GGUF, pinned revision, sha256-checked
 bash scripts/download-models.sh spark
 
-# 3. Serve it and open pi
-bash scripts/start_spark.sh
+# 2. Serve it and open pi
+scripts/llm spark
 
 # Smaller context, more VRAM headroom:
-CTX=65536 bash scripts/start_spark.sh
+CTX=65536 scripts/llm spark
 
 # One question, no chat:
-bash scripts/start_spark.sh -p "explain @README.md" --no-session </dev/null
+scripts/llm spark -p "explain @README.md" --no-session </dev/null
 
 # Done? Free the GPU:
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
+
+(The building block: `bash scripts/start_spark.sh`, or `QMODEL=spark bash scripts/run-qwen.sh` for the server
+alone; every knob in [Knobs](#knobs) below still applies.)
 
 **Thinking level:** `start_spark.sh` runs pi with `--thinking high`. pi sends its thinking level
 as the request's `reasoning_effort`, and Spark's chat template accepts only `high` or `low`. pi's
@@ -132,7 +131,7 @@ each.
   92 MiB, not enough for 128K. The official Q4_K_M (3.3 GiB) would free ~0.8 GB for full 128K,
   but nobody has tried it here yet.
 - **Leftover servers.** If a run is killed or times out, an orphaned llama-server can keep the
-  GPU; `bash scripts/stop-server.sh` (or `kill -9` as a last resort).
+  GPU; `scripts/llm stop --force` (or `kill -9` as a last resort).
 - **Harmless log noise:** `added <｜end▁of▁sentence｜> logit bias = -inf` concerns the warm-up
   request only.
 

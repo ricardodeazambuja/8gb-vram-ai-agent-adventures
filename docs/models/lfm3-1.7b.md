@@ -12,7 +12,7 @@
 > | Code check | correct twice, 0/500 wrong, but needs **5.9K–6.9K tokens** (fails at the usual 6K cap) |
 > | [pibench](../pibench.md) | **12/18 solved** (88% of hidden tests), 2.2 min median per run |
 > | [Security audit](../security.md) | clean |
-> | Launch | `QMODEL=lfm3 bash scripts/start-qwen.sh` (needs the newer llama.cpp build, below) |
+> | Launch | `scripts/llm lfm3` |
 
 ## What is it?
 
@@ -31,27 +31,24 @@ its 24 layers keep full-length attention. 3.7 GB in all, so there's room left fo
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md) (LFM3 support is upstream PR #31252; these
+numbers were measured on our fork at upstream 8ca4060). Then:
 
 ```bash
-# 1. A llama.cpp from after 2026-10-27 (LFM3 support: PR #31252): our fork's adventures
-#    branch, upstream 8ca4060 (where these numbers were measured) plus two model PRs
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
-# 2. Download + sha256-check (1.85 GB), then audit it
+# 1. Download + sha256-check (1.85 GB), then audit it
 bash scripts/download-models.sh lfm3
 bash utils/audit-gguf.sh models/lfm3-1.7b/LFM3-1.7B-Q8_0.gguf
 
-# 3. Server + pi
-QMODEL=lfm3 bash scripts/start-qwen.sh
+# 2. Server + pi
+scripts/llm lfm3
 
 # Stop it
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
 
-Server only, for any OpenAI-compatible client: `QMODEL=lfm3 bash scripts/run-qwen.sh`.
+Server only, for any OpenAI-compatible client: `scripts/llm lfm3 serve`. (The building block:
+`QMODEL=lfm3 bash scripts/run-qwen.sh`; every knob in [Knobs](#knobs) below still applies, e.g.
+`CTX=65536 scripts/llm lfm3`.)
 
 ## Our numbers
 
@@ -100,7 +97,7 @@ identical to the source repo's, no hidden characters, no Jinja internals.
 
 ## Knobs
 
-Env vars for `scripts/start-qwen.sh` / `scripts/run-qwen.sh` with `QMODEL=lfm3`.
+Env vars for `scripts/llm lfm3` / `scripts/run-qwen.sh` with `QMODEL=lfm3`.
 
 | Knob | Default | What it does |
 |---|---|---|

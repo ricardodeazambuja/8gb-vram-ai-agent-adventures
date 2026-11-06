@@ -8,7 +8,7 @@
 > | Peak VRAM | 5.8 GB |
 > | Inputs | prompt, picture, mask |
 > | Licence | Open RAIL++ |
-> | Launch | `python3 bench/imagegen/run_gen.py sdxl --quick` |
+> | Launch | `scripts/imagine "..." -m sdxl` |
 
 The slowest of our three, with garbled sign text. It's still here because it's the one we taught styles
 and a person: [Teaching SDXL](../image-generation.md#teaching-sdxl-a-style-or-a-person). Full comparison:
@@ -21,8 +21,10 @@ it as in [Run it yourself](../image-generation.md#run-it-yourself), then:
 
 ```bash
 bash scripts/download-models.sh sdxl sdxlvae
-python3 bench/imagegen/run_gen.py sdxl --quick
+scripts/imagine "a lighthouse at dusk" -m sdxl
 ```
+
+(The building block: `python3 bench/imagegen/run_gen.py sdxl --quick`.)
 
 Training uses the `vlft` env and `bench/imagegen/train_style.py`, as in the section linked above.
 

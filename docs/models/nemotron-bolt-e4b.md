@@ -4,13 +4,15 @@
 >
 > | | |
 > |---|---|
-> | File | NVIDIA's own Q4_K_M GGUF, 6.2 GB |
+> | On disk | NVIDIA's own Q4_K_M GGUF, 6.2 GB |
 > | Where it lives | Entirely on the GPU (4.4 GB VRAM at 64K) |
 > | Context | 64K |
-> | Speed | **52 tok/s** generating, **1,531 tok/s** reading a prompt |
-> | pibench | **7/18** (78 % of hidden tests) |
-> | Vision probe | text only |
-> | Launcher | `bash scripts/start_e4b.sh` |
+> | Generation | **52 tok/s** |
+> | Prompt processing | **1,531 tok/s** |
+> | [pibench](../pibench.md) | **7/18** (78 % of hidden tests) |
+> | [Vision probe](../vision-probe.md) | text only |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm e4b` |
 
 ## What is it?
 
@@ -28,20 +30,20 @@ nothing waits on the CPU.
 
 ## Install & run
 
-```bash
-# once: our llama.cpp (fork, adventures branch; the same one Flint and Bolt use; see getting-started)
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
+Build our llama.cpp once (the same build Flint and Bolt use): [getting-started.md](../getting-started.md). Then:
 
+```bash
 # once: 6.2 GB, pinned and sha256-checked
 bash scripts/download-models.sh e4b
 
 # go
-bash scripts/start_e4b.sh                      # server + pi
-bash scripts/start_e4b.sh -p "explain @README.md" --no-session </dev/null
-bash scripts/stop-server.sh
+scripts/llm e4b                                # server + pi
+scripts/llm e4b -p "explain @README.md" --no-session </dev/null
+scripts/llm stop
 ```
+
+(The building block: `bash scripts/start_e4b.sh`, or `QMODEL=e4b bash scripts/run-qwen.sh` for the server
+alone; every knob in [Knobs](#knobs) below still applies.)
 
 ## Official numbers
 
@@ -84,8 +86,8 @@ the [scoreboard](../scoreboard.md)):
 | Size | 8B (4B effective) | 4B | 4B, looped | 8B |
 | VRAM | **4.4 GB** | 7.6 GB | 5.7 GB | 7.4 GB |
 | Context | 64K | **108K** | 64K | 16K |
-| Generation | **52 t/s** | 48–50 t/s | 29 t/s | 38 t/s |
-| Prompt speed | 1,531 t/s | **1,450–1,620 t/s** | 852 t/s | 830–900 t/s |
+| Generation | **52 tok/s** | 48–50 tok/s | 29 tok/s | 38 tok/s |
+| Prompt speed | 1,531 tok/s | **1,450–1,620 tok/s** | 852 tok/s | 830–900 tok/s |
 | pibench | 7/18 | **14/18** | not run | not run |
 | Vision | text only | text only | text only | **89 %** |
 

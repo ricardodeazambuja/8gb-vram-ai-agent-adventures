@@ -10,7 +10,7 @@
 > | Best at | One-shot code (3B) and math (1.5B) |
 > | [pibench](../pibench.md) | 3B: **0/18** through the shim (2026-11-02) |
 > | [Security audit](../security.md) | clean |
-> | Launch | `bash scripts/start_vibethinker.sh`, or `QMODEL=vibe3b bash scripts/run-qwen.sh` for the server alone |
+> | Launch | `scripts/llm vibe3b` · `scripts/llm vibe15` (add `serve` for the server alone) |
 
 ## What is it?
 
@@ -24,11 +24,16 @@ The original work, with the full measurements, is in
 
 ## Install & run
 
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
+
 ```bash
 bash scripts/download-models.sh vibe3b vibe15
-bash scripts/start_vibethinker.sh                    # server + shim + pi
-QMODEL=vibe3b bash scripts/run-qwen.sh               # or the plain server, for one-shot work
+scripts/llm vibe3b                                   # server + shim + pi (vibe15 for the 1.5B)
+scripts/llm vibe3b serve                             # or the plain server, for one-shot work
 ```
+
+(The building blocks: `bash scripts/start_vibethinker.sh` (`SIZE=1.5B` for the 1.5B) and
+`QMODEL=vibe3b bash scripts/run-qwen.sh`; their knobs still apply.)
 
 For one-shot work, skip pi and call `/v1/chat/completions` directly: pi always adds its tools and manual, and the
 model can spend the whole turn deliberating over them. Give it a big token budget, because one easy math problem

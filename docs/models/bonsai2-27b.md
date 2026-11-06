@@ -4,14 +4,15 @@
 >
 > | | |
 > |---|---|
-> | Size on disk | 5.95 GB (`PTQ1_0`) + 0.63 GB vision projector |
+> | On disk | 5.95 GB (`PTQ1_0`) + 0.63 GB vision projector |
 > | Where it lives | everything on the GPU (7.14 GB used) |
 > | Context | **32K** (48K if you can spare the last 0.3 GB of VRAM) |
 > | Generation | 38 tok/s (short prompt); 22 tok/s with 28K in context |
 > | Prompt processing | 277 tok/s (15K-token prompt) |
 > | [pibench](../pibench.md) | **16/18** at 32K (14/18 at 16K, where 13 of 18 runs ran out of context) |
 > | [Vision probe](../vision-probe.md) | **98%**, the best at boxes in pixels (as asked) |
-> | Launch | `bash scripts/start_bonsai2.sh` |
+> | [Security audit](../security.md) | clean (`PTQ1_0` and `Q2_0` files) |
+> | Launch | `scripts/llm bonsai2` |
 
 ## What is it?
 
@@ -43,24 +44,24 @@ general tricks in [How it fits](../how-it-fits.md).
 `PTQ1_0` is PrismML's own type, so stock llama.cpp rejects the file. We merged
 [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) (at `5628c733`) into
 [ours](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures), so the one build every other model uses
-runs it too:
+runs it too. Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# 1. Our fork, if you haven't built it yet (~15 min)
-CUDA_VER=12.2 bash scripts/build-llama-cuda.sh
-
-# 2. Download the model + vision projector (~6.6 GB), pinned revision, sha256-checked
+# 1. Download the model + vision projector (~6.6 GB), pinned revision, sha256-checked
 bash scripts/download-models.sh bonsai2
 
-# 3. Serve it and open pi (thinking level "medium" by default)
-bash scripts/start_bonsai2.sh
+# 2. Serve it and open pi (32K context, thinking level "medium" by default)
+scripts/llm bonsai2
 
 # One question, no chat:
-bash scripts/start_bonsai2.sh -p "explain @README.md" --no-session </dev/null
+scripts/llm bonsai2 -p "explain @README.md" --no-session </dev/null
 
 # Done? Free the GPU:
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
+
+(The building block: `bash scripts/start_bonsai2.sh`, or `QMODEL=bonsai2 bash scripts/run-qwen.sh` for the
+server alone; every knob in [Knobs](#knobs) below still applies, e.g. `CTX=49152 scripts/llm bonsai2`.)
 
 The download script needs the `hf` CLI inside the conda env it uses (`ENV_NAME`, default
 `llamacpp`); see [Getting started](../getting-started.md). Free the GPU before building:
@@ -68,7 +69,7 @@ the build's smoke test fails with a misleading "failed to load model" if another
 holding the VRAM.
 
 **The plain `Q2_0` file** (7.63 GB, `bash scripts/download-models.sh bonsai2q2`, then
-`QMODEL=bonsai2q2 bash scripts/start-qwen.sh`) runs on any llama.cpp from `b11556`. Older builds
+`QMODEL=bonsai2q2 bash scripts/start-qwen.sh`; it isn't in `scripts/llm`) runs on any llama.cpp from `b11556`. Older builds
 load it and give garbage, without warning. It doesn't fully fit, so 60 of 64 layers go on the GPU:
 14.3 tok/s, with a working tool call and 0/500 wrong on the code check. Use it only on a build
 without PrismML's code.
@@ -161,7 +162,7 @@ on the CPU).
 
 ## Knobs
 
-All optional; set them in front of the launcher (`CTX=… bash scripts/start_bonsai2.sh`).
+All optional; set them in front of the launcher (`CTX=… scripts/llm bonsai2`).
 
 | Variable | Default | What it does |
 |---|---|---|

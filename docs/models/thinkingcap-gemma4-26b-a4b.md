@@ -12,7 +12,7 @@
 > | Code check | correct twice, 0/500 wrong, 2.2K–2.4K tokens |
 > | [pibench](../pibench.md) | **17/18 solved** (98% of hidden tests), **47% less thinking** than the base, 5.5 min median per run |
 > | [Security audit](../security.md) | clean |
-> | Launch | `MODEL=models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf ALIAS=thinkingcap-gemma-4-26b-a4b NCMOE=23 BACKEND=cuda bash scripts/run-server.sh` |
+> | Launch | `scripts/llm thinkingcap` (64K, q8_0 KV, `NCMOE=23`, the template fix) |
 
 ## What is it?
 
@@ -40,18 +40,20 @@ back.
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 # Download + sha256-check (~14.8 GB with the projector), then audit it
 bash scripts/download-models.sh tcgemma
 bash utils/audit-gguf.sh models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf
 
-# Server (the base Gemma's launcher, pointed at this file)
-BACKEND=cuda CTX=65536 NCMOE=23 KVQUANT=q8_0 ALIAS=thinkingcap-gemma-4-26b-a4b \
-  MODEL=models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf \
-  bash scripts/run-server.sh
+# Server + pi (64K, q8_0 KV, NCMOE=23, the template fix from Gotchas); `serve` for the server alone
+scripts/llm thinkingcap
 ```
+
+(The building block, the base Gemma's launcher pointed at this file:
+`BACKEND=cuda CTX=65536 NCMOE=23 KVQUANT=q8_0 ALIAS=thinkingcap-gemma-4-26b-a4b MODEL=models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf bash scripts/run-server.sh`;
+its knobs, listed on [Gemma 4 26B's page](gemma4-26b-a4b.md#knobs), still apply.)
 
 ## Official numbers
 

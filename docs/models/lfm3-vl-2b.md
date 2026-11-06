@@ -13,7 +13,7 @@
 > | [pibench](../pibench.md) | **0/18** (47% of hidden tests): loops on tool calls, unlike LFM3-1.7B (12/18) |
 > | [Visual control](../visual-control.md) | **60/60** one-picture decisions with thinking (45/60 without); grid mazes 3/8 |
 > | [Security audit](../security.md) | clean (model and projector) |
-> | Launch | `QMODEL=lfm3vl bash scripts/start-qwen.sh --image` (needs the newer llama.cpp build) |
+> | Launch | `scripts/llm lfm3vl` · [`examples/look.py`](../../examples/look.py) |
 
 ## What is it?
 
@@ -26,16 +26,19 @@ benchmark, MM-ToolSandbox, scores 42.5).
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md) and the llama.cpp build from
-[LFM3-1.7B's page](lfm3-1.7b.md#install--run):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 bash scripts/download-models.sh lfm3vl
 bash utils/audit-gguf.sh models/lfm3-vl-2b/LFM3-VL-2B-Q8_0.gguf
 bash utils/audit-gguf.sh models/lfm3-vl-2b/mmproj-LFM3-VL-2B-F16.gguf
 
-QMODEL=lfm3vl bash scripts/start-qwen.sh --image
+scripts/llm lfm3vl          # the server, with its projector; prints the URL
+scripts/llm lfm3vl pi       # or chat with it in pi
 ```
+
+[`examples/look.py`](../../examples/look.py) shows it a picture and lets it pick one tool call. (The building block:
+`QMODEL=lfm3vl bash scripts/run-qwen.sh --image`; its knobs still apply, e.g. `CTX=16384 scripts/llm lfm3vl`.)
 
 ## Our numbers
 

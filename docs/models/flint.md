@@ -10,8 +10,9 @@
 > | Generation | 24.3 tok/s |
 > | Prompt processing | **542 tok/s** (14.4K-token prompt) |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests) |
-> | Vision | none, text only |
-> | Launch | `bash scripts/start_flint.sh` |
+> | [Vision probe](../vision-probe.md) | none, text only |
+> | [Security audit](../security.md) | clean |
+> | Launch | `scripts/llm flint` |
 
 ## What is it?
 
@@ -42,13 +43,14 @@ RAM, llama.cpp ships the expert math for big batches to the GPU, so going from b
 2048 took prompt processing from **192 to 542 tok/s**. The bigger compute buffer costs one
 layer of experts, hence `NCMOE=42` instead of 41. See [how-it-fits.md](../how-it-fits.md).
 
-**A little faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts, with
+**A little faster, same VRAM (2026-11-04, the default in `scripts/llm flint`):** a GPU cache of the most recently used experts, with
 the CPU computing 95% of the misses: **32.1 vs 26.9 tok/s** (A/B/A, one noisy baseline run at 17.4). In a
 full pibench batch: still 18/18, decode 26.4 vs 21.5 tok/s, but prefill 354 vs 426 tok/s; median run 3.6 vs
 4.3 min.
 `MOE_CACHE=auto` (2168 MiB, less if the desktop uses more than ~500 MiB of VRAM) on our fork's
-`moe-cache-max-batch` build, which also sends batches of up to 128 tokens through the cache: tool-call turns of
+`moe-cache-max-batch` build (the default build), which also sends batches of up to 128 tokens through the cache: tool-call turns of
 48–100 new tokens are read 8–20% faster, decode unchanged (2026-11-05, [steps 14–15](../../bench/moe-cache/README.md)).
+`scripts/llm flint` turns it on; `scripts/llm flint --static` gives the classic `NCMOE=42` split.
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 
 **Why the 3-bit file:** the laptop has 32 GB of RAM with about 20 GB actually available. The
@@ -57,36 +59,29 @@ also what Unsloth recommends for 24 GB machines.
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# 1. The build toolchain env (skip if you already have it)
-mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
-
-# 2. Flint needs a newer llama.cpp than the stock b9606 build: our llama.cpp (fork, adventures
-#    branch, pinned; upstream of 2026-10-28) next to this repo, so nothing else gets overwritten
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
-# 3. Hugging Face CLI env for the download script (it wants `hf` inside this env)
+# 1. Hugging Face CLI env for the download script (it wants `hf` inside this env)
 mamba create -y -n llamacpp -c conda-forge huggingface_hub
 
-# 4. Download + sha256-check (18.5 GB)
+# 2. Download + sha256-check (18.5 GB)
 bash scripts/download-models.sh flint
 
-# 5. Server + pi, no env vars needed
-bash scripts/start_flint.sh
+# 3. Server + pi, no env vars needed (expert cache on; add --static for the per-layer split)
+scripts/llm flint
 
 # One-shot
-bash scripts/start_flint.sh -p "explain @README.md" --no-session </dev/null
+scripts/llm flint -p "explain @README.md" --no-session </dev/null
 
 # Stop it (it keeps running after pi exits, so the next start is instant)
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
 
-`start_flint.sh` refuses to start if another model is already serving on port 8080, so pi
-never talks to the wrong model. Stop the other one first.
+`scripts/llm` never replaces another model already serving on port 8080, so pi
+never talks to the wrong model. Stop the other one first. (The building block: `bash scripts/start_flint.sh`,
+or `QMODEL=flint bash scripts/run-qwen.sh` for the server alone; every knob in [Knobs](#knobs) below still
+applies, e.g. `CTX=65536 scripts/llm flint`.)
 
 ## Official numbers
 
@@ -162,11 +157,12 @@ median 5,099 output tokens. One of three perfect scores, with Gemma 4 26B and Gr
 
 ## Knobs
 
-Env vars for `scripts/start_flint.sh` (or `QMODEL=flint` with `start-qwen.sh` / `run-qwen.sh`).
+Env vars for `scripts/llm flint` (or `QMODEL=flint` with `start-qwen.sh` / `run-qwen.sh`).
 
 | Knob | Default | What it does |
 |---|---|---|
 | `NCMOE` | 42 | layers whose experts stay in RAM; 44 frees VRAM if your desktop needs it |
+| `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `BATCH` / `UBATCH` | 2048 / 2048 | 512 saves VRAM but makes prompts ~3× slower |
 | `CTX` | 131072 | context window; smaller helps if you don't need it |
 | `KVQUANT` | q8_0 | KV cache type |

@@ -7,8 +7,9 @@
 > | Time per image | **23 s** at 1024×1024, 4 steps |
 > | Peak VRAM | **3.5 GB** |
 > | Inputs | prompt, picture, mask and reference edit |
+> | [Security audit](../security.md) | clean (model and text encoder) |
 > | Licence | Apache 2.0 |
-> | Launch | `python3 bench/imagegen/run_gen.py klein --quick` |
+> | Launch | `scripts/imagine "..." -m klein` |
 
 The one to pick: the fastest of our three, half the VRAM, good hands, and reference edits that work
 with no training. Full comparison: [Making pictures on 8 GB](../image-generation.md).
@@ -20,11 +21,12 @@ it as in [Run it yourself](../image-generation.md#run-it-yourself), then:
 
 ```bash
 bash scripts/download-models.sh klein kleinte kleinvae        # ~5.3 GB
-python3 bench/imagegen/run_gen.py klein --quick               # one picture
+scripts/imagine "a red fox in the snow" -m klein               # one picture
 ```
 
-Pictures land in `models/image-gen/out/`. `run_gen.py` shows the full `sd-cli` flags. For a reference
-edit, add `-r in.png`, and for one area, `-i in.png --mask mask.png`.
+Pictures land in `models/image-gen/out/`. `scripts/imagine --dry-run` shows the full `sd-cli` command. For a
+reference edit (Klein only), `scripts/imagine "..." -m klein -r in.png`; to start from a picture, `-i in.png`; and
+for one area, `-i in.png --mask mask.png`. (The building block: `python3 bench/imagegen/run_gen.py klein --quick`.)
 
 ## Gotchas
 

@@ -11,7 +11,7 @@
 > | Live reply | first audio in 0.10–0.18 s |
 > | [pibench](../pibench.md) | not run |
 > | [Security audit](../security.md) | clean |
-> | Launch | `QMODEL=lfm3audio bash scripts/run-qwen.sh` |
+> | Launch | `scripts/llm lfm3audio` · [`examples/listen.py`](../../examples/listen.py) · [`examples/speak.py`](../../examples/speak.py) |
 
 ## What is it?
 
@@ -21,15 +21,17 @@ request, which makes it the speech-native route in our [voice agent plans](../up
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 bash scripts/download-models.sh lfm3audio
 (cd ../llama.cpp && cmake --build build --target llama-tts)     # only for text to speech
-QMODEL=lfm3audio bash scripts/run-qwen.sh                       # server on port 8080
+scripts/llm lfm3audio                                           # server on port 8080
 ```
 
-It's a server to call, not a pi model, so there's no `start-qwen.sh` step. The projector always loads.
+It's a server to call, not a pi model, so `scripts/llm` only serves it. The projector always loads.
+[`examples/listen.py`](../../examples/listen.py) and [`examples/speak.py`](../../examples/speak.py) are the short
+versions of Listen and Speak below. (The building block: `QMODEL=lfm3audio bash scripts/run-qwen.sh`.)
 
 - **Listen:** send a WAV to `/v1/chat/completions` as `input_audio`, with the system message
   "Perform ASR in English."

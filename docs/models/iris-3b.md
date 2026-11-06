@@ -8,7 +8,7 @@
 > | Peak VRAM | 7.3 GB of 7.8 |
 > | Inputs | prompt, picture; masks paste a hard square |
 > | Licence | Apache 2.0 |
-> | Launch | `python3 bench/imagegen/run_gen.py iris --quick` |
+> | Launch | `scripts/imagine "..." -m iris` |
 
 It has the cleanest sign text of our three, but leaves nothing spare on the card, and it ignored a request
 for watercolour. It paints pixels directly, so there's no VAE. Full comparison:
@@ -21,8 +21,10 @@ it as in [Run it yourself](../image-generation.md#run-it-yourself), then:
 
 ```bash
 bash scripts/download-models.sh iris iriste
-python3 bench/imagegen/run_gen.py iris --quick
+scripts/imagine "a shop sign that says OPEN" -m iris
 ```
+
+(The building block: `python3 bench/imagegen/run_gen.py iris --quick`.)
 
 ## Gotchas
 

@@ -13,7 +13,7 @@
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), 3.1 min median per run |
 > | [Vision probe](../vision-probe.md) | 74% overall: OCR and CAD fine, boxes poor |
 > | [Security audit](../security.md) | clean |
-> | Launch | `QMODEL=groot bash scripts/start-qwen.sh` |
+> | Launch | `scripts/llm groot` |
 
 ## What is it?
 
@@ -38,30 +38,26 @@ is about 1.4 GB. More in [how-it-fits.md](../how-it-fits.md).
 
 ## Install & run
 
-After [getting-started.md](../getting-started.md):
+Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
-# 1. Our llama.cpp (fork, adventures branch, pinned; upstream of 2026-10-28)
-#    (skip if you already built it for another model)
-CUDA_VER=12.2 LLAMA_REPO=https://github.com/ricardodeazambuja/llama.cpp \
-  LLAMA_REF=7ff495fc463f92dc74e3e4fca0eb78f7602ba961 SRC_DIR=$PWD/../llama.cpp \
-  bash scripts/build-llama-cuda.sh
-
-# 2. Download + sha256-check (~12.6 GB with the projector), then audit it
+# 1. Download + sha256-check (~12.6 GB with the projector), then audit it
 bash scripts/download-models.sh groot
 bash utils/audit-gguf.sh models/groot-19b-a3b/Groot-19B-A3B-261023-Q4_K_M.gguf
 
-# 3. Server + pi
-QMODEL=groot bash scripts/start-qwen.sh
+# 2. Server + pi
+scripts/llm groot
 
 # ...with images
-QMODEL=groot bash scripts/start-qwen.sh --image
+scripts/llm groot --image
 
 # Stop it
-bash scripts/stop-server.sh
+scripts/llm stop
 ```
 
-Server only, for any OpenAI-compatible client: `QMODEL=groot bash scripts/run-qwen.sh`.
+Server only, for any OpenAI-compatible client: `scripts/llm groot serve`. (The building block:
+`QMODEL=groot bash scripts/run-qwen.sh`; every knob in [Knobs](#knobs) below still applies, e.g.
+`CTX=65536 scripts/llm groot`.)
 
 ## Official numbers
 
@@ -135,7 +131,7 @@ visits every book page). Run at `NCMOE=27`, now the default (see Gotchas).
 
 ## Knobs
 
-Env vars for `scripts/start-qwen.sh` / `scripts/run-qwen.sh` with `QMODEL=groot`.
+Env vars for `scripts/llm groot` / `scripts/run-qwen.sh` with `QMODEL=groot`.
 
 | Knob | Default | What it does |
 |---|---|---|

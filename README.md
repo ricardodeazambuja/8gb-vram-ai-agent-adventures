@@ -16,45 +16,50 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 
 | | Model | Size | Context | Speed | [pibench](docs/pibench.md) | [Vision](docs/vision-probe.md) | One-liner |
 |---|---|---|---:|---:|---:|---:|---|
-| 🪨 | [**Flint**](docs/models/flint.md) | 40B MoE, 2.5B active | 128K | 24 t/s | **18/18** | text only | The careful coder. Looks before it leaps. |
-| 💎 | [**Gemma 4 26B-A4B**](docs/models/gemma4-26b-a4b.md) | 26B MoE, 4B active | 32K–128K | 23.5 t/s | **18/18** | **100%** | Where it all started. Quietly aced everything. |
-| 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md) | 26B MoE, 4B active | 64K | 17.5 t/s | 17/18 | — | Gemma told to think less: half the thinking, one fewer solve. |
-| ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md) | 74B hybrid MoE, 9B active | 128K | 14 t/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
-| 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md) | 35B MoE, 3B active | 128K | 23 t/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
-| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md) | 35B MoE, 3B active | 128K | 26 t/s | 16/18 | 88% | Quick jobs (2.5 min). Thinks in haiku. |
-| 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md) | 19B MoE, 3B active | 128K | **39.5 t/s** | **18/18** | 74% | Qwen3.6 with half the experts. Fastest big model here. |
-| 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md) | 24B conv/attention MoE, 2B active | 128K | 31.5 t/s | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
-| 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md) | 35B MoE, 3B active | 128K | 31 t/s | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
-| 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md) | 27B, ternary weights | 32K | 38 t/s | 16/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
-| ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md) | 4B dense | 108K | 48–50 t/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
-| 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md) | 1.7B tri-hybrid | 128K | **106 t/s** | 12/18 | text only | Tiny, as fast as its VL sibling and twice as fast as the rest, and better at chores than models 14× its size. |
-| 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md) | 2B + vision | 32K | 106 t/s | 0/18 | 91% | 2.6 GB, 8 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
-| 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md) | 8B (4B effective) | 64K | 52 t/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
-| 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md) | 8B + vision | 16K | 38 t/s | 1/18 | 89% | Reads an image in 5 seconds flat. Not an agent. |
-| 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md) | 4B, looped | 64K | 29 t/s | 14/18 | text only | Runs its middle layers twice. Just keeps swimming, and gets there: Spark's score at 4B. |
+| 🪨 | [**Flint**](docs/models/flint.md)<br>`flint` | 40B MoE, 2.5B active | 128K | 24 tok/s | **18/18** | text only | The careful coder. Looks before it leaps. |
+| 💎 | [**Gemma 4 26B-A4B**](docs/models/gemma4-26b-a4b.md)<br>`gemma` | 26B MoE, 4B active | 32K–128K | 23.5 tok/s | **18/18** | **100%** | Where it all started. Quietly aced everything. |
+| 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md)<br>`thinkingcap` | 26B MoE, 4B active | 64K | 17.5 tok/s | 17/18 | — | Gemma told to think less: half the thinking, one fewer solve. |
+| ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md)<br>`bolt` | 74B hybrid MoE, 9B active | 128K | 14 tok/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
+| 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md)<br>`qwen36` | 35B MoE, 3B active | 128K | 23 tok/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
+| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md)<br>`distill` | 35B MoE, 3B active | 128K | 26 tok/s | 16/18 | 88% | Quick jobs (2.5 min). Thinks in haiku. |
+| 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md)<br>`groot` | 19B MoE, 3B active | 128K | **39.5 tok/s** | **18/18** | 74% | Qwen3.6 with half the experts. Fastest big model here. |
+| 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md)<br>`lfm25` | 24B conv/attention MoE, 2B active | 128K | 31.5 tok/s | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
+| 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md)<br>`ornith` | 35B MoE, 3B active | 128K | 31 tok/s | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
+| 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md)<br>`bonsai2` | 27B, ternary weights | 32K | 38 tok/s | 16/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
+| ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md)<br>`spark` | 4B dense | 108K | 48–50 tok/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
+| 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md)<br>`lfm3` | 1.7B tri-hybrid | 128K | **106 tok/s** | 12/18 | text only | Tiny, as fast as its VL sibling and twice as fast as the rest, and better at chores than models 14× its size. |
+| 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md)<br>`lfm3vl` | 2B + vision | 32K | 106 tok/s | 0/18 | 91% | 2.6 GB, 8 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
+| 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md)<br>`e4b` | 8B (4B effective) | 64K | 52 tok/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
+| 👁️ | [**Qwen3-VL-8B**](docs/models/qwen3-vl-8b.md)<br>`qwen3vl` | 8B + vision | 16K | 38 tok/s | 1/18 | 89% | Reads an image in 5 seconds flat. Not an agent. |
+| 🔁 | [**Dory1.0-4B**](docs/models/dory1.0-4b.md)<br>`dory` | 4B, looped | 64K | 29 tok/s | 14/18 | text only | Runs its middle layers twice. Just keeps swimming, and gets there: Spark's score at 4B. |
 
 **pibench** = six real chores (fix bugs, build a CLI, scrape websites, log in through a form) done
 alone, in a sandbox, graded by hidden tests; solved attempts out of 18. **Vision** = twelve
 images with known answers: OCR, bounding boxes, charts, counting, engineering drawings. "—" means
 we haven't run it (yet). The full numbers, and what the vendors claim, are on the
-[**scoreboard**](docs/scoreboard.md).
+[**scoreboard**](docs/scoreboard.md). The name under each model starts it: `scripts/llm <name>`
+([below](#using-the-models)). Speeds are with the experts split by layer (`NCMOE`); for Qwen3.6, the
+Qwen3.8 distill, Flint, Ornith and Gemma, `scripts/llm` uses our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
+instead, which decoded 9–62% faster at the same VRAM (Qwen3.6: 24.9 → 39.4 tok/s).
 
 ## The helpers
 
-Not chat models, so they don't drive pi. Each one's page has a launch command and an example call.
+Not chat models, so they don't drive pi. `scripts/llm <name>` starts one, and
+[`examples/`](examples/README.md) has a short Python script for each: search, decisions, pictures in,
+boxes out, speech in and out. The picture makers run through `scripts/imagine`.
 
 | | Model | What it does | Memory | Best result here |
 |---|---|---|---:|---|
-| 🗣️ | [**LFM3-Audio-2B**](docs/models/lfm3-audio-2b.md) | Hears and speaks | 3.3 GB | First audio in under 0.2 s, 3/3 spoken tool calls |
-| 🧲 | [**EmbeddingGemma 2**](docs/models/embeddinggemma-2.md) | Search over code and docs | 1.5 GB | 93% top hit on code, with BM25 |
-| ⚖️ | [**Clef-Flash**](docs/models/clef-flash.md) | Yes/no and pick-one decisions | 7.1 GB | 86% grading pibench, 4/189 false alarms |
-| ⚡ | [**d1-2B**](docs/models/d1-2b.md) | The same, much smaller | 2.6 GB | 27 ms a decision |
-| 📍 | [**LocateAnything-3B**](docs/models/locateanything-3b.md) | Finds things in pictures | 5 GB | 15/15 shapes, mean IoU 0.94 |
-| 🧠 | [**VibeThinker 3B and 1.5B**](docs/models/vibethinker.md) | One-shot code and math | 5.0 GB, 3.1 GB | 0/500 wrong on the code check, 65 and 108 tok/s; 0/18 on pibench (3B), not an agent |
-| 🐭 | [**LFM2.5-VL-450M**](docs/models/lfm2.5-vl-450m.md) | Tiny vision model for fine-tuning | 1.5 GB | 0.1 s a decision once tuned |
-| 🖌️ | [**FLUX.2 Klein 4B**](docs/models/flux2-klein-4b.md) | Pictures, the everyday pick | 3.5 GB | 23 s an image |
-| 🔤 | [**Iris-3B Turbo**](docs/models/iris-3b.md) | Pictures with text | 7.3 GB | Cleanest sign text, 33 s |
-| 🎨 | [**SDXL**](docs/models/sdxl.md) | Pictures, trainable | 5.8 GB | Learned our styles and a person |
+| 🗣️ | [**LFM3-Audio-2B**](docs/models/lfm3-audio-2b.md)<br>`lfm3audio` | Hears and speaks | 3.3 GB | First audio in under 0.2 s, 3/3 spoken tool calls |
+| 🧲 | [**EmbeddingGemma 2**](docs/models/embeddinggemma-2.md)<br>`eg2` | Search over code and docs | 1.5 GB | 93% top hit on code, with BM25 |
+| ⚖️ | [**Clef-Flash**](docs/models/clef-flash.md)<br>`clefflash` | Yes/no and pick-one decisions | 7.1 GB | 86% grading pibench, 4/189 false alarms |
+| ⚡ | [**d1-2B**](docs/models/d1-2b.md)<br>`d1` | The same, much smaller | 2.6 GB | 27 ms a decision |
+| 📍 | [**LocateAnything-3B**](docs/models/locateanything-3b.md)<br>`locate` | Finds things in pictures | 5 GB | 15/15 shapes, mean IoU 0.94 |
+| 🧠 | [**VibeThinker 3B and 1.5B**](docs/models/vibethinker.md)<br>`vibe3b`, `vibe15` | One-shot code and math | 5.0 GB, 3.1 GB | 0/500 wrong on the code check, 65 and 108 tok/s; 0/18 on pibench (3B), not an agent |
+| 🐭 | [**LFM2.5-VL-450M**](docs/models/lfm2.5-vl-450m.md)<br>`lfm25vl` | Tiny vision model for fine-tuning | 1.5 GB | 0.1 s a decision once tuned |
+| 🖌️ | [**FLUX.2 Klein 4B**](docs/models/flux2-klein-4b.md)<br>`imagine -m klein` | Pictures, the everyday pick | 3.5 GB | 23 s an image |
+| 🔤 | [**Iris-3B Turbo**](docs/models/iris-3b.md)<br>`imagine -m iris` | Pictures with text | 7.3 GB | Cleanest sign text, 33 s |
+| 🎨 | [**SDXL**](docs/models/sdxl.md)<br>`imagine -m sdxl` | Pictures, trainable | 5.8 GB | Learned our styles and a person |
 
 ## Quick start
 
@@ -71,12 +76,33 @@ bash scripts/setup.sh
 npm i -g @earendil-works/pi-coding-agent && bash scripts/configure-pi.sh
 
 # 3. go
-BACKEND=cuda bash scripts/start.sh
+scripts/llm gemma
 ```
 
-Other models need their own download and sometimes their own llama.cpp build: the
+Other models need their own download (`bash scripts/download-models.sh groot`, for example): the
 [getting-started guide](docs/getting-started.md) has the full menu, and every model page has
 copy-paste commands.
+
+## Using the models
+
+```bash
+scripts/llm list                       # every model: what it's for, its size, downloaded or not
+scripts/llm groot                      # a coding agent: starts the server, then opens pi
+scripts/llm groot -p "explain @README.md"   # one-shot
+scripts/llm lfm3vl                     # a vision or helper model: starts the server, prints its URL
+scripts/llm status                     # what's running;  scripts/llm stop  stops it
+
+scripts/imagine "a red fox in the snow"                  # a picture with FLUX.2 Klein (~25 s)
+scripts/imagine "a shop sign that says OPEN" -m iris     # Iris-3B when the picture needs text
+
+python3 examples/decide.py guard "rm -rf ~/"             # helpers from Python: examples/README.md
+```
+
+`scripts/llm` knows each model's tested settings (context, KV cache, sampling, where the experts live)
+and runs the server in its own systemd scope, so running out of memory kills the server, not your
+terminal. One model at a time: it refuses to replace a different model that is already serving.
+Every setting can still be overridden (`CTX=65536 scripts/llm flint`); [`scripts/README.md`](scripts/README.md)
+has them all.
 
 ## Things we learned the fun way
 
@@ -123,16 +149,18 @@ copy-paste commands.
 | [Up next](docs/up-next.md) | Models and chores waiting their turn |
 | [Model pages](docs/models/) | One page per model: install, run, official and measured numbers, quirks |
 | [`scripts/README.md`](scripts/README.md) | Every script and knob |
+| [`examples/README.md`](examples/README.md) | The helper models from Python: search, decisions, vision, speech |
 | [`bench/README.md`](bench/README.md) | Running the benchmarks yourself |
 | [`utils/README.md`](utils/README.md) | The GGUF inspector and security auditor |
 
 ## What's in the box
 
 ```
-scripts/     launchers, downloads (pinned + sha256-checked), builds, quick benchmarks
+scripts/     llm (start any model) and imagine (pictures), downloads (pinned + sha256-checked), builds, quick benchmarks
+examples/    short Python recipes for the helper models
 config/      the pi provider definition (all models, context sizes, thinking levels)
 envs/        the pinned CUDA build toolchain and the Python packages for training
-patches/     the llama.cpp patch for Dory, and the unfinished FlashMap drafter
+patches/     the llama.cpp patch for Dory, a CUDA 12.2 build fix for the MoE cache, and the unfinished FlashMap drafter
 bench/       pibench (sandboxed agent benchmark), the vision and visual control probes, fine-tuning, steering, image generation
 docs/        everything you read above
 utils/       a GGUF inspector and a GGUF security auditor

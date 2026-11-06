@@ -143,6 +143,17 @@ VRAM is in use than the size was measured with (`MOE_CACHE_ADAPT=0` turns that o
 1 GiB. For anything else, close the browser or lower `NCMOE`/`-ngl`. The shrunk caches cost 9–13% of decode
 speed and 5–24% on short turns, and are still far faster than static offload at the same VRAM
 ([measured](../bench/moe-cache/README.md)). Flint's shrunk size falls under the floor: close the browser.
+`scripts/llm` says so before loading anything ("the expert cache doesn't fit next to what is on the GPU
+now"); `scripts/llm <name> --static` runs without the cache instead, which may still run out of memory next
+to a busy desktop. Gemma's `MOE_CACHE=auto` (run-server.sh) shrinks the same way, from an estimated ~700 MiB.
+
+### `error: invalid argument: --moe-cache-mib` (or `--moe-cache-cpu-share`, `--moe-cache-max-batch`)
+
+**What's going on:** the llama.cpp build is older than the MoE expert cache: the `adventures` branch, or
+upstream. Builds made with `build-llama-cuda.sh` before 2026-11-06 defaulted to `adventures`.
+
+**Fix:** rebuild with the current default, `bash scripts/build-llama-cuda.sh` (our fork's
+`moe-cache-max-batch` branch), or run without the cache: `scripts/llm <name> --static`.
 
 ### 128K "should fit" by the math, but runs out of memory
 
@@ -227,13 +238,14 @@ under scripts and harnesses.
 
 **Fix:** `pi -p "your prompt" --no-session </dev/null`.
 
-### The launcher refuses: `port 8080 is already serving 'X'`
+### The launcher refuses: `port 8080 already serves X` / `port 8080 is already serving 'X'`
 
-**What's going on:** another model is still running. The `start_*.sh` launchers refuse to reuse a
-server that's serving a different model, so pi never talks to the wrong one by accident.
+**What's going on:** another model is still running. `scripts/llm` and the `start_*.sh` launchers refuse to
+reuse a server that's serving a different model, so pi never talks to the wrong one by accident.
 
-**Fix:** `bash scripts/stop-server.sh`, then start again. Only one model fits on the card at a
-time anyway.
+**Fix:** `scripts/llm stop`, then start again. It only stops servers `scripts/llm` started; for one
+started some other way, `scripts/llm stop --force` (or `bash scripts/stop-server.sh`) stops whatever holds
+the port. Only one model fits on the card at a time anyway.
 
 ### A `llama-server` is still around after you killed things
 
