@@ -151,13 +151,21 @@ long-prompt check for the first two. All logs in [`models/logs/`](models/logs/),
 | LFM2.5 24B-A2B (2048) | `NCMOE=27` | 4212 MiB | 7521 / 7512 MiB | 34.0 → **48.5** (+42%) | 29.2 → 37.9 (+30%) | 992 → 920 (−7%) |
 | Qwen3.8 distill (512) | `NCMOE=31` | 3661 MiB | 7230 / 7227 MiB | 39.3 → **52.7** (+34%) | 30.8 → 34.0 (+10%) | 220 → 212 (−4%) |
 | Ornith 1.5 35B (2048) | `NCMOE=34` | 2983 MiB | 7219 / 7223 MiB | 33.9 → **40.4** (+19%) | 28.5 → 29.7 (+4%) | 461 → 457 (−1%) |
-| Bolt 74B-A9B | | | | not run: the tuner ran out of VRAM (1299 MiB compute buffer at 128K, batch 2048) | | |
+| Bolt 74B-A9B (2048) | `-cmoe` | (600 MiB) | | not run: the tuner ran out of VRAM; then (`step13-bolt.sh`, daytime) `-cmoe` itself didn't load | | |
 
 Old-split numbers are the mean of both old runs (the long check: the first only). The Qwen3.8 row is `models/step5-qwen38.sh`
 ([`step5.log`](models/logs/step5.log)), which replaced a first try that compared `NCMOE=34` (5926 MiB) with a
 cache that had 827 MiB more. It compares the best of each at the same VRAM. The cache needs ~3.5 GB besides
 itself (`-cmoe` + cache C loads at ~3489 + C MiB), against ~5.9 GB at `NCMOE=34` plus 408 MiB per layer fewer.
 Share 0.8 was slower (46.4 tok/s) despite a higher hit rate (75% vs 65%).
+
+Bolt (`models/step13-bolt.sh`, [`step13.log`](models/logs/step13.log), 2026-11-05 daytime, RAM margin 3 GiB with the
+user's OK): with 1538 MiB of VRAM already in use, the launcher's own placement (every expert in RAM, batch 2048,
+128K) was projected at 6192 MiB (model 4183, context 708, compute 1299) against 6195 free, and ran out of CUDA
+memory on its warm-up decode. The cache runs never started. By the VRAM rule, with 334 MiB in use (night) there
+would be ~860 MiB for a cache: ~5% of the 16.8 GB of weights it keeps in RAM. Since only ~1.7B of the ~8.5B
+parameters per token are routed experts (its model page), the gain would be small; not worth a run until the
+desktop is light.
 
 The Ornith row is `models/step12-ornith.sh` ([`step12.log`](models/logs/step12.log)). Its first try in step 3
 gave the cache 3486 MiB, which loaded at 7722 MiB and ran out of VRAM on the first request; 2983 MiB matches

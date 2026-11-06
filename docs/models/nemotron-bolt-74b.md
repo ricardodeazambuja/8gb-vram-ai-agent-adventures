@@ -133,7 +133,10 @@ On paper it's second only to Flint; on this laptop it's slower and less reliable
 
 ## Gotchas
 
-- **RAM, not VRAM, is the limit.** The experts need ~22 GB of RAM. Close the browser tabs.
+- **RAM is the main limit, but VRAM is tight too.** The experts need ~22 GB of RAM. Close the browser tabs.
+  The default needs ~6.2 GB of VRAM of its own: with 1.5 GB already in use by a daytime desktop it ran out of
+  GPU memory at load (2026-11-05, [`bench/moe-cache/`](../../bench/moe-cache/README.md)). With a busy desktop,
+  use `BATCH=512 UBATCH=512` (~0.65 GB less, prompts half as fast).
 - **It's slow per job.** 14 tok/s plus long reasoning means 5–10 minutes per agent task. Great for
   "go do this while I get coffee", less great for chatting.
 - **Vision is slow too:** the 1.7 GB projector runs on the CPU (there's no VRAM left for it).
