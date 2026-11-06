@@ -55,6 +55,9 @@
 #              auto = qwen36 2900, flint 2168, ornith 2983 (each the VRAM its NCMOE default uses); distill 2770 with
 #              batch 2048 (+34% decode, long prompts 2.3x faster; room for a ~700 MiB desktop, see
 #              bench/moe-cache/README.md). See docs/how-it-fits.md §12.  (default: empty = off)
+#   MOE_CACHE_MAX_BATCH  batches up to N tokens go through the cache, bigger ones copy every expert they use
+#              (--moe-cache-max-batch; needs the fork's moe-cache-max-batch branch)
+#              (default: empty = the binary's 32; with MOE_CACHE=auto, distill 256)
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU instead of copied over PCIe
 #              (--moe-cache-cpu-share)  (default: 0.95)
 #   NGL        dense only: transformer layers on GPU   (default: bonsai2, qwen3vl 99 = all;
@@ -121,8 +124,9 @@ case "$QMODEL" in
     _ngl=30; _ctx=; _minp=0; _bin=
     _ncmoe=34
     # MOE_CACHE=auto: batch 2048 + 2770 MiB. Measured at 2900: 6820 MiB own peak (desktop <= ~570 MiB);
-    # 130 MiB less leaves room for a ~700 MiB desktop. bench/moe-cache/experimental/logs/step10.log.
-    _moecache=2770; _moecache_batch=2048
+    # 130 MiB less leaves room for a ~700 MiB desktop. Cache-path batch limit 256: 48-200-token turns
+    # read 30-43% faster. bench/moe-cache/experimental/logs/step10.log, step11.log.
+    _moecache=2770; _moecache_batch=2048; _moecache_maxbatch=256
     _temp=0.6 ;;
   bonsai2)
     # Qwen3.8-27B in ternary weights (5.95 GB) — fits fully on an 8 GB GPU. PTQ1_0 and the
@@ -454,7 +458,9 @@ if [ "$MOE_CACHE" = auto ]; then
   [ -n "$MOE_CACHE" ] || { echo "ERROR: MOE_CACHE=auto has no measured size for QMODEL=$QMODEL; give MiB"; exit 1; }
   # the size was measured at this batch; a bigger batch needs more VRAM besides the cache
   [ -n "${_moecache_batch:-}" ] && _batch=$_moecache_batch
+  MOE_CACHE_MAX_BATCH="${MOE_CACHE_MAX_BATCH:-${_moecache_maxbatch:-}}"
 fi
+MOE_CACHE_MAX_BATCH="${MOE_CACHE_MAX_BATCH:-}"
 MOE_CACHE_SHARE="${MOE_CACHE_SHARE:-0.95}"
 NGL="${NGL:-$_ngl}"
 KVQUANT="${KVQUANT:-${_kv:-q8_0}}"
@@ -501,6 +507,10 @@ if [ "$KIND" = moe ]; then
   if [ -n "$MOE_CACHE" ]; then
     OFFLOAD_ARGS+=(--cpu-moe --moe-cache-mib "$MOE_CACHE" --moe-cache-cpu-share "$MOE_CACHE_SHARE")
     echo ">> MoE: all experts in RAM, $MOE_CACHE MiB GPU expert cache, CPU computes $MOE_CACHE_SHARE of misses"
+    if [ -n "$MOE_CACHE_MAX_BATCH" ]; then
+      OFFLOAD_ARGS+=(--moe-cache-max-batch "$MOE_CACHE_MAX_BATCH")
+      echo ">> MoE cache: batches up to $MOE_CACHE_MAX_BATCH tokens use the cache"
+    fi
   elif [ -n "$NCMOE" ]; then
     OFFLOAD_ARGS+=(--n-cpu-moe "$NCMOE")
     echo ">> MoE: experts of first $NCMOE layers on CPU, the rest on GPU"

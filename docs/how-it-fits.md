@@ -302,14 +302,17 @@ scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
 
 ```bash
 QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model; or a MiB number
-QMODEL=distill MOE_CACHE=auto bash scripts/run-qwen.sh  # Qwen3.8: 2770 MiB and batch 2048
+QMODEL=distill MOE_CACHE=auto bash scripts/run-qwen.sh  # Qwen3.8: 2770 MiB, batch 2048, cache batch limit 256
 BACKEND=cuda KVQUANT=q8_0 MOE_CACHE=3267 bash scripts/run-server.sh   # Gemma 4 26B at 32K
 ```
 
 The flag isn't in upstream llama.cpp yet. Build our fork's
+[`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) branch:
+`LLAMA_REF=69ca796ddb1a9b62c342f047d50880bc43b3c023 bash scripts/build-llama-cuda.sh`. It is the
 [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch (`adventures` +
-PR #30966's 8 commits): `LLAMA_REF=3a72c57bef4ca02bfa394961f1789393c5e4e9c6 bash scripts/build-llama-cuda.sh`.
-Without it, `MOE_CACHE` fails at startup with an unknown flag.
+PR #30966's 8 commits, `3a72c57be`, on which the numbers above were measured) plus one commit that adds
+`--moe-cache-max-batch N` (default 32, so nothing else changes). Without it, `MOE_CACHE` fails at startup
+with an unknown flag; `moe-offload` alone works for every model except `QMODEL=distill MOE_CACHE=auto`.
 
 **In real agent sessions too.** A full [pibench](pibench.md) batch with `MOE_CACHE=auto` (2026-11-04,
 18 attempts per model, same 64K/128K contexts as the scored batch) against the scored batch from 2026-10-23.

@@ -245,7 +245,9 @@ MiB for Qwen3.8 to leave ~700.
 
 The other session has since made this a proper option, `--moe-cache-max-batch N`, on the fork's local branch
 `moe-cache-max-batch` at `69ca796dd` (`moe-offload` plus one commit; default 32, so nothing changes without the
-flag). It isn't pushed: that's for the user to decide.
+flag). Pushed on 2026-11-05 as `origin/moe-cache-max-batch`, and the fork's main `build/` now runs it.
+`QMODEL=distill MOE_CACHE=auto` passes `--moe-cache-max-batch 256`; the other models keep 32 until 128 is
+measured.
 
 With that flag (`step11-flag.sh`, [`step11.log`](experimental/logs/step11.log), built from `69ca796dd` into
 `../llama.cpp-warm/build-warm`), 32 against 256 on three models. Change in prompt time for 16 / 48 / 100 / 200 /
