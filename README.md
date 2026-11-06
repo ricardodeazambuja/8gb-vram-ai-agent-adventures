@@ -85,6 +85,9 @@ copy-paste commands.
 
 ## Using the models
 
+**[The cheatsheet](docs/cheatsheet.md)** has it all on one page: "I want to…, so I run…" for every task, and
+every model with its command.
+
 ```bash
 scripts/llm list                       # every model: what it's for, its size, downloaded or not
 scripts/llm groot                      # a coding agent: starts the server, then opens pi
@@ -134,6 +137,7 @@ has them all.
 
 | | |
 |---|---|
+| [**Cheatsheet**](docs/cheatsheet.md) | I want to…, so I run…: every task and every model, one command each |
 | [Getting started](docs/getting-started.md) | Requirements, builds, downloads, pi, first launch |
 | [The scoreboard](docs/scoreboard.md) | Every number: ours, the vendors', everyone vs. Qwen3.6; how each one behaves; which one to pick |
 | [pibench](docs/pibench.md) | The agent benchmark: the chores, the sandbox, the results, what we saw in the transcripts |

@@ -87,6 +87,38 @@ model() {
   esac
 }
 
+# page <name>: the model's page under docs/models/ (docs/cheatsheet.md and utils/check_docs.py use it)
+page() {
+  case "$1" in
+    groot) echo groot-19b-a3b.md ;;            flint) echo flint.md ;;
+    gemma) echo gemma4-26b-a4b.md ;;           qwen36) echo qwen3.6-35b-a3b.md ;;
+    bonsai2) echo bonsai2-27b.md ;;            distill) echo qwen3.8-35b-a3b-distill.md ;;
+    ornith) echo ornith-1.5-35b-a3b.md ;;      thinkingcap) echo thinkingcap-gemma4-26b-a4b.md ;;
+    bolt) echo nemotron-bolt-74b.md ;;         lfm25) echo lfm2.5-24b-a2b.md ;;
+    spark) echo spark-x2.6-4b.md ;;            dory) echo dory1.0-4b.md ;;
+    lfm3) echo lfm3-1.7b.md ;;                 e4b) echo nemotron-bolt-e4b.md ;;
+    twil) echo twil-8b.md ;;                   vibe3b|vibe15) echo vibethinker.md ;;
+    qwen3vl) echo qwen3-vl-8b.md ;;            lfm3vl) echo lfm3-vl-2b.md ;;
+    lfm25vl) echo lfm2.5-vl-450m.md ;;         locate) echo locateanything-3b.md ;;
+    eg2) echo embeddinggemma-2.md ;;           d1) echo d1-2b.md ;;
+    clefflash) echo clef-flash.md ;;           lfm3audio) echo lfm3-audio-2b.md ;;
+  esac
+}
+
+# llm list --md: the model table in docs/cheatsheet.md, generated from this file (no downloads needed).
+cmd_list_md() {
+  local n what
+  echo "| Model | Job | Command | What it is |"
+  echo "|---|---|---|---|"
+  for n in $NAMES; do
+    model "$n"
+    what="${DESC#*: }"
+    # shellcheck disable=SC2016  # the backticks are markdown, not a command substitution
+    printf '| [%s](models/%s) | %s | `scripts/llm %s`%s | %s |\n' "${DESC%%:*}" "$(page "$n")" "$JOB" "$n" \
+      "$([ "$ACTION" = serve ] && [ "$JOB" = agent ] && echo ' (server only)')" "$what"
+  done
+}
+
 # The backend's resolved settings (MODEL, ALIAS, CTX, KIND), with the model's defaults applied.
 # extra args: more KEY=VALUE to apply.
 config() {
@@ -237,7 +269,8 @@ main() {
   [ $# -gt 0 ] || { usage; exit 0; }
   case "$1" in
     -h|--help|help) usage; exit 0 ;;
-    list|ls) cmd_list; exit 0 ;;
+    list|ls) if [ "${2:-}" = --md ]; then cmd_list_md; else cmd_list; fi; exit 0 ;;
+    names) echo "${NAMES//$'\n'/ }"; exit 0 ;;   # for utils/check_docs.py
     status) cmd_status; exit 0 ;;
     stop) shift; cmd_stop "$@"; exit 0 ;;
   esac

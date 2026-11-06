@@ -134,6 +134,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true", help="print the sd-cli command and stop")
     ap.add_argument("--list", action="store_true", help="list the models and whether they are downloaded")
     argv = sys.argv[1:]
+    if argv == ["--names"]:  # for utils/check_docs.py
+        print(" ".join(MODELS))
+        return None
     extra = argv[argv.index("--") + 1:] if "--" in argv else []  # after --: extra sd-cli flags
     a = ap.parse_args(argv[:argv.index("--")] if "--" in argv else argv)
 

@@ -35,6 +35,10 @@ The two Gemma 4 12B pages are retired ([graveyard](../graveyard.md)) and keep th
 ## Knobs                           (Variable | Default | What it does)
 ```
 
+Adding a model: give it a `scripts/llm` entry (with its page in `page()`), write the page, then run
+`python3 utils/check_docs.py --fix`. That regenerates the [cheatsheet](../cheatsheet.md)'s model table and checks
+that the page's Launch row, every command in the docs and every link agree with the scripts.
+
 Conventions: speeds in **tok/s**; "not run" for tests we haven't done; dates as YYYY-MM-DD; every number
 traceable to a log or script ([reproduce.md](../reproduce.md)). The launcher names are the ones in
 `scripts/llm list` (the same as run-qwen.sh's `QMODEL`, plus `gemma` and `thinkingcap`).

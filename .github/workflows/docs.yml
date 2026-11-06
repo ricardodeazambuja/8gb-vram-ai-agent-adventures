@@ -1,0 +1,20 @@
+# Keeps the docs in step with the launchers: every command, model name, link and anchor the docs mention
+# must exist, and docs/cheatsheet.md's model table must match scripts/llm. No models or GPU needed.
+name: docs
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Docs match the scripts
+        run: python3 -I utils/check_docs.py
+      - name: Launchers parse
+        run: |
+          for f in scripts/*.sh scripts/llm; do bash -n "$f"; done
+          shellcheck -x scripts/llm
+          python3 -I scripts/imagine --names

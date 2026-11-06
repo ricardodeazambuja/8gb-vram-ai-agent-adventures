@@ -302,7 +302,7 @@ Qwen3.6's is still 62% faster than static offload at the same VRAM. The method,
 scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
 
 ```bash
-scripts/llm qwen36            # scripts/llm turns the cache on for qwen36, distill, flint, ornith and gemma
+scripts/llm qwen36            # the launcher turns the cache on for qwen36, distill, flint, ornith and gemma
 scripts/llm qwen36 --static   # the classic NCMOE split instead
 # the building blocks underneath:
 QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model, smaller if the desktop uses more VRAM than measured; or a MiB number

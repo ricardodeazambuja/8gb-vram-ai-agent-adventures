@@ -1,4 +1,4 @@
-# utils
+# 🔧 utils
 
 Small standalone tools that aren't part of the run/serve flow but are handy for
 poking at the model files.
@@ -36,6 +36,18 @@ verdict      : projector (mmproj) — vision
 - The `gguf` module is auto-resolved from our llama.cpp fork (`../llama.cpp/gguf-py`,
   or `$ADV_LLAMA/gguf-py`), otherwise an installed copy — no extra install needed
   once the fork is checked out.
+
+## `check_docs.py` — do the docs still match the scripts?
+
+```bash
+python3 utils/check_docs.py          # report, exit 1 on any problem
+python3 utils/check_docs.py --fix    # also regenerate docs/cheatsheet.md's model table from scripts/llm
+```
+
+Checks every `scripts/llm NAME`, `QMODEL=`, `download-models.sh`, `imagine -m` and `examples/` command in the
+docs against the real scripts, every relative link and anchor, and that each model page's Launch row shows its
+`scripts/llm` command. Standard library only, no models needed; CI runs it on every push
+(`.github/workflows/docs.yml`).
 
 ## `audit-gguf.{sh,py}` — is this GGUF safe to load?
 

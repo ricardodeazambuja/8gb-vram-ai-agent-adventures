@@ -15,6 +15,10 @@ Everything under `scripts/`, and the knobs they take. Every script prints its ow
 | **`imagine`** | **Pictures**, from the command line: `scripts/imagine "a red fox" [-m klein\|iris\|sdxl] [-n 4] [--seed N] [--size WxH] [-i in.png [--mask m.png]] [-r ref.png] [--lora FILE[:w]] [--dry-run]`. Each model's measured settings, a `.json` with the prompt, seed and command next to every picture, refuses while a llama-server holds the GPU. `scripts/imagine --list` shows the models. |
 | [`../examples/`](../examples/README.md) | The helper models from Python: `search.py`, `decide.py`, `look.py`, `locate.py`, `listen.py`, `speak.py`, `chat.py`. |
 
+Which command for which job: [the cheatsheet](../docs/cheatsheet.md). After changing a launcher or a doc, run
+`python3 utils/check_docs.py`: it checks every command and model name the docs mention against these scripts
+(`--fix` regenerates the cheatsheet's model table from `llm`), and CI runs it on every push.
+
 The rest of this page is the machinery underneath: `llm` calls `run-qwen.sh` / `run-server.sh` (they hold
 every per-model setting; `PRINT_CONFIG=1` prints what they resolved) and `start-qwen.sh` for pi.
 

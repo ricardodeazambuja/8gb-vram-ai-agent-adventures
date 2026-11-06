@@ -17,7 +17,7 @@
 
 [LiquidAI's speech model](https://huggingface.co/LiquidAI/LFM3-Audio-2B-GGUF) (LFM Open License v1.0,
 commercial use under $10M revenue). It hears and speaks 18 languages and can call tools from a voice
-request, which makes it the speech-native route in our [voice agent plans](../up-next.md#-voice-agents-agents-that-talk-to-people).
+request, which makes it the speech-native route in our [voice agent plans](../up-next.md#️-voice-agents-agents-that-talk-to-people).
 
 ## Install & run
 

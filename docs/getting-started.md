@@ -113,7 +113,8 @@ refuses to start a second one. Want a one-shot answer instead of a chat? Any pi 
 scripts/llm flint -p "explain @README.md" --no-session
 ```
 
-The older launchers (`scripts/start.sh`, `start_flint.sh`, `QMODEL=... start-qwen.sh`) still work; they
+[The cheatsheet](cheatsheet.md) maps tasks to commands ("search my notes", "make a picture", …). The older
+launchers (`scripts/start.sh`, `start_flint.sh`, `QMODEL=... start-qwen.sh`) still work; they
 are what `scripts/llm` builds on. [`scripts/README.md`](../scripts/README.md) has every knob.
 
 ## 8. Pictures (optional)
