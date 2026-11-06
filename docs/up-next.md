@@ -235,7 +235,8 @@ style words turn green (not the starting word).
 9. **Captions from our own vision models,** only if style results stay weak.
 
 **Then the vision goals, which matter more than making them train faster:**
-10. **Real camera pictures,** the open question since 2026-10-30.
+10. **Real camera pictures,** the open question since 2026-10-30. Run [Cactus's Mirage](../bench/cactus/README.md) (21.6 MB, CPU, offline) on the
+    same pictures: on our drawn scenes it read text perfectly but missed the stick-figure person and the dials (80/150).
 11. **Qwen3-VL-2B or 4B,** to tell "fine-tuning works" from "it works on Liquid's models".
 12. **A system prompt test on LFM3-1.7B,** our first plain text fine-tune. (VL's doom loops are
     [dealt with](fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01): temperature 0.7 ends them, and an agent LoRA
