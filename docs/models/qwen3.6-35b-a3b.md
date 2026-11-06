@@ -40,7 +40,10 @@ of the 40 layers keep a KV cache (2 KV heads × 256), 128K of context at q8_0 co
 **Faster, same VRAM (2026-11-04, opt-in):** a GPU cache of the most recently used experts instead of
 fixed layers, with the CPU computing 95% of the misses: **39.4 vs 24.9 tok/s** decode (A/B/A), prompt speed
 unchanged. In a full pibench batch: 17/18 solved, decode 32.9 vs 20.7 tok/s, median run 2.6 vs 3.4 min.
-`MOE_CACHE=auto` (2900 MiB) on our fork's `moe-offload` build;
+`MOE_CACHE=auto` (2900 MiB, less if the desktop uses more than ~380 MiB of VRAM) on our fork's
+`moe-cache-max-batch` build, which also sends batches of up to 128 tokens through the cache: tool-call turns of
+48–128 new tokens are read 11–17% faster (2026-11-05;
+[step 14](../../bench/moe-cache/README.md)). See
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 
 ## Install & run

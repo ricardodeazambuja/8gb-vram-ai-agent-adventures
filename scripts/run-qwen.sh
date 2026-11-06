@@ -57,7 +57,7 @@
 #              bench/moe-cache/README.md). See docs/how-it-fits.md §12.  (default: empty = off)
 #   MOE_CACHE_MAX_BATCH  batches up to N tokens go through the cache, bigger ones copy every expert they use
 #              (--moe-cache-max-batch; needs the fork's moe-cache-max-batch branch)
-#              (default: empty = the binary's 32; with MOE_CACHE=auto, distill 256)
+#              (default: empty = the binary's 32; with MOE_CACHE=auto, distill 256, qwen36 128)
 #   MOE_CACHE_ADAPT  1 = MOE_CACHE=auto shrinks the cache by however much more VRAM is in use at launch than its
 #              size leaves room for (qwen36 380, distill 700, flint 500, ornith 430 MiB); 0 = the measured size
 #              as is  (default: 1)
@@ -117,6 +117,7 @@ case "$QMODEL" in
     _ngl=30; _ctx=; _minp=0; _bin=
     _ncmoe=32
     _moecache=2900; _moecache_desk=380   # desk: desktop VRAM (MiB) this size leaves room for, measured
+    _moecache_maxbatch=128   # 48-128-token turns read 11-17% faster; experimental/step14-mb128.sh
     _temp=0.6 ;;
   distill)
     KIND=moe

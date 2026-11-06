@@ -278,6 +278,25 @@ tokens. 128 would probably keep their gains at 48 and 100 tokens without the los
 gains least: with a 33% hit rate, more of each turn falls to the CPU. Like the cache size, the limit is per
 model.
 
+**128 (step 14, 2026-11-05 night).** `experimental/step14-mb128.sh` ([`step14.log`](experimental/logs/step14.log)) ran
+limits 32 / 128 / 256 / 32 again on Qwen3.6 (cache 2800 MiB, batch 512) and Flint (2168, batch 2048) on the main
+build, desktop 356–394 MiB. Change in prompt time against the mean of the two runs at 32, which repeat to within 1%
+(3–4% at 16 tokens):
+
+| Model, limit | 16 | 48 | 100 | 128 | 150 | 200 | 300–600 | Decode vs 32 |
+|---|---|---|---|---|---|---|---|---|
+| Qwen3.6, 128 | −6% | **−17%** | **−13%** | **−11%** | −1% | −1% | −2 to −4% | −2% |
+| Qwen3.6, 256 | −5% | −16% | −13% | −10% | 0% | **+6%** | −3 to −4% | −8% |
+| Flint, 128 | −2% | **−20%** | **−8%** | −1% | −1% | −1% | 0% | −8% |
+| Flint, 256 | −2% | −20% | −7% | −1% | **+7%** | **+16%** | 0% | −1% |
+
+128 keeps the short-turn gain and drops the loss at 150–200 tokens on both. Decode is the open question: the four
+runs at 32 alone spread over 36.9–39.9 tok/s (Qwen3.6) and 30.8–32.9 (Flint); Qwen3.6 at 128 is inside that
+spread, but Flint at 128 and Qwen3.6 at 256 are below it, in opposite settings, and the limit shouldn't touch
+decode (one-token batches; srvbench's 6K prompt mostly bypasses the cache, all but its last ~100 tokens). So
+`QMODEL=qwen36 MOE_CACHE=auto` now passes `--moe-cache-max-batch 128`; Flint stays at 32 until a longer decode test
+settles it.
+
 The peak VRAM in these runs also says how much desktop the launchers' `MOE_CACHE=auto` sizes leave room for,
 by the rule above (7687 − 300 − the server's own peak): Qwen3.6 at 2900 MiB peaked at 6973–7005 MiB of its own,
 which leaves ~380 MiB; Flint at 2168, ~6883, ~500; Qwen3.8 at 2900 (batch 2048), ~6833, ~550, hence its 2770.
