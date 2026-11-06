@@ -294,8 +294,14 @@ build, desktop 356–394 MiB. Change in prompt time against the mean of the two 
 runs at 32 alone spread over 36.9–39.9 tok/s (Qwen3.6) and 30.8–32.9 (Flint); Qwen3.6 at 128 is inside that
 spread, but Flint at 128 and Qwen3.6 at 256 are below it, in opposite settings, and the limit shouldn't touch
 decode (one-token batches; srvbench's 6K prompt mostly bypasses the cache, all but its last ~100 tokens). So
-`QMODEL=qwen36 MOE_CACHE=auto` now passes `--moe-cache-max-batch 128`; Flint stays at 32 until a longer decode test
-settles it.
+`QMODEL=qwen36 MOE_CACHE=auto` now passes `--moe-cache-max-batch 128`.
+
+Flint's decode, settled (`experimental/step15-flint-decode.sh`, [`step15.log`](experimental/logs/step15.log)): limits
+32 / 128 / 32 / 128, four 400-token runs each. Means 32.90 / 31.42 / 31.23 / 31.03 tok/s: the machine slowed 5%
+between the two runs at 32, and in the second pair 128 is 0.6% behind, within the runs' spread (0.3–0.7 tok/s).
+The decode hit rate is higher at 128 (34.8% vs 33.6%, the same in both repeats), so the cache isn't costing
+anything; step 14's dip was the same drift, since 128 always ran after 32. Flint's `MOE_CACHE=auto` now passes 128
+too.
 
 The peak VRAM in these runs also says how much desktop the launchers' `MOE_CACHE=auto` sizes leave room for,
 by the rule above (7687 − 300 − the server's own peak): Qwen3.6 at 2900 MiB peaked at 6973–7005 MiB of its own,

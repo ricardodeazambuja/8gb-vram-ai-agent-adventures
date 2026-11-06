@@ -46,7 +46,9 @@ layer of experts, hence `NCMOE=42` instead of 41. See [how-it-fits.md](../how-it
 the CPU computing 95% of the misses: **32.1 vs 26.9 tok/s** (A/B/A, one noisy baseline run at 17.4). In a
 full pibench batch: still 18/18, decode 26.4 vs 21.5 tok/s, but prefill 354 vs 426 tok/s; median run 3.6 vs
 4.3 min.
-`MOE_CACHE=auto` (2168 MiB) on our fork's `moe-offload` build;
+`MOE_CACHE=auto` (2168 MiB, less if the desktop uses more than ~500 MiB of VRAM) on our fork's
+`moe-cache-max-batch` build, which also sends batches of up to 128 tokens through the cache: tool-call turns of
+48–100 new tokens are read 8–20% faster, decode unchanged (2026-11-05, [steps 14–15](../../bench/moe-cache/README.md)).
 [how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
 
 **Why the 3-bit file:** the laptop has 32 GB of RAM with about 20 GB actually available. The
