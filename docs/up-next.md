@@ -109,7 +109,10 @@ The catch: REAP works on Hugging Face checkpoints, and a 35B model in BF16 is ~7
 RAM (its layer-wise mode, added 2026-03-30, may get around that; untested). The other route is to do it in
 GGUF: collect the scores with our llama.cpp fork on our own workload (pi sessions), then write a GGUF without
 the dropped experts and their router rows. Calibrate on what we actually run, and let pibench decide whether
-it still works. First look, from traces we already had: [expert use](../bench/moe-cache/README.md#how-concentrated-is-expert-use-expert_usagepy-2026-11-05).
+it still works. Measured so far ([expert use](../bench/moe-cache/README.md#how-concentrated-is-expert-use-expert_usagepy-2026-11-05)):
+on 18 real pi sessions Qwen3.6 picks every expert, and a ranking from other tasks keeping the top 90% / 75%
+misses 2% / 7.6% of a new task's picks. So 10–25% at most, and only a pruned model's pibench score can say
+whether the router's second choices are good enough. Flint spreads its picks even more evenly.
 
 ## 🗣️ Voice agents: agents that talk to people
 

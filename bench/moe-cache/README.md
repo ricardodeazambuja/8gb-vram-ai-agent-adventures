@@ -40,6 +40,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `divergence2.py` | like `divergence.py`, with thinking off and on; found ThinkingCap's empty-thought bug |
 | `empty_thoughts.py FOLDER...` | tool-call turns without thinking in pibench transcripts; output in `logs/empty-thoughts.txt` |
 | `expert_usage.py TRACE...` | how concentrated the router's expert picks are per layer, and what keeping the top K% would miss on held-out tokens; output in `logs/expert-usage.txt` |
+| `experts/` | expert use on real agent sessions: `trace-qwen36.sh` (the run), `replay_sessions.py` (in the folder above), `agent_experts.py` (the analysis), logs |
 | `gemma-empty.sh` | base Gemma 26B with the fixed `config/gemma4-26b-nonl.jinja`: `divergence2.py` and the agent loop, thinking off and on (uses `longctx/srv.sh`) |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
@@ -322,12 +323,41 @@ prompt). Output in [`logs/expert-usage.txt`](logs/expert-usage.txt). Per layer, 
 
 "Held-out": experts ranked on the first half of the tokens, picks counted on the second half. Qwen3.6 leans on
 a small set of experts, Flint spreads its picks almost evenly, and the cache hit rates agree (Qwen3.6 63% and
-Flint 33% in step 11). So Qwen3.6, and likely Qwen3.8 and Ornith, which share its architecture, are the
-candidates; Flint is not.
+Flint 33% in step 11). On this trace alone, Qwen3.6 looked like the candidate and Flint not; the agent
+sessions below overturn the Qwen3.6 half of that.
 
 What this doesn't show: one story prompt of ~1K tokens (about 32 picks per expert per layer, so "never picked"
 is partly chance), and both halves come from the same text, so it says nothing about an agent session yet.
 Frequency only: REAP also weighs the gate value and how much each expert changes the output, and a lost pick
 goes to the router's next choice rather than to nothing. The next step is a trace of real agent sessions:
 any cache run writes one with `LLAMA_MOE_CACHE_TRACE=FILE`.
+
+### On real agent sessions: Qwen3.6 uses all its experts (`experts/`, 2026-11-05)
+
+`experts/trace-qwen36.sh` replays Qwen3.6's 18 pibench sessions (6 tasks × 3 runs, 183,358 tokens) as prompts
+on a cache run with `LLAMA_MOE_CACHE_TRACE` and `--moe-cache-max-batch 512`, so prompt batches go through
+the traced cache path too (`replay_sessions.py` turns pi's `pi.jsonl` into chat messages). The router picks an
+expert from the token and the context before it, so reading a session back routes it as it was routed when the
+model wrote it, except the thinking of earlier turns, which Qwen3.6's template leaves out of the history.
+`experts/agent_experts.py` splits the trace into sessions, saves the counts
+([`qwen36-agent-counts.npz`](experts/logs/qwen36-agent-counts.npz), so the analysis reruns without the 217 MB
+trace) and writes [`qwen36-agent.txt`](experts/logs/qwen36-agent.txt). Three layers are left out: the last one
+only runs the tokens whose output is needed, and layers 34 and 38 saw just 72 tokens, so their large prompt
+batches took the untraced large-batch path anyway (why only those two, we don't know).
+
+| Qwen3.6, 37 layers | Story prompt (above) | Agent sessions |
+|---|---|---|
+| Experts never picked (median per layer) | 28% | **0%** |
+| Experts covering 90% / 99% of picks | 23% / 52% | **68% / 93%** |
+| Keep the top 75%: held-out picks lost | 1.9% (second half of the same text) | **7.6%** (a task it wasn't ranked on; 6.3–8.0% by task) |
+| Keep the top 90% | 0.8% | 2.0% |
+| Ranked on the story, keep 75%, scored on agent sessions | | 23% |
+
+The story trace was too short and too uniform: on agent work every expert gets used, and a ranking from the
+story is no better than chance (its top 25% of experts share 22% with the agent sessions' top 25%). A ranking
+from other agent tasks does carry over: dropping a tenth of each layer's experts would miss 2% of the picks on
+a task it never saw, a quarter 7.6%, half 24%. So frequency-based pruning of Qwen3.6 is worth at most ~10–25%
+of the experts (1.4–3.5 GiB of the 14.1 GiB they take in RAM), and only if the router's second choices are nearly
+as good, which only a pruned model can answer. REAP's own claims are for models with more experts, and its
+score weighs each expert's output, not just how often it's picked.
 
