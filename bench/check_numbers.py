@@ -103,8 +103,8 @@ for scene in ("tanks", "signal", "gauge"):
 MC = f"{BENCH}/moe-cache/logs"
 
 
-def decode(label):  # mean decode tok/s of the 400-token runs in one srvbench log
-    with open(f"{MC}/srv-{label}.log") as f:
+def decode(label, d=MC):  # mean decode tok/s of the 400-token runs in one srvbench log
+    with open(f"{d}/srv-{label}.log") as f:
         runs = [float(m[1]) for m in re.finditer(r"eval time = .*/\s+400 tokens .*?([\d.]+) tokens per second", f.read())]
     return statistics.mean(runs)
 
@@ -128,6 +128,17 @@ same("ThinkingCap reprocessed per turn, empty thoughts kept", reprocessed("tcap-
      [2, 17, 17, 28, 28, 3, 17, 17, 28, 28])
 same("Gemma reprocessed per turn, empty thoughts kept (off, on)", reprocessed("gemma-empty")[4:],
      [5, 14, 14, 25, 25, 5, 14, 14, 25, 25])
+# daytime cache sizes (bench/moe-cache/README.md, step 16): night size (two runs) -> day size, decode change %
+EX = f"{BENCH}/moe-cache/experimental/logs"
+for name, night, day, want in [("q36", 2900, 1580, (38.7, 35.3, -9)), ("q38", 2770, 1770, (49.0, 43.1, -12)),
+                               ("flint", 2168, 1024, (32.6, 29.0, -11)), ("ornith", 2983, 1713, (44.5, 38.5, -13))]:
+    a = statistics.mean([decode(f"day-{name}-c{night}", EX), decode(f"day-{name}-c{night}-b", EX)])
+    b = decode(f"day-{name}-c{day}", EX)
+    same(f"{name} decode, night / day cache / change %", (round(a, 1), round(b, 1), round((b / a - 1) * 100)), want)
+a = statistics.mean([decode("day-q36-ncmoe36", EX), decode("day-q36-ncmoe36-b", EX)])
+b = decode("day-q36-c1580-c", EX)
+same("Qwen3.6 daytime VRAM decode, n-cpu-moe 36 / cache 1580 / gain %", (round(a, 1), round(b, 1), round((b / a - 1) * 100)),
+     (21.4, 34.8, 62))
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))

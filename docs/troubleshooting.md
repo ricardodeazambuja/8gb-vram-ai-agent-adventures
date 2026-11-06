@@ -140,8 +140,9 @@ Nemotron Bolt's default placement ran out of VRAM at load next to the daytime de
 
 **Fix:** check `nvidia-smi` before launching. `MOE_CACHE=auto` now shrinks the cache by however much more
 VRAM is in use than the size was measured with (`MOE_CACHE_ADAPT=0` turns that off), and refuses below
-1 GiB. For anything else, close the browser or lower `NCMOE`/`-ngl`. Speed with the shrunk caches is
-not measured yet.
+1 GiB. For anything else, close the browser or lower `NCMOE`/`-ngl`. The shrunk caches cost 9–13% of decode
+speed and 5–24% on short turns, and are still far faster than static offload at the same VRAM
+([measured](../bench/moe-cache/README.md)). Flint's shrunk size falls under the floor: close the browser.
 
 ### 128K "should fit" by the math, but runs out of memory
 

@@ -40,14 +40,14 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `divergence2.py` | like `divergence.py`, with thinking off and on; found ThinkingCap's empty-thought bug |
 | `empty_thoughts.py FOLDER...` | tool-call turns without thinking in pibench transcripts; output in `logs/empty-thoughts.txt` |
 | `expert_usage.py TRACE...` | how concentrated the router's expert picks are per layer, and what keeping the top K% would miss on held-out tokens; output in `logs/expert-usage.txt` |
-| `experts/` | expert use on real agent sessions: `trace-qwen36.sh` (the run), `replay_sessions.py` (in the folder above), `agent_experts.py` (the analysis), logs |; `prune-eval.sh` with `make_rank.py` and `prune_gguf.py` (pruned GGUFs, KL divergence)
+| `experts/` | expert use on real agent sessions: `trace-qwen36.sh` (the run), `replay_sessions.py` (in the folder above), `agent_experts.py` (the analysis), `prune-eval.sh` with `make_rank.py` and `prune_gguf.py` (pruned GGUFs, KL divergence), logs |
 | `gemma-empty.sh` | base Gemma 26B with the fixed `config/gemma4-26b-nonl.jinja`: `divergence2.py` and the agent loop, thinking off and on (uses `longctx/srv.sh`) |
 | `fitcheck.sh NAME LAUNCHER...` | starts one of our launchers on port 8090, sends a ~30K-token prompt plus 200 tokens, reports VRAM; the pibench pre-check below |
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
 | `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), reruns at matched VRAM `step5-qwen38.sh` and `step12-ornith.sh`, logs and tuner output |
-| `experimental/` | the fork's local `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`, logs) |
+| `experimental/` | the fork's local `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); logs |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -313,8 +313,30 @@ desktop, give a smaller `MOE_CACHE` in MiB, or a larger `NCMOE`.
 That busier desktop is the daytime one: base Gemma's template run (`gemma-empty.sh`) started with 1737 MiB
 already in use, against 334 at night, and peaked at 7608 MiB. So `run-qwen.sh` now does the arithmetic at
 launch: `MOE_CACHE=auto` subtracts the excess from its size (with 1650 MiB in use, Qwen3.6 gets 1632 MiB and
-Qwen3.8 1822), and any other MoE launch warns when more than 600 MiB is in use. The smaller caches are untested
-for speed.
+Qwen3.8 1822), and any other MoE launch warns when more than 600 MiB is in use.
+
+What the smaller caches cost (`experimental/step16-daytime-size.sh`, [`step16.log`](experimental/logs/step16.log),
+2026-11-06): each model's `MOE_CACHE=auto` size against what the launcher shrinks it to next to a ~1.7 GB desktop,
+run night / day / night. Both ran with a ~0.5 GB desktop, so this is the smaller cache alone, not GPU contention.
+srvbench decode (400 tokens, mean of the runs) and turnbench (ms for N new tokens after a cached ~2K base):
+
+| Model | cache night → day (MiB) | decode tok/s | 48 | 100 | 200 | 600 | decode hit rate |
+|---|---|---|---|---|---|---|---|
+| Qwen3.6 | 2900 → 1580 | 38.7 → 35.3 (−9%) | +21% | +24% | +14% | +16% | 62.7% → 50.7% |
+| Qwen3.8 | 2770 → 1770 | 49.0 → 43.1 (−12%) | +10% | +14% | +11% | +7% | 59.4% → 49.6% |
+| Flint | 2168 → 1024 | 32.6 → 29.0 (−11%) | +23% | +14% | +8% | +5% | 35.8% → 30.4% |
+| Ornith | 2983 → 1713 | 44.5 → 38.5 (−13%) | +7% | +6% | +6% | +5% | 53.2% → 42.3% |
+
+The two night runs agreed within 1–4% on decode and turns. Flint's day size would be 968 MiB, under the
+launcher's 1024 floor, so with a 1.7 GB desktop the launcher refuses and Flint needs the browser closed; it ran
+at 1024 here, and its two decode runs split (32.1, 26.0), so its −11% is the least certain. Ornith's night decode,
+44.5 tok/s, is 10% above step 12's 40.4 at the same size (that ran the moe-offload build); not looked into.
+
+Is the shrunk cache still worth it, or should a busy day fall back to static offload? Qwen3.6 at the same VRAM
+(`step16b-daytime-static.sh`, [`step16b.log`](experimental/logs/step16b.log)): `--n-cpu-moe 36` (1572 MiB of experts
+on the GPU, 5905 MiB loaded) / cache 1580 (5919 MiB) / `--n-cpu-moe 36`. Decode 21.4 vs **34.8 tok/s (+62%)**,
+turns −19% / −8% / −7% / −5% at 48 / 100 / 200 / 600 tokens with the cache. So the cache keeps nearly all of its
+lead over static offload at daytime sizes; a busy desktop costs ~10% of decode, not the cache's gain.
 
 **This queue made systemd-oomd kill the terminal** (03:17, 03:30, 03:31). The tuner reads the whole GGUF into
 the page cache on top of the previous model's pages; with distill, Bolt (20.5 GiB) and Ornith back to back,

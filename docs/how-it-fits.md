@@ -297,7 +297,8 @@ gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.
 The cache sizes match the expert bytes `--n-cpu-moe` puts on the GPU (Qwen3.6's 2900 is a little under its
 3070); they are not tuned yet. Gemma at pibench's 64K is the exception: the matching 4084 MiB ran out of memory at load (and so did
 `NCMOE=20` itself that day, with the desktop using ~0.7 GB), so it gets 3500, peaking at 7.5 GB after a 34K-token
-prompt. The method,
+prompt. Next to a busy daytime desktop (~1.7 GB) the launcher's smaller caches cost 9–13% of decode speed, and
+Qwen3.6's is still 62% faster than static offload at the same VRAM. The method,
 scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
 
 ```bash
