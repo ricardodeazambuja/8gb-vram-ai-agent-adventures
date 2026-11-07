@@ -18,6 +18,34 @@ says where it went.
 3. **LFM3-Audio's open parts:** tool calls over `/v1/realtime`, and recorded human speech instead of its own
    voice ([voice agents](#️-voice-agents-agents-that-talk-to-people) below).
 
+### When the GPU is quiet (browser closed, or at night)
+
+`scripts/llm` and `scripts/imagine` (2026-11-06) were tested live on the small models, the helpers and Klein, but
+the desktop held 2.5 GB of VRAM, so these still need a run:
+
+- [ ] **The big models through `scripts/llm`:** `qwen36`, `distill`, `flint` and `ornith` with the expert cache,
+      `gemma` (cache + template fix) and `thinkingcap`. With a busy desktop they correctly refused; check that each
+      loads, answers a `-p` one-shot, and that `status`/`stop` work. Watch memory pressure on the first load.
+- [ ] **`bonsai2` and `spark`:** that the context really is 32K / 108K now (`scripts/llm status`) and that pi gets
+      `--thinking medium` / `high` without an HTTP 400.
+- [ ] **The interactive "stop the server too?" question** after a normal pi session.
+- [ ] **Rerun `bench/recheck` and the vision probe through `scripts/llm <name> serve`**, so their numbers are the
+      launcher defaults (cache, Gemma's q8_0 KV and template fix). Today both use the backend scripts with the
+      static split, and their pages say so.
+- [ ] **Groot and LFM2.5-24B with the cache:** measured faster (+16% and +42%, [Groot](models/groot-19b-a3b.md),
+      [LFM2.5](models/lfm2.5-24b-a2b.md)) but not the launcher default, because `MOE_CACHE=auto` has no measured size
+      for them that leaves room for a desktop. Measure each one's peak next to a ~0.5 and a ~1.7 GB desktop, give
+      them a size and a desktop allowance in `run-qwen.sh`, then add them to `scripts/llm`'s cache list.
+
+### Loose ends from the docs review (2026-11-06)
+
+- **VibeThinker's audit:** its page says "clean", but there is no saved output or record of it
+  ([security](security.md)). Run `utils/audit-gguf.py` on both files with `--ref` and record the result.
+- **Gemma's MTP gain:** the graveyard says +15–31% at greedy, its model page +19–31%. The log is in the old
+  Gemma4 project (GitHub only); find it and keep one figure.
+- **`bench/visual-control/results/summary.md`** labels rows by model key only, so the clean, new-scenes and
+  shifted runs of one model look alike; add the scene set to the label in `run_control.py summary`.
+
 ## In progress
 
 | What | Status |
