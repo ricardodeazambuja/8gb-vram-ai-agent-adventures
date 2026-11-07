@@ -37,11 +37,6 @@ the desktop held 2.5 GB of VRAM, so these still need a run:
       for them that leaves room for a desktop. Measure each one's peak next to a ~0.5 and a ~1.7 GB desktop, give
       them a size and a desktop allowance in `run-qwen.sh`, then add them to `scripts/llm`'s cache list.
 
-### Loose ends from the docs review (2026-11-06)
-
-- **Gemma's MTP gain:** the graveyard says +15–31% at greedy, its model page +19–31%. The log is in the old
-  Gemma4 project (GitHub only); find it and keep one figure.
-
 ## In progress
 
 | What | Status |

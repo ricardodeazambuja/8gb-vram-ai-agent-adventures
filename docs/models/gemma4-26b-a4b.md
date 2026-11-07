@@ -146,7 +146,7 @@ A q8_0 KV cache frees ~1 GB at 64K and ~2 GB at 128K, which buys a faster expert
 
 **MTP (speculative decoding).** Gemma 4 ships a tiny 0.25 GB "draft" head that guesses the next
 few tokens. It's lossless, and at **greedy** it's a real win: 79–88% of drafts accepted and
-**+19–31%** faster (≈21 → 27 tok/s). At the default temperature 1.0, acceptance drops to 66–74%
+**+19–31%** faster at 32K (22.9 → 27.1 tok/s at draft length 2; [the benchmark](https://github.com/ricardodeazambuja/gemma4-26B-only-8B-VRAM/blob/ff2c219c99cca2b908258550b129db054cf6e737/docs/mtp-benchmark.md)). At the default temperature 1.0, acceptance drops to 66–74%
 and the gain disappears into this laptop's ±13% noise. A draft-confidence floor (`p_min > 0`)
 turned the output into `fmt-fmt…` loops, so don't. Want faster coding? Lower the temperature and
 try `MTP=1`. (The EAGLE3 draft was slower and crashier; it's in the [graveyard](../graveyard.md).)

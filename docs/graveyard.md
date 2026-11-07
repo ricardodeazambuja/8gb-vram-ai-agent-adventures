@@ -68,8 +68,8 @@ i-quant kernels, built with the same toolchain.
 QAT repo) with `--spec-type draft-mtp`. Speculative decoding is lossless by construction, so the
 only question is speed.
 
-**Numbers:** at greedy (temp 0), 79–88% draft acceptance and **+15–31%** decode (≈21 → 27
-tok/s). At the default temp 1.0, acceptance falls to 66–74% and the gain is **within noise**. And
+**Numbers:** at greedy (temp 0) and 32K, 79–88% draft acceptance and **+19–31%** decode (22.9 → 27.1
+tok/s at draft length 2; +13% at 64K) ([measured 2026-06-12](https://github.com/ricardodeazambuja/gemma4-26B-only-8B-VRAM/blob/ff2c219c99cca2b908258550b129db054cf6e737/docs/mtp-benchmark.md)). At the default temp 1.0, acceptance falls to 66–74% and the gain is **within noise**. And
 `--spec-draft-p-min > 0` is a trap: with sampling it collapsed the output into `fmt-fmt-fmt…`
 loops, which look like 85–100% acceptance because degenerate text is very easy to predict.
 
