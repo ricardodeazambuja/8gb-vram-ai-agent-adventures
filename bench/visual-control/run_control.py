@@ -492,17 +492,21 @@ def summary():
     import glob
     import statistics
     lines = ["# Visual control probe: results", "", "## glance: one picture, one decision", "",
-             "| Model | Thinking | Tool call | " + " | ".join(SCENES) + " | All | Median time | Invalid calls |",
-             "|---|---|---|" + "---:|" * (len(SCENES) + 3)]
+             ("Scenes: *probe* = the probe's own scenes; *new* = never-seen drawings (`--new`); *shifted* = degraded "
+              "pictures (`--shift`)."), "",
+             "| Model | Scenes | Thinking | Tool call | " + " | ".join(SCENES) + " | All | Median time | Invalid calls |",
+             "|---|---|---|---|" + "---:|" * (len(SCENES) + 3)]
     for p in sorted(glob.glob(os.path.join(RES, "glance-*.json"))):
         with open(p) as f:
             d = json.load(f)
+        name = os.path.basename(p)  # the scene set is only in the file name (see main: tag)
+        scenes = "new" if "-new-think-" in name else "shifted" if "-shift-think-" in name else "probe"
         it = d["items"]
         cells = []
         for s in SCENES:
             xs = [x for x in it if x["scene"] == s]
             cells.append(f"{sum(x['ok'] for x in xs)}/{len(xs)}")
-        lines.append(f"| {d['key']} | {'on' if d['think'] else 'off'} | {d.get('tool_choice', 'auto')} | "
+        lines.append(f"| {d['key']} | {scenes} | {'on' if d['think'] else 'off'} | {d.get('tool_choice', 'auto')} | "
                      + " | ".join(cells) +
                      f" | **{sum(x['ok'] for x in it)}/{len(it)}** | {statistics.median(x['secs'] for x in it):.1f} s"
                      f" | {sum(x['invalid_calls'] for x in it)} |")

@@ -41,8 +41,6 @@ the desktop held 2.5 GB of VRAM, so these still need a run:
 
 - **Gemma's MTP gain:** the graveyard says +15–31% at greedy, its model page +19–31%. The log is in the old
   Gemma4 project (GitHub only); find it and keep one figure.
-- **`bench/visual-control/results/summary.md`** labels rows by model key only, so the clean, new-scenes and
-  shifted runs of one model look alike; add the scene set to the label in `run_control.py summary`.
 
 ## In progress
 
