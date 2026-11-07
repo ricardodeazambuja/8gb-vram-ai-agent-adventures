@@ -26,7 +26,8 @@ untouched starter files fail them.
 
 **The rules:** plain [pi](https://github.com/badlogic/pi-mono) 1.3.0 with no extensions, each
 model at its launcher's defaults unless its page says otherwise (Gemma and LFM3-VL ran at 64K, the Gemma 12B agentic
-at 32K on our fork), 20 minutes per attempt, **3 attempts per task**. An attempt
+at 32K on our fork). The MoEs ran with the static `NCMOE` split, from before the expert cache; the cache's own
+batch is in [how it fits](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes). 20 minutes per attempt, **3 attempts per task**. An attempt
 counts as **solved only if every hidden test passes**. Close doesn't count; it's that kind of
 gym.
 

@@ -46,7 +46,7 @@ experts instead of fixed layers: **39.4 vs 24.9 tok/s** decode, and in a full pi
 ## Install & run
 
 You need the basics from [getting-started.md](../getting-started.md) first (mamba, an NVIDIA
-driver, pi). Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
+driver, pi) and our llama.cpp, built once. Then:
 
 ```bash
 # 1. A small env with the Hugging Face CLI (the download script insists the `hf` CLI
