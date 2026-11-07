@@ -1,8 +1,8 @@
 # 👀 The vision probe — what can they actually see?
 
-Six of our models accept images. That sounds great until you ask "how well?", and the honest
+Most of our models accept images. That sounds great until you ask "how well?", and the honest
 answer is "we had to check". So we drew twelve pictures with a known right answer, showed them
-to every image-capable model, and graded the replies field by field.
+to nine image-capable models, and graded the replies field by field.
 
 ## The pictures
 
@@ -25,17 +25,22 @@ answer has to be JSON. Each model uses its own vision projector and launcher def
 |---|---:|---:|---:|---:|---:|---:|---:|
 | [**Gemma 4 26B-A4B**](models/gemma4-26b-a4b.md) | 100% | 0% | 100% | 100% | 100% | **100%** | 70 s |
 | [**Qwen3.6-35B-A3B**](models/qwen3.6-35b-a3b.md) | 100% | 7% | 100% | 100% | 100% | **100%** | 43 s |
-| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 100% | 13% | 87% | 100% | 100% | **97%** | 33 s |
 | [Bonsai 2 27B](models/bonsai2-27b.md) | 100% | **67%** | 100% | 100% | 93% | **98%** | 38 s |
+| [Ornith-1.5-35B-A3B](models/ornith-1.5-35b-a3b.md) ² | 100% | 13% | 87% | 100% | 100% | **97%** | 33 s |
 | [LFM3-VL-2B](models/lfm3-vl-2b.md) ² | 100% | 7% | 100% | 69% | 93% | **91%** | 8 s |
 | [Nemotron 3.5 Bolt 74B](models/nemotron-bolt-74b.md) | 100% | 21% | 64% | 100% | 100% | **91%** | 110 s |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | 100% | 7% | 100% | 61% | 96% | **89%** | **5 s** |
 | [Qwen3.8 distill](models/qwen3.8-35b-a3b-distill.md) | 100% | 13% | 87% | 67% | 100% | **88%** | 35 s |
+| LFM3-VL-2B, thinking off, tuned on the glance scenes (LoRA) ³ | 100% | 7% | 100% | 50% | 63% | **78%** | — |
 | [Groot-19B-A3B](models/groot-19b-a3b.md) ¹ | 97% | 21% | 21% | 78% | 100% | **74%** | 44 s |
 
 "Overall" counts boxes in whatever coordinate format the model chose (more on that in a second).
-Measured 2026-10-23 (¹ 2026-10-26, ² 2026-10-27/28), one answer per image. Flint, Spark and the Nemotron E4B are text-only, so they
-sat this one out.
+Measured 2026-10-23 (¹ 2026-10-26, ² 2026-10-27/28), one answer per image. ³ 2026-10-30, one seed of the
+[fine-tuned LFM3-VL](fine-tuning.md#did-it-hold-up-2026-10-30) with thinking off; the same model untuned with
+thinking off scored 68%. LocateAnything-3B (boxes only,
+[visual control](visual-control.md#locateanything-3b-boxes-instead-of-tool-calls)), LFM2.5-VL-450M and
+ThinkingCap Gemma also take images but didn't sit this probe. Flint, Spark, Dory, LFM3-1.7B, LFM2.5-24B, the
+Nemotron E4B, VibeThinker and TwIL are text-only.
 
 <p align="center"><img src="../bench/vision/results/overlays/gemma26b-bbox-shapes-3.png" alt="Gemma 4 26B's boxes (magenta) drawn over the true boxes (green): all six shapes overlap closely" width="560"><br><em>Gemma's boxes (magenta) over the truth (green). Not bad for a model that refused to use pixels.</em></p>
 
@@ -72,14 +77,14 @@ projector is the biggest of the lot.
 
 **Bigger isn't better at boxes.** Bolt 74B, the largest model here, read the invoices, chart,
 dots, grid and drawings perfectly, then drew the worst boxes: right x positions and top edges,
-bottoms about twice as low as they should be. Its 64 % "any format" box score was the lowest of the
-first six (Groot later scored 21 %); Bonsai 2, about a third of its size, used pixels as asked and scored 100 %.
+bottoms about twice as low as they should be: 64% on "any format" boxes, while Bonsai 2, about a third
+of its size, used pixels as asked and scored 100%.
 
 ## Run it yourself
 
 ```bash
 python3 bench/vision/gen_images.py               # regenerate the 12 images
-bash scripts/stop-server.sh                      # it needs the GPU to itself
+scripts/llm stop                                 # it needs the GPU to itself
 python3 bench/vision/run_vision.py               # every model in its list; resumable
 python3 bench/vision/run_vision.py qwen3vl       # just one
 ```

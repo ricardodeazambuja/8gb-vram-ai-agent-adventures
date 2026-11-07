@@ -71,7 +71,9 @@ still about a minute.
 **[pibench](../pibench.md): 12/18 solved**, 88% of hidden tests, median **2.2 min** per run. That
 is more than its 24B sibling LFM2.5 (10/18) and the 8B Nemotron E4B (7/18), from a model a tenth
 of the size. The CLI, the feature and the login were 3/3, the bug fix 2/3 (once it fixed only the
-reported bugs and still accepted `5x` and `abc`). Where it fell down was the data it scraped:
+reported bugs and still accepted `5x` and `abc`). Where it fell down was the data it scraped.
+
+## How it behaves
 
 - 📚 **books, 0/3.** One run wrote the CSV by hand without quoting, so "1,000 Places to See
   Before You Die" split at the comma; the others got the order wrong or wrote duplicate rows

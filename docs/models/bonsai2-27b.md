@@ -43,18 +43,19 @@ general tricks in [How it fits](../how-it-fits.md).
 
 `PTQ1_0` is PrismML's own type, so stock llama.cpp rejects the file. We merged
 [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) (at `5628c733`) into
-[ours](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures), so the one build every other model uses
-runs it too. Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
+[ours](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) (`adventures`, which our default build
+contains), so the one build every other model uses runs it too. Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 # 1. Download the model + vision projector (~6.6 GB), pinned revision, sha256-checked
 bash scripts/download-models.sh bonsai2
+bash utils/audit-gguf.sh models/bonsai2-27b/Ternary-Bonsai-2-27B-PTQ1_0.gguf   # then audit it (and the mmproj)
 
 # 2. Serve it and open pi (32K context, thinking level "medium" by default)
 scripts/llm bonsai2
 
 # One question, no chat:
-scripts/llm bonsai2 -p "explain @README.md" --no-session </dev/null
+scripts/llm bonsai2 -p "explain @README.md" --no-session
 
 # Done? Free the GPU:
 scripts/llm stop

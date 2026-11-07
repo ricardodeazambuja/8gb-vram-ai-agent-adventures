@@ -33,6 +33,7 @@ Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 bash scripts/download-models.sh twil      # pinned revision 58d49f0, sha256 checked
+bash utils/audit-gguf.sh models/twil-8b/TwIL-8B-Q4_K_M-verbose.gguf   # then audit it
 scripts/llm twil serve                    # port 8080, 24K, q4_0 KV, temp 1.0, top-p 0.95
 ```
 

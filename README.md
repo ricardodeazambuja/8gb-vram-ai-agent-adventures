@@ -18,7 +18,7 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 |---|---|---|---:|---:|---:|---:|---|
 | 🪨 | [**Flint**](docs/models/flint.md)<br>`flint` | 40B MoE, 2.5B active | 128K | 24 tok/s | **18/18** | text only | The careful coder. Looks before it leaps. |
 | 💎 | [**Gemma 4 26B-A4B**](docs/models/gemma4-26b-a4b.md)<br>`gemma` | 26B MoE, 4B active | 32K–128K | 23.5 tok/s | **18/18** | **100%** | Where it all started. Quietly aced everything. |
-| 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md)<br>`thinkingcap` | 26B MoE, 4B active | 64K | 17.5 tok/s | 17/18 | — | Gemma told to think less: half the thinking, one fewer solve. |
+| 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md)<br>`thinkingcap` | 26B MoE, 4B active | 64K | 17.4 tok/s | 17/18 | not run | Gemma told to think less: half the thinking, one fewer solve. |
 | ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md)<br>`bolt` | 74B hybrid MoE, 9B active | 128K | 14 tok/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
 | 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md)<br>`qwen36` | 35B MoE, 3B active | 128K | 23 tok/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
 | 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md)<br>`distill` | 35B MoE, 3B active | 128K | 26 tok/s | 16/18 | 88% | Quick jobs (2.5 min). Thinks in haiku. |
@@ -35,12 +35,13 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 
 **pibench** = six real chores (fix bugs, build a CLI, scrape websites, log in through a form) done
 alone, in a sandbox, graded by hidden tests; solved attempts out of 18. **Vision** = twelve
-images with known answers: OCR, bounding boxes, charts, counting, engineering drawings. "—" means
+images with known answers: OCR, bounding boxes, charts, counting, engineering drawings. "not run" means
 we haven't run it (yet). The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md). The name under each model starts it: `scripts/llm <name>`
 ([below](#using-the-models)). Speeds are with the experts split by layer (`NCMOE`); for Qwen3.6, the
-Qwen3.8 distill, Flint, Ornith and Gemma, `scripts/llm` uses our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
-instead, which decoded 9–62% faster at the same VRAM (Qwen3.6: 24.9 → 39.4 tok/s).
+Qwen3.8 distill, Flint, Ornith and Gemma, `scripts/llm` uses our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
+instead: 19–58% faster decode at the same VRAM next to a quiet desktop (Qwen3.6 24.9 → 39.4 tok/s; the
+distill +34%), about 10% less than that next to a busy one.
 
 ## The helpers
 

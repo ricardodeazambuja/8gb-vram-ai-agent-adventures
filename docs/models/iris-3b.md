@@ -10,8 +10,13 @@
 > | Licence | Apache 2.0 |
 > | Launch | `scripts/imagine "..." -m iris` |
 
+## What is it?
+
+A 3B text-to-image model (a 6 GB file) with Qwen3-VL-4B as its text encoder. It paints pixels directly, so there's
+no VAE, and draws 1024×1024 in 4 steps.
+
 It has the cleanest sign text of our three, but leaves nothing spare on the card, and it ignored a request
-for watercolour. It paints pixels directly, so there's no VAE. Full comparison:
+for watercolour. Full comparison:
 [Making pictures on 8 GB](../image-generation.md).
 
 ## Install & run

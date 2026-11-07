@@ -7,7 +7,7 @@
 > | On disk | 13.6 GB (`IQ4_XS` experts, `Q8_0` everything else) + 1.2 GB vision projector |
 > | Where it lives | experts of 23 of 30 layers in RAM, everything else on the GPU (7.0 GB VRAM) |
 > | Context | 64K (as we run the base Gemma in pibench) |
-> | Generation | **17–18 tok/s** (the base Gemma file: ~30 tok/s with the same settings) |
+> | Generation | **17–18 tok/s** (the base Gemma file: 30.0 with `scripts/llm`'s expert cache, ~23.5 with the static split) |
 > | Prompt processing | ~350 tok/s (16K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 2.2K–2.4K tokens |
 > | [pibench](../pibench.md) | **17/18 solved** (98% of hidden tests), **47% less thinking** than the base, 5.5 min median per run |
@@ -31,8 +31,8 @@ tensor (attention, the dense feed-forward block, the embedding) at `Q8_0`, 2.6 G
 in the Unsloth QAT file we use for the base. That extra 1.2 GB pushes three more layers' experts
 to RAM (`NCMOE=23` instead of 20; 20 and 18 run out of VRAM at load). The bytes of experts read
 from RAM per token come out about the same as the base's (smaller `IQ4_XS` experts, more layers
-of them), so the drop to 17–18 tok/s from ~30 most likely comes from the CPU's `IQ4_XS` kernels
-being slower than the QAT file's; we haven't profiled it.
+of them), so the drop to 17–18 tok/s (the base file: ~23.5 with the static split, 30.0 with the expert cache)
+most likely comes from the CPU's `IQ4_XS` kernels being slower than the QAT file's; we haven't profiled it.
 
 The card recommends its `MXFP4_MOE` file (the one it evaluated); we took `IQ4_XS` as the
 smallest 4-bit option. A file with the non-expert part at Q4–Q6 would get most of the speed
@@ -52,7 +52,7 @@ scripts/llm thinkingcap
 ```
 
 (The building block, the base Gemma's launcher pointed at this file:
-`BACKEND=cuda CTX=65536 NCMOE=23 KVQUANT=q8_0 ALIAS=thinkingcap-gemma-4-26b-a4b MODEL=models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf bash scripts/run-server.sh`;
+`BACKEND=cuda CTX=65536 NCMOE=23 KVQUANT=q8_0 ALIAS=thinkingcap-gemma-4-26b-a4b MODEL=models/thinkingcap-gemma4-26b-a4b/ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf EXTRA_ARGS="--chat-template-file config/thinkingcap-gemma4-26b-nonl.jinja" bash scripts/run-server.sh`;
 its knobs, listed on [Gemma 4 26B's page](gemma4-26b-a4b.md#knobs), still apply.)
 
 ## Official numbers
@@ -93,13 +93,18 @@ own doctests pass, 0/500 wrong, in 2,163 and 2,370 tokens.
 | Output tokens, median | 7,114 | **5,303 (−25%)** |
 | Median time | **4.8 min** | 5.5 min |
 
-The card's claim holds up on agentic work: about half the thinking, the same results. The
-biggest cut was on the bug fix (23K → 9K characters), and twice it wrote the CLI tool with
-almost no thinking at all. The one miss was the books scrape, where it read the UTF-8 pages as
-Latin-1 (`Noahâ\x80\x99s Ark`), the same trap that caught [LFM2.5](lfm2.5-24b-a2b.md) and
-[Ornith](ornith-1.5-35b-a3b.md). It's slower per job only because this file decodes at 17 tok/s
-on this laptop instead of ~30. A file quantized like our base Gemma file could turn the shorter
-thinking into shorter jobs; we haven't tried one.
+The card's claim holds up on agentic work: about half the thinking, the same results.
+
+## How it behaves
+
+- **Thinks less, solves the same.** The biggest cut was on the bug fix (23K → 9K characters), and
+  twice it wrote the CLI tool with almost no thinking at all.
+- **One miss, a familiar trap.** On the books scrape it read the UTF-8 pages as Latin-1
+  (`Noahâ\x80\x99s Ark`), the same trap that caught [LFM2.5](lfm2.5-24b-a2b.md) and
+  [Ornith](ornith-1.5-35b-a3b.md).
+- **Slower per job anyway.** Only because this file decodes at 17 tok/s on this laptop instead of the
+  base file's 23.5–30. A file quantized like our base Gemma file could turn the shorter thinking into
+  shorter jobs; we haven't tried one.
 
 ## Security audit
 
@@ -115,7 +120,8 @@ thinking into shorter jobs; we haven't tried one.
 
 ## Gotchas
 
-- `NCMOE=20`, the base's setting, runs out of VRAM: use 23.
+- `NCMOE=20` and 18 run out of VRAM at load: use 23. (At 64K, `NCMOE=20` now fails on the base Gemma too, which
+  `scripts/llm` runs with the expert cache instead.)
 - Thinking is off unless the client asks for it, as with the base; there's no saving to be had
   without it.
 - Its chat template makes llama-server reprocess the whole previous turn after most tool calls
@@ -124,3 +130,15 @@ thinking into shorter jobs; we haven't tried one.
   keeps them (and drops a stray newline), down to 17–28 tokens a turn:
   `EXTRA_ARGS="--chat-template-file config/thinkingcap-gemma4-26b-nonl.jinja"`.
   [Details](../../bench/moe-cache/README.md#thinkingcap-the-empty-thought-block-2026-11-05).
+
+## Knobs
+
+Env vars for `scripts/llm thinkingcap` (the base Gemma's launcher underneath; all of
+[its knobs](gemma4-26b-a4b.md#knobs) apply).
+
+| Variable | Default | What it does |
+|---|---|---|
+| `CTX` | 65536 | context window |
+| `NCMOE` | 23 | layers whose experts stay in RAM (20 and 18 run out of VRAM) |
+| `KVQUANT` | q8_0 | KV cache type |
+| `EXTRA_ARGS` | `--chat-template-file config/thinkingcap-gemma4-26b-nonl.jinja` | extra llama-server flags; yours go after the template fix |

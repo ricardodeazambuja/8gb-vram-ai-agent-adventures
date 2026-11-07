@@ -28,6 +28,35 @@ should use less, which we haven't tried.
 The text encoder runs on the CPU (`--backend te=cpu`), since it's needed once per prompt, and VAE
 tiling is on. Iris-3B paints pixels directly, so it has no VAE at all.
 
+## Use it
+
+[`scripts/imagine`](../scripts/imagine) wraps `sd-cli` (built as in [Run it yourself](#run-it-yourself)) with each
+model's measured settings and prints the path of what it made. Anything after `--` goes to `sd-cli` as it is:
+
+```bash
+scripts/imagine "a red fox in the snow"                       # Klein, 1024x1024, random seed
+scripts/imagine "a shop sign that says OPEN" -m iris          # Iris-3B Turbo: the cleanest text
+scripts/imagine "an oil painting of a harbour" -m sdxl        # SDXL, 25 steps
+scripts/imagine "a castle" -n 4 --seed 7 --size 768x1344      # four pictures, seeds 7-10
+scripts/imagine "the same street at night" -i in.png          # img2img (--strength 0.7)
+scripts/imagine "a red door" -i in.png --mask mask.png        # inpaint: white = redraw
+scripts/imagine "the cat wearing a hat" -r cat.png            # reference edit, Klein only
+scripts/imagine "a portrait, sks style" -m sdxl --lora path/to/pytorch_lora_weights.safetensors
+scripts/imagine "..." --dry-run                               # just print the sd-cli command
+scripts/imagine "zxqtok man on a beach" -m sdxl -- --embd-dir models/image-gen/style-runs/subject-word   # the 8 KB learned word
+```
+
+Each picture gets a `.json` next to it with the prompt, the seed and the exact command. `imagine`
+refuses while a llama-server holds the GPU (`scripts/llm stop` first) and runs `sd-cli` in its own
+systemd scope. Pictures land in `models/image-gen/out/`. All the downloads are pinned and sha256-checked, and their audits are in
+[Security](security.md#audits-so-far).
+
+The learned word (`zxqtok`, the invented man) isn't in the repo: [`invert.py`](../bench/imagegen/invert.py)
+trains it in 35 minutes into `models/image-gen/style-runs/subject-word/zxqtok.safetensors`
+([below](#the-best-person-file-is-8-kb)), and `--embd-dir` takes the folder it's in.
+[`stack.py`](../bench/imagegen/stack.py) gathers several words into `style-runs/stack-words/`, so one
+prompt can use two (`"vgword style, zxqtok man on a beach"`).
+
 ## Giving it a picture as well
 
 Prompts aren't the only input. One test of each on our own 1024×1024 fisherman, 2026-10-31:
@@ -51,100 +80,18 @@ the two latent models go through a VAE, which we think explains that. At strengt
 keep more, and we only tried this one. ControlNet, IP-Adapter and PhotoMaker also have flags and
 are untested.
 
-## Run it yourself
-
-The runner is [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), the llama.cpp
-of image models. We used commit `0a067120`, cloned next to this repo:
-
-```bash
-git clone --recursive https://github.com/leejet/stable-diffusion.cpp ../stable-diffusion.cpp
-git -C ../stable-diffusion.cpp checkout 0a067120b388bfefb9a87b96960cb548b97e9157
-git -C ../stable-diffusion.cpp submodule update --init --recursive
-mamba run -n llamacpp-cuda bash -c 'cd ../stable-diffusion.cpp && \
-  cmake -B build -DSD_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DCMAKE_BUILD_TYPE=Release && \
-  cmake --build build -j6'
-
-bash scripts/download-models.sh klein kleinte kleinvae        # ~5.3 GB (iris iriste, sdxl sdxlvae for the others)
-python3 bench/imagegen/run_gen.py klein iris sdxl             # the table above
-```
-
-For your own pictures, [`scripts/imagine`](../scripts/imagine) wraps `sd-cli` with each model's measured
-settings and prints the path of what it made:
-
-```bash
-scripts/imagine "a red fox in the snow"                       # Klein, 1024x1024, random seed
-scripts/imagine "a shop sign that says OPEN" -m iris          # Iris-3B Turbo: the cleanest text
-scripts/imagine "an oil painting of a harbour" -m sdxl        # SDXL, 25 steps
-scripts/imagine "a castle" -n 4 --seed 7 --size 768x1344      # four pictures, seeds 7-10
-scripts/imagine "the same street at night" -i in.png          # img2img (--strength 0.7)
-scripts/imagine "a red door" -i in.png --mask mask.png        # inpaint: white = redraw
-scripts/imagine "the cat wearing a hat" -r cat.png            # reference edit, Klein only
-scripts/imagine "a portrait, sks style" -m sdxl --lora path/to/pytorch_lora_weights.safetensors
-scripts/imagine "..." --dry-run                               # just print the sd-cli command
-```
-
-Each picture gets a `.json` next to it with the prompt, the seed and the exact command. `imagine`
-refuses while a llama-server holds the GPU (`scripts/llm stop` first) and runs `sd-cli` in its own
-systemd scope. Pictures land in `models/image-gen/out/`, benchmark timings in
-[`bench/imagegen/results/`](../bench/imagegen/results/).
-All the downloads are pinned and sha256-checked, and their audits are in
-[Security](security.md#audits-so-far).
-
 ## Teaching SDXL a style or a person
 
-An 8 KB learned word is the best first try, for a person and for a style. It's
-strong and doesn't leak into prompts without the word, and it stacks. For famous styles, naming them
-in the prompt is still free and at least as good, and 1000 steps of LoRA or norm-only fell short of
-that. The first results below are by eye from two seeds (1 and 2), through diffusers rather than
-`sd-cli`, so treat them as a first look, not a score. Later results are in
-[The best person file is 8 KB](#the-best-person-file-is-8-kb) and
-[Words on styles](#words-on-styles-and-stacking).
-
-![Each row compares no adapter, the style named in the prompt, LoRA and norm-only; the last row is the person](image-style-samples.jpg)
-
-*Seed 1. The last row's second picture is the training reference, not a generated result. "No
-adapter" uses the same prompt as the adapters, trigger word included.*
-
-| Teaching | Pictures | Named in the prompt | LoRA | Norm-only |
-|---|---|---|---|---|
-| Van Gogh | 17 | Clear on both seeds | Paint and palette, without the swirling strokes | Slight, some paint texture |
-| Juan Gris (cubism) | 23 | Clear on both seeds | Muted paint, no cubist shapes | Little, some odd geometry |
-| Atget (old photo) | 24 | Clear on both seeds | Faded tones, sepia only sometimes | Little |
-| A person | 20 | Can't: an invented man has no name | Face, hair, beard and glasses | Beard and glasses, often the face; weaker at full length |
-
-- The person worked best. With no adapter, the same prompts give a stranger. Norm-only gets
-  the round glasses and red beard on both seeds in the watercolour and chef pictures, from a file
-  about 19x smaller. Neither method shows much through the astronaut's visor.
-- It went the opposite way from our guess. We expected style to suit norm-only, because
-  style-transfer research ties style to feature means and spreads. Here, it did better on the person.
-- It leaks. Asked for just "a man on a beach", both person adapters drew a man in a blue shirt
-  like the training pictures. Style adapters also change pictures without their trigger word,
-  mostly darkening or muting them. Stacking a person with a style needs a test for this.
-- The fix for the person turned out to be a word. See [below](#the-best-person-file-is-8-kb).
-- Why Gris rather than Picasso: Picasso's work is still under copyright. We train only on public
-  domain art, and the Atget photos are public domain too. The "person" is invented, drawn by Klein
-  ([`make_subject.py`](../bench/imagegen/make_subject.py)).
-
-| Method | Trainable | File | 1000 steps at 768 px | Peak VRAM |
-|---|---|---|---|---|
-| LoRA, rank 8 | 11.6M | 47 MB | 17 min | 5.4 GiB |
-| Norm-only | 0.59M | 2.5 MB | 15.5 min | 5.3 GiB |
-
-Both train in the 8 GB card by caching text and image encodings first. Numbers are in
-[`style-runs.json`](../bench/imagegen/results/style-runs.json).
-
-The `vlft` environment is [here](reproduce.md#setup).
-
-```bash
-python3 bench/imagegen/fetch_commons.py        # our public domain sets, listed in bench/imagegen/data/
-mamba run -n vlft python bench/imagegen/train_style.py train --set vangogh --method norm --trigger vgstyl
-mamba run -n vlft python bench/imagegen/train_style.py eval --run vangogh-norm --trigger vgstyl
-```
+An 8 KB learned word (Textual Inversion) is the best first try, for a person and for a style. It's
+strong, doesn't leak into prompts without the word, and two words stack. For famous styles, naming
+them in the prompt is still free and at least as good. Everything here is judged by eye on two seeds
+(1 and 2); there's no automatic likeness or style score yet. Our first comparison, LoRA against
+norm-only, is [further down](#first-try-lora-against-norm-only).
 
 ### The best person file is 8 KB
 
 Same invented man, 20 pictures, two seeds, judged by eye. Pictures for the new rows come from
-`sd-cli` where marked, so they're what you'd actually run. There's no automatic likeness score yet.
+`sd-cli` where marked, so they're what you'd actually run.
 
 | Method | File | Training | Likeness | Leaks into "a man on a beach"? |
 |---|---|---|---|---|
@@ -186,8 +133,8 @@ eye on two seeds. A 3000-step Van Gogh LoRA (50 minutes) is the comparison.
 | **LoRA, 3000 steps** | 47 MB | 50 min | **About level with the prompt** | **Yes, strongly: a plain prompt comes out painted** |
 | **Word** | **8 KB** | 35 min | Bold strokes, stronger than 1000 steps of LoRA, but everything turns green | **No** |
 
-- Steps mattered more than we'd assumed. The earlier verdict that the prompt beats training was
-  a verdict on 1000 steps. Three times as long closes the gap on Van Gogh, at the price of the worst
+- Steps mattered more than we'd assumed. Our [first verdict](#first-try-lora-against-norm-only), that the
+  prompt beats training, was a verdict on 1000 steps. Three times as long closes the gap on Van Gogh, at the price of the worst
   leak we've seen. Regularisation pictures fixed the person's leak, but we haven't tried them on a style.
 - The word has a colour habit. Van Gogh and Gris both came out green, in pictures of a cat and a
   street as well as the green coat. It isn't the starting word: starting a Van Gogh word from "art"
@@ -202,10 +149,56 @@ eye on two seeds. A 3000-step Van Gogh LoRA (50 minutes) is the comparison.
   only as strong as the weaker word. All 16 pictures took about 12 minutes. Turning the style word
   down to 0.7 with `(word:0.7)` barely changed anything, so it's not a usable strength control.
 
+To train and score the person's word yourself (the `vlft` environment is [here](reproduce.md#setup)):
+
 ```bash
-mamba run -n vlft python bench/imagegen/train_style.py preflight --set subject --method norm --trigger zxq
-mamba run -n vlft python bench/imagegen/invert.py --set subject --word zxqtok
-mamba run -n vlft python bench/imagegen/eval_sdcli.py --run subject-word --trigger zxqtok
+~/miniforge3/envs/vlft/bin/python bench/imagegen/train_style.py preflight --set subject --method norm --trigger zxq
+~/miniforge3/envs/vlft/bin/python bench/imagegen/invert.py --set subject --word zxqtok
+~/miniforge3/envs/vlft/bin/python bench/imagegen/eval_sdcli.py --run subject-word --trigger zxqtok
+```
+
+### First try: LoRA against norm-only
+
+These runs went through diffusers rather than `sd-cli`, so treat them as a first look, not a score.
+One thousand steps of LoRA or norm-only fell short of naming the style in the prompt.
+
+![Each row compares no adapter, the style named in the prompt, LoRA and norm-only; the last row is the person](image-style-samples.jpg)
+
+*Seed 1. The last row's second picture is the training reference, not a generated result. "No
+adapter" uses the same prompt as the adapters, trigger word included.*
+
+| Teaching | Pictures | Named in the prompt | LoRA | Norm-only |
+|---|---|---|---|---|
+| Van Gogh | 17 | Clear on both seeds | Paint and palette, without the swirling strokes | Slight, some paint texture |
+| Juan Gris (cubism) | 23 | Clear on both seeds | Muted paint, no cubist shapes | Little, some odd geometry |
+| Atget (old photo) | 24 | Clear on both seeds | Faded tones, sepia only sometimes | Little |
+| A person | 20 | Can't: an invented man has no name | Face, hair, beard and glasses | Beard and glasses, often the face; weaker at full length |
+
+- The person worked best. With no adapter, the same prompts give a stranger. Norm-only gets
+  the round glasses and red beard on both seeds in the watercolour and chef pictures, from a file
+  about 19x smaller. Neither method shows much through the astronaut's visor.
+- It went the opposite way from our guess. We expected style to suit norm-only, because
+  style-transfer research ties style to feature means and spreads. Here, it did better on the person.
+- It leaks. Asked for just "a man on a beach", both person adapters drew a man in a blue shirt
+  like the training pictures. Style adapters also change pictures without their trigger word,
+  mostly darkening or muting them.
+- The fix for the person turned out to be a word: see [above](#the-best-person-file-is-8-kb).
+- Why Gris rather than Picasso: Picasso's work is still under copyright. We train only on public
+  domain art, and the Atget photos are public domain too. The "person" is invented, drawn by Klein
+  ([`make_subject.py`](../bench/imagegen/make_subject.py)).
+
+| Method | Trainable | File | 1000 steps at 768 px | Peak VRAM |
+|---|---|---|---|---|
+| LoRA, rank 8 | 11.6M | 47 MB | 17 min | 5.4 GiB |
+| Norm-only | 0.59M | 2.5 MB | 15.5 min | 5.3 GiB |
+
+Both train in the 8 GB card by caching text and image encodings first. Numbers are in
+[`style-runs.json`](../bench/imagegen/results/style-runs.json).
+
+```bash
+python3 bench/imagegen/fetch_commons.py        # our public domain sets, listed in bench/imagegen/data/
+~/miniforge3/envs/vlft/bin/python bench/imagegen/train_style.py train --set vangogh --method norm --trigger vgstyl
+~/miniforge3/envs/vlft/bin/python bench/imagegen/train_style.py eval --run vangogh-norm --trigger vgstyl
 ```
 
 **A bug to avoid:** an SDXL VAE loaded on its own in diffusers gets SD 1.5's scaling factor, 0.18215
@@ -213,6 +206,25 @@ instead of 0.13025. Pictures come out off-colour and training quietly learns the
 our first full round of runs, so `train_style.py` now sets it explicitly.
 
 Everything else on this page, flag for flag, is in [Reproducing our results](reproduce.md#pictures).
+
+## Run it yourself
+
+The runner is [stable-diffusion.cpp](https://github.com/leejet/stable-diffusion.cpp), the llama.cpp
+of image models. We used commit `0a067120`, cloned next to this repo:
+
+```bash
+git clone --recursive https://github.com/leejet/stable-diffusion.cpp ../stable-diffusion.cpp
+git -C ../stable-diffusion.cpp checkout 0a067120b388bfefb9a87b96960cb548b97e9157
+git -C ../stable-diffusion.cpp submodule update --init --recursive
+mamba run -n llamacpp-cuda bash -c 'cd ../stable-diffusion.cpp && \
+  cmake -B build -DSD_CUDA=ON -DCMAKE_CUDA_ARCHITECTURES=75 -DCMAKE_BUILD_TYPE=Release && \
+  cmake --build build -j6'
+
+bash scripts/download-models.sh klein kleinte kleinvae        # ~5.3 GB (iris iriste, sdxl sdxlvae for the others)
+python3 bench/imagegen/run_gen.py klein iris sdxl             # the table above
+```
+
+Timings land in [`bench/imagegen/results/`](../bench/imagegen/results/).
 
 ## What's next
 

@@ -1,4 +1,7 @@
-# Vision probe — what the image-capable models can actually see
+# 👁️ Vision probe — what the image-capable models can actually see
+
+Results, 2026-10-23 to 2026-10-28 (one answer per image): [`results/summary.md`](results/summary.md), written up in
+[docs/vision-probe.md](../../docs/vision-probe.md).
 
 Twelve synthetic images with exact ground truth, three per category, asked straight through
 llama-server's chat API (no agent, no tools, nothing executed, so no sandbox is needed). Each answer
@@ -18,6 +21,8 @@ named inside a longer label ("blue circle") counts. The gap between the two colu
 separates "cannot localise" from "localises but ignores the requested format". Overlays (green =
 truth, magenta = the model's boxes in its best convention) are written to `results/overlays/`.
 
+## Rerun
+
 ```bash
 python3 bench/vision/gen_images.py               # regenerate the images (fixed seeds, identical every time)
 bash scripts/stop-server.sh                      # needs the GPU to itself
@@ -25,6 +30,7 @@ python3 bench/vision/run_vision.py               # every model in its MODELS lis
 python3 bench/vision/run_vision.py --score-only  # re-score saved answers -> results/summary.md
 ```
 
-Every model runs with its own projector (`--image`) and launcher defaults. Twelve items, one answer
+Every model runs with its own projector (`--image`) and the backend script's defaults (`run_vision.py` starts
+`run-qwen.sh` or `run-server.sh`, not `scripts/llm`), so the MoEs ran with the static `NCMOE` split. Twelve items, one answer
 each: a probe of capabilities, not a benchmark; a single wrong field moves a category by several
 points.

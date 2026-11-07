@@ -48,9 +48,9 @@ Both are the defaults here. More on the general tricks in [How it fits](../how-i
 
 No llama.cpp release supports Dory yet. NVIDIA's pull request
 [ggml-org/llama.cpp#30306](https://github.com/ggml-org/llama.cpp/pull/30306) does. Our llama.cpp
-fork carries it: branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures)
-is upstream of 2026-10-28 with that PR (at `43e865ec`, the version measured here) merged in, and
-it serves the other new models too ([getting-started](../getting-started.md#3-build-llamacpp-once-per-flavour)).
+fork carries it in our default build: branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures)
+is upstream of 2026-10-28 with that PR (at `43e865ec`, the version measured here) merged in, and the default
+`moe-cache-max-batch` branch is built on it, serving the other new models too ([getting-started](../getting-started.md#3-build-llamacpp-once)).
 The numbers on this page were first measured on the PR's own base (upstream of 2026-10-15, kept
 as `patches/llama.cpp-dory-pr30306.patch`); the fork build gives the same, 29.7 tok/s and
 867 tok/s prompt (2026-10-30). Build our llama.cpp once: [getting-started.md](../getting-started.md).
@@ -58,6 +58,7 @@ as `patches/llama.cpp-dory-pr30306.patch`); the fork build gives the same, 29.7 
 ```bash
 # 1. Download the Q5_K_M GGUF (3.67 GB), pinned revision, sha256-checked
 bash scripts/download-models.sh dory
+bash utils/audit-gguf.sh models/dory1-4b/NVIDIA-Nemotron-Labs-Dory1.0-4B-Q5_K_M.gguf   # then audit it
 
 # 2. Serve it and open pi (2 loops, 64K)
 scripts/llm dory
@@ -69,7 +70,7 @@ LOOPS=4 scripts/llm dory
 CTX=131072 LOOP_KV=last_loop scripts/llm dory
 
 # One question, no chat:
-scripts/llm dory -p "explain @README.md" --no-session </dev/null
+scripts/llm dory -p "explain @README.md" --no-session
 
 # Done? Free the GPU:
 scripts/llm stop
@@ -134,10 +135,18 @@ about twice Spark's time. The vision probe doesn't apply (text only).
 
 ## How it behaves
 
-We only have short smoke tests, so no character study yet. What we saw: thinking is on by
-default (llama-server returns it as `reasoning_content`), tool calls work, and it answered the
-pi one-shot correctly with one tool call. The loop dial behaves as advertised: more loops,
-lower perplexity, lower speed.
+From the 18 pibench jobs above:
+
+- **Thinks a lot, and tests.** 31K characters of thinking a job and 1.5 pytest runs a job; it never ran
+  out of context (35K at most of 64K).
+- **Steady on code.** It solved every bug fix, feature and login job, all three JavaScript scrapes and two
+  of the three CLIs.
+- **Falls for scraped data's traps.** It never solved the books scrape: five stars for every book (twice),
+  the undeclared character set (`Noahâ\x80\x99s`) and a curly apostrophe turned straight.
+- **Slow per job:** 7.2 min, about twice Spark's time.
+
+Thinking is on by default (llama-server returns it as `reasoning_content`). The loop dial behaves as
+advertised: more loops, lower perplexity, lower speed.
 
 ## Gotchas
 

@@ -25,6 +25,7 @@ Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 bash scripts/download-models.sh lfm3audio
+bash utils/audit-gguf.sh models/lfm3-audio-2b/LFM3-Audio-2B-Q8_0.gguf   # then audit it (and the mmproj)
 (cd ../llama.cpp && cmake --build build --target llama-tts)     # only for text to speech
 scripts/llm lfm3audio                                           # server on port 8080
 ```
@@ -45,7 +46,7 @@ runs them all in about a minute.
 ## Our numbers
 
 **First test of LFM3-Audio-2B (2026-10-28, Q8_0 + F16 projector, `vendor/llama.cpp-lfm3`
-@`8ca4060`, all on the GPU in 3.3 GB).** Audited clean first ([security.md](../security.md)). Test
+@`8ca4060`, deleted 2026-11-02, all on the GPU in 3.3 GB; reruns on the fork: [bench/voice](../../bench/voice/README.md)).** Audited clean first ([security.md](../security.md)). Test
 audio was made by the model itself (`llama-tts`), so the text is known and scoring is automatic.
 Reruns on our fork gave the same scores.
 

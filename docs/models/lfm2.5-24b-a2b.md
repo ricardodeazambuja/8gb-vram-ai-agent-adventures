@@ -101,15 +101,23 @@ top-k 50, repeat-penalty 1.05, no top-p). `scripts/qwen-bench.py`, single runs.
 | `NCMOE=26`, batch 512 | 7.5 GB | 32.4 tok/s | 325 tok/s | |
 | `NCMOE=25`, batch 512 | — | — | — | **out of memory at load** |
 
-Slower to generate than Groot (39.5), faster than Qwen3.6 (23); prompt reading about the same as
-Groot.
+With the static split: slower to generate than Groot (39.5), faster than Qwen3.6 (23); prompt reading about the
+same as Groot.
+
+**Expert cache: measured faster, not yet the launcher default.** A 4212 MiB cache against `NCMOE=27` at the same
+VRAM: 48.5 vs 34.0 tok/s (+42%), 37.9 vs 29.2 after a 30K-token prompt, prompt reading 920 vs 992 tok/s
+([bench/moe-cache](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)). `scripts/llm lfm25`
+still uses `NCMOE=27`; `MOE_CACHE=4212 scripts/llm lfm25` tries the cache.
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **3,290 and 3,071 tokens**: as wordy as Qwen3.6 (3,558).
 
 **[pibench](../pibench.md): 10/18 solved**, 86% of hidden tests, median 4.2 min per run, 6.7K
 output tokens. Perfect on the feature, the JavaScript page and (2 of 3) the CLI and the login,
-and two clean zeros, each the same mistake three times:
+and two clean zeros, each the same mistake three times (below). Run with a concurrent llama.cpp build
+and downloads on the same laptop, so the times may be a little high.
+
+## How it behaves
 
 - 🐛 **bug fix, 0/3**: it fixed the two reported bugs and stopped. The parser still accepts
   `5x`, `abc` and `1h 2` (22–25 of 27 tests), so the bugs nobody reported stayed.
@@ -119,8 +127,7 @@ and two clean zeros, each the same mistake three times:
   stock count. The slowest run took 20 minutes and 70 tool calls.
 
 Same lesson as the rest of the [pibench](../pibench.md) field: it runs its code, but doesn't read
-what comes out. (Run with a concurrent llama.cpp build and downloads on the same laptop, so the
-times may be a little high.)
+what comes out.
 
 ## Security audit
 

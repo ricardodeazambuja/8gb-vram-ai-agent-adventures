@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | On disk | 18.5 GB (`UD-Q3_K_XL`) |
-> | Where it lives | experts of 42 of 49 layers in RAM, everything else on the GPU (7.25 GB VRAM) |
+> | Where it lives | every expert in RAM with a 2168 MiB VRAM cache of the recently used ones, everything else on the GPU (`scripts/llm`); `--static`: experts of 42 of 49 layers in RAM (7.25 GB VRAM) |
 > | Context | **128K** |
-> | Generation | 24.3 tok/s |
+> | Generation | **32.1 tok/s** with `scripts/llm` (expert cache, light desktop; next to a ~1.7 GB daytime one it won't start, use `--static`); 24.3 with `--static` |
 > | Prompt processing | **542 tok/s** (14.4K-token prompt) |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests) |
 > | [Vision probe](../vision-probe.md) | none, text only |
@@ -43,15 +43,10 @@ RAM, llama.cpp ships the expert math for big batches to the GPU, so going from b
 2048 took prompt processing from **192 to 542 tok/s**. The bigger compute buffer costs one
 layer of experts, hence `NCMOE=42` instead of 41. See [how-it-fits.md](../how-it-fits.md).
 
-**A little faster, same VRAM (2026-11-04, the default in `scripts/llm flint`):** a GPU cache of the most recently used experts, with
-the CPU computing 95% of the misses: **32.1 vs 26.9 tok/s** (A/B/A, one noisy baseline run at 17.4). In a
-full pibench batch: still 18/18, decode 26.4 vs 21.5 tok/s, but prefill 354 vs 426 tok/s; median run 3.6 vs
-4.3 min.
-`MOE_CACHE=auto` (2168 MiB, less if the desktop uses more than ~500 MiB of VRAM) on our fork's
-`moe-cache-max-batch` build (the default build), which also sends batches of up to 128 tokens through the cache: tool-call turns of
-48–100 new tokens are read 8–20% faster, decode unchanged (2026-11-05, [steps 14–15](../../bench/moe-cache/README.md)).
-`scripts/llm flint` turns it on; `scripts/llm flint --static` gives the classic `NCMOE=42` split.
-[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
+**A little faster, same VRAM (2026-11-04, the default in `scripts/llm flint`):** a 2168 MiB GPU cache of the recently
+used experts: **32.1 vs 26.9 tok/s** against `NCMOE=42`; in a full pibench batch still 18/18, decode 26.4 vs 21.5 tok/s
+but prefill 354 vs 426. `scripts/llm flint --static` gives the `NCMOE=42` split. More in
+[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes).
 
 **Why the 3-bit file:** the laptop has 32 GB of RAM with about 20 GB actually available. The
 4-bit `UD-Q4_K_XL` is 25 GB and would leave the page cache gasping; `UD-Q3_K_XL` at 18.5 GB is
@@ -67,12 +62,13 @@ mamba create -y -n llamacpp -c conda-forge huggingface_hub
 
 # 2. Download + sha256-check (18.5 GB)
 bash scripts/download-models.sh flint
+bash utils/audit-gguf.sh models/flint-40b-a2.5b/flint-UD-Q3_K_XL.gguf   # then audit it
 
 # 3. Server + pi, no env vars needed (expert cache on; add --static for the per-layer split)
 scripts/llm flint
 
 # One-shot
-scripts/llm flint -p "explain @README.md" --no-session </dev/null
+scripts/llm flint -p "explain @README.md" --no-session
 
 # Stop it (it keeps running after pi exits, so the next start is instant)
 scripts/llm stop
@@ -112,9 +108,16 @@ RTX 2070 Max-Q (8 GB), 32 GB RAM, 128K context, q8_0 KV, single runs (±13% nois
 | 40 | 512 | 7.2 GB | 26.1 tok/s | 192 tok/s |
 | 40 | 1024 | 7.4 GB | 24.9 tok/s | 340 tok/s |
 | 41 | 2048 | 7.6 GB (~0.2 GB spare) | 25.4 tok/s | 549 tok/s |
-| **42** | **2048** | **7.25 GB** | **24.3 tok/s** | **542 tok/s** |
+| 42 (`--static`) | 2048 | 7.25 GB | 24.3 tok/s | 542 tok/s |
+| **expert cache, 2168 MiB (default)** | **2048** | **same as `NCMOE=42`** | **32.1 tok/s** ¹ | — |
 
-Generation barely moves between rows (that's within noise); prompt speed nearly triples.
+Generation barely moves between the `NCMOE` rows (that's within noise); prompt speed nearly triples.
+
+¹ A/B/A against `NCMOE=42` at 26.9 tok/s, one noisy baseline run
+([how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)). Next to a ~1.7 GB
+daytime desktop the cache would shrink below the launcher's 1024 MiB floor, so it refuses to start: use `--static`
+or close the browser. At 1024 MiB it ran 11% slower ([step 16](../../bench/moe-cache/README.md), the least certain
+of those runs).
 
 At the default settings:
 
@@ -148,7 +151,7 @@ median 5,099 output tokens. One of three perfect scores, with Gemma 4 26B and Gr
 - **Text only.** No vision projector exists; use another model for screenshots.
 - **Thinking can't be turned off.** `enable_thinking: false` is ignored; give it enough tokens.
   (That's why a 64-token "no thinking" test returns an empty answer.)
-- **It needs a llama.cpp from after 2026-10-21** (our fork's `adventures` branch here); the
+- **It needs a llama.cpp from after 2026-10-21** (our default build has it); the
   stock b9606 build doesn't know the architecture.
 - The log line `common_fit_params: failed to fit params ... n_gpu_layers already set by user`
   is harmless: auto-fit is skipped because the script sets `-ngl 99`.
@@ -161,7 +164,7 @@ Env vars for `scripts/llm flint` (or `QMODEL=flint` with `start-qwen.sh` / `run-
 
 | Knob | Default | What it does |
 |---|---|---|
-| `NCMOE` | 42 | layers whose experts stay in RAM; 44 frees VRAM if your desktop needs it |
+| `NCMOE` | 42 | with `--static`: layers whose experts stay in RAM; 44 frees VRAM if your desktop needs it |
 | `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `BATCH` / `UBATCH` | 2048 / 2048 | 512 saves VRAM but makes prompts ~3× slower |
 | `CTX` | 131072 | context window; smaller helps if you don't need it |

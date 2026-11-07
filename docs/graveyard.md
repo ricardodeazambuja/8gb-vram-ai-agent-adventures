@@ -29,6 +29,11 @@ and the agentic model writing clean calls most of the time and broken ones now a
 single-function coding problems only; the agentic model's one supporting number is a 20-task benchmark its author
 ran. Both retired on 2026-11-02, with their launchers, download entries and the TurboQuant build.
 
+<a id="gemma-4-12b-coder-at-q2_k-fits-runs-talks-nonsense"></a>
+The coder's Q2_K quant had died earlier: it fit entirely on the GPU at ~19 tok/s but produced degenerate output on
+every path (raw prompts, the chat template at temp 0.7, the native turn format: `l. l. l.`, CJK noise, rambling to
+the token limit), while its Q4_K_M wrote clean, correct code. Too aggressive a quant for this model.
+
 ## Qwen3.8-27B, dense, in i-quants: 2.5 tok/s
 
 **Tried:** Qwen's dense 27B as ISTA-DASLab's GSQ-RCO `IQ3_XXS-mtp` file (10.4 GB), split by whole
@@ -46,7 +51,7 @@ are expensive to decode on a CPU. The pre-test estimate (6–8 tok/s from bandwi
 ~3× for exactly that reason.
 
 **Afterlife:** the same model lives on as [Bonsai 2 27B](models/bonsai2-27b.md): ternary weights,
-5.95 GB, all on the GPU, ~27 tok/s.
+5.95 GB, all on the GPU, 38 tok/s.
 
 ## ik_llama.cpp for that same 27B: slower
 
@@ -84,6 +89,35 @@ full transformer layer, so it was **slower than no speculation even at greedy** 
 **Cause of death:** temp 1.0 degenerated, and the chat-template path (which is how pi talks to the
 server) segfaulted. Bonus trap: one "fix confirmed" test was really an empty reply hiding the
 crash. Always check that it *generates*, not just that it stays alive.
+
+## Relaxed draft acceptance: faster, but it rambles
+
+**Tried (2026-10-31):** an idea from the [Parallel Language Models](https://arxiv.org/abs/2610.26693) paper, which
+reports 46.5% more accepted tokens per call at comparable quality: keep a drafted token if the main model finds it
+likely, not only if it matches exactly. On Gemma 4 26B with its MTP head, n-max 2, temperature 1.0, on the fork's
+experiment branch [`relaxed-accept`](https://github.com/ricardodeazambuja/llama.cpp/tree/relaxed-accept)
+([harness](../bench/relaxed/run_relaxed.py)). The rule keeps a drafted token when the target gives it at least τ
+times the probability of its top choice, and turns off once a grammar is active.
+
+| Mode | tok/s | Drafts kept | Ran out of 1500 tokens (of 70) | Tool calls |
+|---|---:|---:|---:|---:|
+| no draft | 20.8 / 22.1 | — | 4 | 30/30 |
+| MTP, exact match | 23.6 / 26.2 | 71% | 7 | 30/30 |
+| MTP, `--spec-draft-sampling probabilistic` | 27.0 | 76% | 8 | 30/30 |
+| relaxed τ 0.5 | 28.3 | 82% | 13 | 30/30 |
+| relaxed τ 0.2 | 28.8 | 87% | 13 | 30/30 |
+| relaxed τ 0.05 | 29.3 | 89% | 8 | 30/30 |
+
+Two runs where a mode was repeated. Every arithmetic miss in every mode was the thinking running out of tokens, not
+a wrong answer: with a 4000-token budget and new tasks, no finished answer was wrong (no draft and probabilistic
+30/30 over two rounds, τ 0.2 14/15 over one).
+
+**Cause of death:** it doesn't break answers or tool calls, but it makes the model ramble, which eats much of the
+extra speed, and the 7% over probabilistic drafting is within this laptop's noise. Probabilistic drafting already
+ships in llama.cpp, needs no patch and keeps the model's own distribution, so that's the one to use if you use MTP
+at all: +26% over no draft in one run, same scores as no draft on the new tasks, though 2 of 50 hit the limit
+against none. It isn't the default in `run-server-mtp.sh` because that's a single speed measurement. The
+temperature 0.6 runs were dropped for time, and these are small, easy tasks.
 
 ## DiffusionGemma 26B-A4B: 5.2 tok/s
 
@@ -130,17 +164,6 @@ and the fused single-graph cycle were all ruled out; the prime suspect is a nume
 drafter-graph port. The next step is one instrumented NumPy-vs-ggml comparison of a single draft
 step, not more benchmark sweeps.
 
-## Gemma 4 12B coder at Q2_K: fits, runs, talks nonsense
-
-**Tried:** the smallest quant of the 12B coder fine-tune. It fits entirely on the GPU and runs at
-~19 tok/s.
-
-**Numbers:** degenerate output on every path: raw prompts, the chat template at temp 0.7, the
-native turn format. Things like `l. l. l.`, CJK noise, or rambling to the token limit.
-
-**Cause of death:** the quant is simply too aggressive for this model. Q4_K_M of the same model
-writes clean, correct code. Skip Q2_K; the run script refuses it anyway.
-
 ## Vulkan as the default backend: 5× slower
 
 **Tried:** the zero-build path, conda's Vulkan llama.cpp, which works on any driver.
@@ -168,7 +191,7 @@ Both are in [Can LFM3-VL do more than look?](fine-tuning.md#can-lfm3-vl-do-more-
 Checked and skipped on paper, so you don't have to:
 
 - **Qwen3.8-Flash-Next** (REAP-288 / GSQ-RCO builds): the smallest files are 58–66 GB+, more than
-  32 GB RAM + 8 GB VRAM. [Strata](up-next.md) runs it on gaming PCs, but its smallest pack needs 37.6 GB of RAM + VRAM
+  32 GB RAM + 8 GB VRAM. [Strata](up-next.md#strata) runs it on gaming PCs, but its smallest pack needs 37.6 GB of RAM + VRAM
   and a 12 GB card; on less, experts come from the SSD and it's much slower (checked 2026-11-06).
 - **Qwen3.8-Whittle-16B:** its own card calls it a "non-starter for agent and long multi-turn use:
   repetition looping".

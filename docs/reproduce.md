@@ -24,8 +24,10 @@ python3 bench/check_numbers.py
 ## Setup
 
 1. **llama.cpp:** our fork at the pinned commit, as in
-   [getting started](getting-started.md#3-build-llamacpp-once-per-flavour) (`../llama.cpp`,
-   branch `adventures`, `3cb2992`). Every LFM3 result, steering included, ran on this build.
+   [getting started](getting-started.md#3-build-llamacpp-once). Every LFM3 result, steering included,
+   ran on the `adventures` branch at `3cb2992b3`, which the default build contains. For an exact LFM3
+   rerun, build that commit into its own folder:
+   `LLAMA_REF=3cb2992b3 SRC_DIR=$PWD/../llama.cpp-3cb2992 bash scripts/build-llama-cuda.sh`.
 2. **Weights:** first make the [`llamacpp` download env](getting-started.md#4-a-small-env-for-downloads),
    then run `bash scripts/download-models.sh lfm3 lfm3vl groot lfm25vl`. These files are pinned and checked
    by sha256. Gemma has [its own steps](models/gemma4-26b-a4b.md#install--run).
@@ -184,17 +186,22 @@ in git history at `2764962`). The per-model numbers in the write-up: `python3 be
 | Retrieval | Weights: `download-models.sh eg2`. `bench/retrieval/run_retrieval.py bm25` needs no server; `embed KEY` needs an embedding server on port 8080. Scores: [`bench/retrieval/results/`](../bench/retrieval/results/) |
 | Voice (LFM3-Audio-2B) | [`bench/voice/README.md`](../bench/voice/README.md). Rerun on the fork on 2026-11-01: same scores as the first run |
 | Clef-Flash, d1, EmbeddingGemma and LocateAnything quick checks | `bash bench/smoke/run.sh`. Weights: `download-models.sh clefflash d1 eg2 locate`. Rerun on the fork on 2026-11-01: same scores, [saved here](../bench/smoke/results/) |
-| Every chat model launches, with speed, tool call and code check | `bash bench/recheck/run.sh`, about 1.5 hours. [Results](../bench/recheck/README.md) |
+| Every chat model launches, with speed, tool call and code check (pre-cache launchers: static split) | `bash bench/recheck/run.sh`, about 1.5 hours. It launches through bare `run-qwen.sh` / `run-server.sh`, so no expert cache and no Gemma template fix; results from 2026-11-01 and 2026-11-02. [Results](../bench/recheck/README.md) |
 | Bonsai 2's context fit: 32K default, 48K max, q8_0 KV | `bash bench/bonsai-ctx/run.sh`, about 10 minutes. [Results](../bench/bonsai-ctx/README.md) |
-| MoE expert cache (how-it-fits §12) and the Gemma template fix | The default build (`bash scripts/build-llama-cuda.sh`, the fork's `moe-cache-max-batch` branch at `69ca796dd`; the numbers were measured on `moe-offload` `3a72c57be`, which it extends by one flag, [§12](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)). Each A/B row: `bash bench/moe-cache/srvbench.sh LABEL ARGS` with the flags in [`RESULTS.md`](../bench/moe-cache/RESULTS.md); the agent-loop runs: `bench/moe-cache/agentloop.py`. Raw logs in [`bench/moe-cache/logs/`](../bench/moe-cache/logs/); `bench/check_numbers.py` recomputes the headline numbers from them. The pibench batch: `MOE_CACHE=auto MODELS="qwen36 flint gemma26b" RAW=$PWD/bench/results/raw-moecache bash bench/run-bench.sh`, then `RAW=… python3 bench/batch_stats.py qwen36 flint gemma26b` ([`stats-moecache.txt`](../bench/results/stats-moecache.txt)) and `python3 bench/moe-cache/pibench_speed.py bench/results/raw bench/results/raw-moecache qwen36 flint gemma26b` ([`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt)); both read the raw transcripts, which stay on this disk |
+| MoE expert cache (how-it-fits §12) and the Gemma template fix: A/B rows | The default build (`bash scripts/build-llama-cuda.sh`, the fork's `moe-cache-max-batch` branch at `69ca796dd`; the numbers were measured on `moe-offload` `3a72c57be`, which it extends by one flag, [§12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)). Each A/B row: `bash bench/moe-cache/srvbench.sh LABEL ARGS` with the flags in [`RESULTS.md`](../bench/moe-cache/RESULTS.md); the agent-loop runs: `bench/moe-cache/agentloop.py`. Raw logs in [`bench/moe-cache/logs/`](../bench/moe-cache/logs/); `bench/check_numbers.py` recomputes the headline numbers from them |
+| MoE expert cache: the pibench batch | `MOE_CACHE=auto MODELS="qwen36 flint gemma26b" RAW=$PWD/bench/results/raw-moecache bash bench/run-bench.sh`, then `RAW=… python3 bench/batch_stats.py qwen36 flint gemma26b` ([`stats-moecache.txt`](../bench/results/stats-moecache.txt)) and `python3 bench/moe-cache/pibench_speed.py bench/results/raw bench/results/raw-moecache qwen36 flint gemma26b` ([`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt)); both read the raw transcripts, which stay on this disk |
+| MoE expert cache: long prompts, other models, the pre-pibench fit check, expert usage, pruning, the experimental steps | One script each: `longctx/`, `models/`, `fitcheck.sh`, `expert_usage.py`, `experts/prune-eval.sh`, `experimental/`; what each runs and where its logs are is in [the Files table](../bench/moe-cache/README.md#files). Steps 8 and 9 need a build that isn't published (Known gaps) |
+| Cactus Mirage | `python -I bench/cactus/fetch.py models/cactus` once, then `bash bench/cactus/sandbox.sh -I /bench/cactus/mirage_glance.py 30` (no network). [`bench/cactus/README.md`](../bench/cactus/README.md) |
+| Gemma 12B probe (pibench harness vs the models) | Needs the retired 12B launchers from git history; [`bench/gemma12-probe/README.md`](../bench/gemma12-probe/README.md#rerun) |
+| [`examples/`](../examples/README.md) | No numbers: recipes. Each script starts its model with `scripts/llm` |
 | Relaxed acceptance | Build the fork's `relaxed-accept` branch into its own folder: `LLAMA_REF=relaxed-accept SRC_DIR=$PWD/../llama.cpp-relaxed bash scripts/build-llama-cuda.sh` (`LLAMA_REF` takes a branch, tag or commit; the repo defaults to our fork), then `bench/relaxed/run_relaxed.py` |
 
 ## What isn't in git, and why
 
 | Not committed | Size | Why it's OK |
 |---|---|---|
-| Model weights, adapters, pictures | 133 GB | Downloads are pinned, and the commands above rebuild the rest |
-| Raw pibench transcripts in `bench/results/` | 850 MB | Scores and per-run stats are committed. Later analysis of the raw text, like a new replay, needs a new run |
+| Model weights, adapters, pictures | 284 GB (`du -sh models`, 2026-11-06) | Downloads are pinned, and the commands above rebuild the rest |
+| Raw pibench transcripts in `bench/results/` (`raw/` 890 MB, plus `raw-moecache/`, `raw-bonsai2-32k/`, `agent-doom/`, `steering-doom/`, `temp07-doom/`, `raw-gemma-probe/`) | 1.2 GB in all (2026-11-06) | Scores and per-run stats are committed. Later analysis of the raw text, like a new replay, needs a new run |
 | The server logs in `loop/logs/` | small | The beyond-vision ones were copied to `bench/beyond-vision/results/logs/`; the others weren't |
 
 ## Known gaps
@@ -214,6 +221,8 @@ covers only the beyond-vision, glance and steering numbers, and (since 2026-11-0
 | Detect-all counts, web-page clicks | No saved output; the page captures aren't committed |
 | Training time and VRAM, image verdicts | The evidence is in ignored `models/` and `loop/logs/` |
 | Results from `vendor/llama.cpp-lfm3` and `vendor/locate-llama.cpp` | Those builds are gone. Voice and the quick checks have been rerun on the fork |
+| MoE-cache experimental steps 8 and 9 | They ran on the fork's `moe-cache-warm` branch, which exists only on this laptop (not pushed) |
+| TwIL-8B | Downloaded and audited, but no benchmark has run on it yet: no speed or pibench numbers to reproduce |
 
 [`loop/`](../loop/README.md) keeps the night-by-night commands and journal. It's a record of what
 happened, so use this page to repeat anything.

@@ -47,12 +47,13 @@ Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 ```bash
 # 1. Download the model + projector (5.8 GB), pinned revision, sha256-checked
 bash scripts/download-models.sh qwen3vl
+bash utils/audit-gguf.sh models/qwen3vl-8b/Qwen3VL-8B-Instruct-Q4_K_M.gguf   # then audit it (and the mmproj)
 
 # 2. Serve it (vision on) and open pi
 scripts/llm qwen3vl pi
 
 # One question about an image, no chat:
-scripts/llm qwen3vl pi -p "describe @photo.jpg" --no-session </dev/null
+scripts/llm qwen3vl pi -p "describe @photo.jpg" --no-session
 
 # Server only, OpenAI-compatible API on :8080:
 scripts/llm qwen3vl
@@ -138,7 +139,8 @@ mazes (it wanders in four-move cycles).
 - **Keep the projector on the GPU** (`MMPROJ_GPU=1`, the default here), unless you enjoy
   waiting 4.5 minutes per photo.
 - **No thinking mode.** pi's entry says `reasoning: false`; thinking flags do nothing.
-- **`pi -p` can hang** if stdin is left open (for example under a script). Add `</dev/null`.
+- **`pi -p` can hang** if stdin is left open (for example under a script). `scripts/llm` closes it for you;
+  with raw `pi -p`, add `</dev/null`.
 - **`Q8_0` weights (8.7 GB) don't fit** fully on the card; partial offload wasn't tried.
 
 ## Knobs

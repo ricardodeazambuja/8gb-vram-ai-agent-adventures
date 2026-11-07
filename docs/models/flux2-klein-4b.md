@@ -11,6 +11,11 @@
 > | Licence | Apache 2.0 |
 > | Launch | `scripts/imagine "..." -m klein` |
 
+## What is it?
+
+A 4B text-to-image model in a `Q4_0` GGUF, with Qwen3-4B as its text encoder (run on the CPU) and a VAE. It
+draws 1024×1024 in 4 steps, and it's the only one of our three whose reference edits (`-r`) work.
+
 The one to pick: the fastest of our three, half the VRAM, good hands, and reference edits that work
 with no training. Full comparison: [Making pictures on 8 GB](../image-generation.md).
 
@@ -21,6 +26,7 @@ it as in [Run it yourself](../image-generation.md#run-it-yourself), then:
 
 ```bash
 bash scripts/download-models.sh klein kleinte kleinvae        # ~5.3 GB
+bash utils/audit-gguf.sh models/image-gen/flux2-klein/flux-2-klein-4b-Q4_0.gguf   # then audit it (and the text encoder)
 scripts/imagine "a red fox in the snow" -m klein               # one picture
 ```
 

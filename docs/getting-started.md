@@ -35,17 +35,19 @@ Nothing system-wide is touched.
 mamba create -y -n llamacpp-cuda --file envs/llamacpp-cuda.linux-64.lock
 ```
 
-## 3. Build llama.cpp (once per flavour)
+<a id="3-build-llamacpp-once-per-flavour"></a>
+
+## 3. Build llama.cpp (once)
 
 Every model runs on one build of our llama.cpp fork, cloned next to this repo. The
 fork carries the model PRs we use on top of a pinned upstream commit, and the launch scripts find
 it there, or set `ADV_LLAMA=/path`. `build-llama-cuda.sh` builds it by default at the commit
-everything here was tested on. Build only what you need
-(~10–20 min each; free the GPU first, the build ends with a quick smoke test).
+everything here was tested on. One build serves every model (~10–20 min; free the GPU first, the
+build ends with a quick smoke test).
 
 | Build | For | Command |
 |---|---|---|
-| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) at `69ca796dd`: the [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) branch (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306 + [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) for `PTQ1_0`) + the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch) | every model in `scripts/llm list` | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
+| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) at `69ca796dd`: the [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) branch (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306 + [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) for `PTQ1_0`) + the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) | every model in `scripts/llm list` | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
 | `../llama.cpp`, extra target | text to speech with LFM3-Audio ([`examples/speak.py`](../examples/speak.py)) | `(cd ../llama.cpp && cmake --build build --target llama-tts)` |
 
 The script treats `../llama.cpp` as its own checkout: if you already have a clone there with a branch
@@ -74,9 +76,13 @@ load fine and still be corrupt (we learned this the [hard way](troubleshooting.m
 
 ```bash
 bash scripts/setup.sh                       # Gemma 4 26B-A4B (~14 GB) + the llamacpp env
+bash scripts/download-models.sh gemmavis    # Gemma's vision projector
 bash scripts/download-models.sh groot       # any name from `scripts/llm list`; several at once is fine
 bash scripts/download-models.sh -h          # the full list, including the picture models
 ```
+
+Gemma is pinned too: `setup.sh` calls `download-models.sh gemma` (it fetched the unpinned `main` before
+2026-11-06).
 
 `scripts/llm list` shows which models are downloaded, and the download command for the rest.
 

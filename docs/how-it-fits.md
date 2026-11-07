@@ -18,7 +18,9 @@ Two things fight over those 8 GB, and you will meet them on every page of this r
 ```
 
 Everything below is a way to make one of those boxes smaller, or to move it out of the GPU
-without making everything slow.
+without making everything slow. The sections go roughly in the order we learned them; what
+`scripts/llm` runs by default for the big MoEs today is the expert cache in
+[§12](#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes), built on §1.
 
 ---
 
@@ -45,23 +47,26 @@ The flags:
 - `--n-cpu-moe N`: the experts of the **first N** layers go to RAM, the rest stay on the GPU.
   Lower N = more experts on the GPU = faster, but more VRAM.
 
-In this repo that's the `NCMOE` knob. Leave it empty for "all experts in RAM":
+In this repo that's the `NCMOE` knob of the static split. `scripts/llm` no longer uses it by default
+for Qwen3.6, the distill, Flint, Ornith and Gemma: they get the expert cache of
+[§12](#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes), which keeps all experts in RAM
+and caches the busy ones on the GPU. `--static` gives you this split instead:
 
 ```bash
+scripts/llm qwen36 --static                     # the static split, default NCMOE=32: 8 layers' experts on the GPU
 QMODEL=qwen36 NCMOE= bash scripts/run-qwen.sh   # every expert in RAM: least VRAM
-QMODEL=qwen36 bash scripts/run-qwen.sh          # default NCMOE=32: 8 layers' experts on the GPU
 ```
 
-What it trades, measured on Flint (128K context, q8_0 KV):
+What it trades, measured on Flint (128K context, q8_0 KV; the full table is on
+[Flint's page](models/flint.md#our-numbers)):
 
 | Experts on the GPU | VRAM | Generation |
 |---|---:|---:|
 | none (`--cpu-moe`) | 4.4 GB | 22.2 tok/s |
-| 7 layers (`NCMOE=42`) | 6.6 GB | 24.9 tok/s |
 | 9 layers (`NCMOE=40`) | 7.2 GB | 26.1 tok/s |
 
 Notice the gain is modest: the CPU still does most of the expert work. Each layer's experts cost
-Flint ~300 MiB of VRAM. The per-model defaults (`NCMOE=32` for Qwen3.6, `34` for the distill,
+Flint ~300 MiB of VRAM. The per-model static defaults (`NCMOE=32` for Qwen3.6, `34` for the distill,
 `42` for Flint) are the measured "fits with ~0.5 GB to spare next to a desktop" values.
 
 **Why isn't RAM bandwidth the bottleneck?** Because only a few experts fire per token. On
@@ -149,10 +154,9 @@ Two catches:
 
 - **It needs flash attention.** llama.cpp won't quantize the V cache without it, so any `KVQUANT`
   turns `-fa` on.
-- **It's not always allowed.** PrismML's own build (Bonsai 2) had no Turing (sm_75) code for its
-  q8_0 flash-attention kernel: the server loaded fine, then aborted on the first request with *"no
-  device code compatible with CUDA arch 750"*, so Bonsai ran an **f16** cache and stopped at 16K.
-  With PrismML's code merged into our fork, q8_0 works, and Bonsai gets 32K in 7.1 GB.
+- **It needs a kernel for your GPU.** Bonsai 2 once ran on PrismML's own build, which had no Turing
+  q8_0 flash-attention kernel; on our fork q8_0 works and Bonsai gets 32K in 7.1 GB
+  ([the story](models/bonsai2-27b.md)).
 
 ## 5. The hidden tax: flash attention's f16 copy
 
@@ -178,7 +182,9 @@ for the whole batch. On Flint, raising the batch from 512 to 2048:
 | **2048** | **7 layers (`NCMOE=42`)** | **7.25 GB** | **542 tok/s** | 24.3 tok/s |
 
 Prefill nearly triples for about 1 tok/s of generation. The bigger compute buffer costs one layer
-of experts, which is why Flint's default is `NCMOE=42` with batch 2048. For an agent like pi, whose
+of experts, which is why Flint's static default (`scripts/llm flint --static`) is `NCMOE=42` with batch
+2048; the cache of [§12](#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes), the default
+now, keeps batch 2048. For an agent like pi, whose
 every turn re-reads a big system prompt and file dumps, that's the difference between waiting a
 minute and waiting 25 seconds.
 
@@ -217,13 +223,14 @@ No RAM traffic, no CPU math: fast, as long as you can live with the context.
 
 ### Dory's surprise: `-ngl 999`
 
-Dory is a *looped* model: a block of 20 layers runs 1–4 times per token. The llama.cpp build for
-it counts every loop as extra layers, so the usual "all layers" value `-ngl 99` silently leaves
-weights on the CPU. At 4 loops that kept 2.9 GB of weights and most of the KV cache on the host:
-3.8 tok/s instead of 19. The clue was VRAM going *down* as loops went up. `-ngl 999` fixes it, and
-the repo's Dory default already uses it.
+Dory is a *looped* model whose build counts every loop as extra layers, so "all layers" (`-ngl 99`)
+silently leaves weights on the CPU; `-ngl 999` fixes it, and `scripts/llm dory` uses it
+([details](models/dory1.0-4b.md#how-does-it-fit-in-8-gb)).
 
 ## 9. TurboQuant: an even smaller V cache
+
+> **History:** nothing in this section can be run from the repo any more; the models and the
+> TurboQuant build were retired on 2026-11-02.
 
 The Gemma 4 12B agentic fine-tune is dense too, and at Q4_K_M it *almost* fits. The fix was
 `turbo3`, a ~3.5-bit V-cache codec (Walsh-Hadamard-rotated polar quantization) from the
@@ -242,10 +249,10 @@ Same model (Gemma 4 26B), same split (`NCMOE=22`), same laptop:
 
 | Backend | Generation |
 |---|---:|
-| CPU only | ~1.9 tok/s |
 | Vulkan (stock build) | ~4.9 tok/s |
 | **CUDA (built from source)** | **~23.5 tok/s** |
 
+(CPU only and the full comparison: [Gemma's page](models/gemma4-26b-a4b.md#our-numbers).)
 CUDA is about 5× Vulkan here, far outside the usual "CUDA is a bit faster" folklore. The prebuilt
 conda CUDA binaries need a newer driver than this laptop's, so `scripts/build-llama-cuda.sh` builds
 llama.cpp against the driver's own CUDA version in an isolated environment. Details in
@@ -254,19 +261,14 @@ llama.cpp against the driver's own CUDA version in an isolated environment. Deta
 ## 11. VRAM is not the only wall 🧱
 
 The GPU isn't the only thing that can run out. The MoE models keep 15–20 GB of experts in system
-RAM, and Linux will happily let you load all of that and then **kill the server** a few seconds
-later when something else needs memory. It looks like this: a clean load, pi connects, and the
-server log just says `Killed`. That's the kernel's OOM killer, not the GPU.
+RAM, so host memory is a second budget: that's why Flint uses UD-Q3_K_XL. `scripts/llm` checks it
+before loading a big model (it refuses when RAM is short or already under pressure) and stops the
+server if memory pressure climbs while it loads. When the server dies with `Killed` anyway, or the
+whole terminal vanishes, see [troubleshooting → Memory](troubleshooting.md#memory).
 
-```bash
-journalctl -k | grep -i oom      # confirm it was host RAM
-```
+<a id="12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch"></a>
 
-Fixes: a smaller context, a smaller quant (that's why Flint uses UD-Q3_K_XL), closing the browser
-with 40 tabs, or more swap. Re-tuning `NCMOE` won't help; the GPU was never the problem. More
-symptoms like this live in [troubleshooting](troubleshooting.md).
-
-## 12. Let a cache pick the experts (opt-in, our fork's `moe-offload` branch)
+## 12. Let a cache pick the experts (the default for the big MoEs)
 
 `--n-cpu-moe` (§1) puts *fixed* layers' experts on the GPU, whether or not the next token uses them. The
 GPU expert cache picks experts by use instead. Every expert lives in RAM (`--cpu-moe`), and llama.cpp keeps
@@ -281,15 +283,16 @@ same expert from RAM in ~0.1 ms. The open upstream PR [#30966](https://github.co
 (Aman Gupta) adds `--moe-cache-cpu-share F`, which hands that share of the misses to the CPU. Copying
 every miss, the cache gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of misses on the CPU:
 
-| Model (context) | Now: `--n-cpu-moe` | Cache + CPU share 0.95, same VRAM | Gain |
+| Model (context) | Static (`--static`): `--n-cpu-moe` | Cache + CPU share 0.95, same VRAM | Gain |
 |---|---:|---:|---:|
 | Qwen3.6-35B-A3B (128K) | 24.9 tok/s (`NCMOE=32`) | **39.4 tok/s** (2900 MiB) | +58% |
 | Gemma 4 26B-A4B (32K) | 21.0 tok/s (`NCMOE=22`) | **30.0 tok/s** (3267 MiB) | +43% |
 | Flint (128K) | 26.9 tok/s (`NCMOE=42`) | **32.1 tok/s** (2168 MiB) | +19% |
 | Ornith 1.5 35B-A3B (128K) | 33.9 tok/s (`NCMOE=34`) | **40.4 tok/s** (2983 MiB) | +19% |
 
-Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512, Flint and Ornith 2048); baseline, cache, baseline
-again, two 400-token runs each; the table compares the first baseline (Ornith, a later run: the mean of both). Prompt speed didn't change. VRAM
+Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512, Flint and Ornith 2048). Each model ran
+baseline, cache, then baseline again, two 400-token runs each. The table shows the first baseline; for Ornith,
+measured later, it shows the mean of both baselines. Prompt speed didn't change. VRAM
 in use was 86–186 MiB lower for Qwen3.6 and within 10 MiB for the other two. The cache also held up over a 2,500-token answer: 33–37
 tok/s, while `NCMOE=32` sank to 18–21 tok/s as the CPU package hit 100 °C (83 °C with the cache). Flint's
 gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.
@@ -307,17 +310,13 @@ scripts/llm qwen36 --static   # the classic NCMOE split instead
 # the building blocks underneath:
 QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model, smaller if the desktop uses more VRAM than measured; or a MiB number
 QMODEL=distill MOE_CACHE=auto bash scripts/run-qwen.sh  # Qwen3.8: 2770 MiB, batch 2048, cache batch limit 256
-BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto bash scripts/run-server.sh   # Gemma 4 26B at 32K (3267 MiB)
+BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto \
+  EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja" bash scripts/run-server.sh   # what `scripts/llm gemma` runs (3267 MiB)
 ```
 
-`--moe-cache-cpu-share` and `--moe-cache-max-batch` aren't in upstream llama.cpp yet. Our default build has
-them: `bash scripts/build-llama-cuda.sh` builds our fork's
-[`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) branch
-(`69ca796dd`). It is the
-[`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch (`adventures` +
-PR #30966's 8 commits, `3a72c57be`, on which the numbers above were measured) plus one commit that adds
-`--moe-cache-max-batch N` (default 32, so nothing else changes). An older build (the `adventures` branch)
-fails at startup with an unknown flag; `moe-offload` alone works for every model except `QMODEL=distill MOE_CACHE=auto`.
+`--moe-cache-cpu-share` and `--moe-cache-max-batch` aren't in upstream llama.cpp yet; the default build
+has them (the numbers above were measured on its parent, `moe-offload` `3a72c57be`), see
+[getting started §3](getting-started.md#3-build-llamacpp-once).
 
 **In real agent sessions too.** A full [pibench](pibench.md) batch with `MOE_CACHE=auto` (2026-11-04,
 18 attempts per model, same 64K/128K contexts as the scored batch) against the scored batch from 2026-10-23.

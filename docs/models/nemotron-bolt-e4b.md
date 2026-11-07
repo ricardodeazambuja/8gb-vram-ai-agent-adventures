@@ -35,10 +35,11 @@ Build our llama.cpp once (the same build Flint and Bolt use): [getting-started.m
 ```bash
 # once: 6.2 GB, pinned and sha256-checked
 bash scripts/download-models.sh e4b
+bash utils/audit-gguf.sh models/nemotron-bolt-e4b/Nemotron-3.5-Bolt-E4B-Q4_K_M.gguf   # then audit it
 
 # go
 scripts/llm e4b                                # server + pi
-scripts/llm e4b -p "explain @README.md" --no-session </dev/null
+scripts/llm e4b -p "explain @README.md" --no-session
 scripts/llm stop
 ```
 
@@ -88,7 +89,7 @@ the [scoreboard](../scoreboard.md)):
 | Context | 64K | **108K** | 64K | 16K |
 | Generation | **52 tok/s** | 48–50 tok/s | 29 tok/s | 38 tok/s |
 | Prompt speed | 1,531 tok/s | **1,450–1,620 tok/s** | 852 tok/s | 830–900 tok/s |
-| pibench | 7/18 | **14/18** | not run | not run |
+| pibench | 7/18 | **14/18** | **14/18** | 1/18 |
 | Vision | text only | text only | text only | **89 %** |
 
 Spark is nearly as fast and solves twice as many chores; for agent coding on a small model, use

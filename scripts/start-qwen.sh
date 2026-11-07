@@ -17,7 +17,7 @@
 #   NCMOE    MoE: first N layers' experts on CPU, rest on GPU  (default: qwen36 32, distill 34, flint 42)
 #   KVQUANT  KV type both sides           (default q8_0)
 #   TEMP / TOP_P / TOP_K / PRESENCE_PENALTY  sampling (defaults per model card)
-#   NP / BATCH / UBATCH  slots / batch sizes  (defaults 1 / 512 / 512)
+#   NP / BATCH / UBATCH  slots / batch sizes  (per model: run-qwen.sh -h)
 #   PORT / HOST                                (defaults 8080 / 127.0.0.1)
 #   --image  forwarded to the server; all other extra args go to pi (e.g. -p "...").
 #

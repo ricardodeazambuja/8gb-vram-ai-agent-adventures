@@ -1,6 +1,6 @@
-# 🧠 MoE expert cache and prompt-cache reuse (2026-11-04)
+# 🧠 MoE expert cache and prompt-cache reuse (2026-11-04 to 2026-11-06)
 
-The measurements behind [How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
+The measurements behind [How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
 and the Gemma 4 template fix on [its model page](../../docs/models/gemma4-26b-a4b.md). They started from three ideas in
 [FreeToken](https://github.com/FlashML-org/FreeToken), which we read but did not run:
 
@@ -10,12 +10,15 @@ and the Gemma 4 template fix on [its model page](../../docs/models/gemma4-26b-a4
 
 Ideas 1 and 2 already existed in llama.cpp: upstream PR #29887 (merged) and the open PR #30966, cherry-picked onto
 our fork's [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch at `3a72c57be`.
+Our default build is now the [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch)
+branch (`69ca796dd`): `moe-offload` plus the `--moe-cache-max-batch` flag ([below](#two-experiments-in-the-fork-experimental-local-branch-not-pushed)).
 Idea 3 isn't needed. Qwen3.6 reprocesses about 25 tokens per turn. Gemma 4 wasted 743 and 1,147 tokens on long
 `write` turns because its chat template adds a `\n` the model never writes;
 [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja) removes it, which brings both turns to 14
 tokens.
 
-**[`RESULTS.md`](RESULTS.md) has every number, command line and build commit.** Its console output is verbatim,
+**[`RESULTS.md`](RESULTS.md) has every number, command line and build commit.** Rerun: see
+[docs/reproduce.md](../../docs/reproduce.md#the-other-benchmarks). Its console output is verbatim,
 because several results were only ever printed to the console. The work was done in a separate session working in
 the llama.cpp fork and copied here afterwards. The paths in the scripts were then made relative. The logic
 didn't change: the offline scripts give identical output ([`logs/offline-sizes.txt`](logs/offline-sizes.txt)),
@@ -109,7 +112,8 @@ the test's, an older build, the CPU's temperature, and the 200-token answer. The
 (`tune/*.txt`): Qwen3.6 2624 MiB / share 0.8, Gemma 3008 / 0.8, Flint 2048 / 0.8, its Flint numbers lower
 than both our A/B and the `NCMOE=42` baseline.
 
-Why, from the code: batches over 32 tokens skip the cache (`src/llama-moe-cache.cpp`, `max_batch = 32`) and
+Why, from the code: batches over 32 tokens skip the cache (`src/llama-moe-cache.cpp`, `max_batch = 32`; since
+made a flag, `--moe-cache-max-batch`, [below](#two-experiments-in-the-fork-experimental-local-branch-not-pushed)) and
 copy the used experts of every MoE layer per ubatch (40 on Qwen3.6, 47 on Flint), so prefill runs a few
 percent slower. They also never insert into the cache, so decode after a long prompt starts with an empty
 cache, and until it fills, every miss is copied rather than computed on the CPU.
@@ -177,7 +181,8 @@ now uses 2983 MiB.
 
 These sizes were measured with 0.33–0.41 GB of VRAM already in use by the desktop. Qwen3.8's model page measured
 `NCMOE=34` at 7.2–7.3 GB and `NCMOE=32` out of memory, likely with a heavier desktop; so `NCMOE=31` and a
-3661 MiB cache only fit when the desktop is light. The launcher keeps `NCMOE=34` for now.
+3661 MiB cache only fit when the desktop is light. The launcher keeps `NCMOE=34` for now (since changed:
+`scripts/llm distill` uses the cache, 2770 MiB at batch 2048, below).
 
 A rule for any of these sizes: the server's own VRAM is the loaded total minus "vram before" in the logs. The
 card gives CUDA about 7687 MiB (the tuner saw 7353 MiB free with 334 MiB in use), and ~300 MiB should stay free
@@ -261,7 +266,7 @@ The other session has since made this a proper option, `--moe-cache-max-batch N`
 `moe-cache-max-batch` at `69ca796dd` (`moe-offload` plus one commit; default 32, so nothing changes without the
 flag). Pushed on 2026-11-05 as `origin/moe-cache-max-batch`, and the fork's main `build/` now runs it.
 `QMODEL=distill MOE_CACHE=auto` passes `--moe-cache-max-batch 256`; the other models keep 32 until 128 is
-measured.
+measured (since done: `run-qwen.sh` now passes 128 for Qwen3.6 and Flint, steps 14–15 below).
 
 With that flag (`step11-flag.sh`, [`step11.log`](experimental/logs/step11.log), built from `69ca796dd` into
 `../llama.cpp-warm/build-warm`), 32 against 256 on three models. Change in prompt time for 16 / 48 / 100 / 200 /
@@ -352,7 +357,7 @@ also runs the server with `-lv 4` now, so each log ends with the cache's hit rat
 
 **pibench (2026-11-04):** scores held and decode inside the sessions was faster for all three
 (Qwen3.6 +59%, Gemma +26%, Flint +23%); Flint's prompt speed was 17% lower there, 4% in the test above.
-[How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
+[How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
 has the table.
 
 ## How concentrated is expert use? (`expert_usage.py`, 2026-11-05)

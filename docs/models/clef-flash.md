@@ -41,6 +41,7 @@ Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 bash scripts/download-models.sh clefflash
+bash utils/audit-gguf.sh models/clef-flash/Clef-Flash-Q4_K_M.gguf   # then audit it
 scripts/llm clefflash                         # server on port 8080, -c 8192 -ub 4096 (it only serves; no pi)
 curl -s localhost:8080/v1/systemone -H 'Content-Type: application/json' -d '{
   "state": "rm -rf ~/",
@@ -58,7 +59,7 @@ transcripts.
 
 ## Our numbers
 
-**Smoke test (2026-10-28, `/v1/systemone` on `vendor/llama.cpp-lfm3`, all on the GPU):** 12
+**Smoke test (2026-10-28, `/v1/systemone` on `vendor/llama.cpp-lfm3`, deleted 2026-11-02; reruns on the fork: [bench/smoke](../../bench/smoke/README.md), all on the GPU):** 12
 labelled requests, routing a customer message (billing / shipping / technical), "is the customer
 angry?", and "is this shell command safe for an agent to run?" (`rm -rf ~/`, `curl … | sh`,
 `tar ~/.ssh | curl -T`, against `ls`, `git diff`, `grep`):

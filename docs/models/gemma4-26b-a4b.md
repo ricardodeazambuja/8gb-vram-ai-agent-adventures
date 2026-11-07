@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | On disk | `gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf`, ~14 GB (13.26 GiB) |
-> | Where it lives | attention + KV cache on the GPU, most MoE experts in system RAM |
+> | Where it lives | attention + KV cache on the GPU, every expert in RAM with a 3267 MiB VRAM cache of the recently used ones (`scripts/llm`); `--static`: most experts in RAM, a few layers' on the GPU |
 > | Context | 32K by default; 64K for free; up to 128K with a quantized KV cache |
-> | Generation | **~23.5 tok/s** (CUDA) · ~4.9 tok/s (Vulkan) · ~1.9 tok/s (CPU only) |
+> | Generation | **30.0 tok/s** with `scripts/llm` (CUDA, expert cache, 32K) · ~23.5 with `--static` · ~4.9 (Vulkan) · ~1.9 (CPU only) |
 > | Prompt processing | ~63 tok/s (llama-bench, CUDA) |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), median 4.8 min per run |
 > | [Vision probe](../vision-probe.md) | **100%** overall (OCR, boxes, understanding, CAD), ~70 s per image |
@@ -43,24 +43,10 @@ token. Then `--n-cpu-moe N` (the `NCMOE` knob) moves some experts back to the GP
 layer's experts cost ~0.45 GB, and at 32K context about 8 layers fit (`NCMOE=22`). The full story,
 with numbers, is in [How it fits](../how-it-fits.md).
 
-**Faster, same VRAM (2026-11-04, the default in `scripts/llm gemma`):** a GPU cache of the most recently used experts instead of
-fixed layers, with the CPU computing 95% of the misses: **30.0 vs 21.0 tok/s** at 32K (A/B/A). In a full
-pibench batch at 64K: 17/18 (the miss passed 5 of 6 hidden tests), decode 32.3 vs 25.6 tok/s, model time
-75 vs 93 min for all 18 runs.
-`KVQUANT=q8_0 MOE_CACHE=3267` (3500 at pibench's 64K; both are `MOE_CACHE=auto`) on our fork's `moe-cache-max-batch`
-build, the default build. `scripts/llm gemma` turns it on; `scripts/llm gemma --static` gives the classic `NCMOE` split;
-[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
-
-**Its chat template wastes prompt processing in agent loops.** The GGUF's template renders the thinking
-block as `thinking + '\n<channel|>'`, but the model writes no `\n` there. So after each long tool call the
-re-rendered history stops matching the cache, and llama-server reprocesses the thinking and the call:
-743 and 1,147 tokens on two `write` turns, measured. Short `bash` calls survive (the sliding-window cache
-has ~512 tokens of slack). [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja)
-drops that `\n` and brings it to 14 tokens: `EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja"`.
-It also keeps the empty thought block of a tool call made with thinking off, which the stock template drops
-from the history, so each such turn was reprocessed whole; with the fix, 5 / 14 / 14 / 25 / 25 tokens per turn
-with thinking off or on.
-Method in [`bench/moe-cache/`](../../bench/moe-cache/README.md).
+**Faster, same VRAM (2026-11-04, the default in `scripts/llm gemma`):** a 3267 MiB GPU cache of the recently used
+experts (3500 at 64K): **30.0 vs 21.0 tok/s** against `NCMOE=22` at 32K; in a full pibench batch at 64K 17/18, decode
+32.3 vs 25.6 tok/s. `scripts/llm gemma --static` gives the `NCMOE` split. More in
+[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes).
 
 ## Install & run
 
@@ -69,11 +55,12 @@ Prerequisites (mamba, an NVIDIA driver, `pi`) are in [Getting started](../gettin
 ```bash
 # 1. Env + model download (~14 GB) + build llama.cpp against YOUR driver's CUDA (~20 min, once)
 BACKEND=cuda bash scripts/setup.sh
+bash utils/audit-gguf.sh models/gemma4-26b-a4b-qat/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf   # then audit it
 
 # 2. Register the local server with pi (once)
 bash scripts/configure-pi.sh
 
-# 3. Server + pi, in one go (32K, q8_0 KV, expert cache on, the template fix below; --static for the NCMOE split)
+# 3. Server + pi, in one go (32K, q8_0 KV, expert cache on, the template fix from Gotchas; --static for the NCMOE split)
 scripts/llm gemma
 ```
 
@@ -96,12 +83,11 @@ cache (`CTX=131072 KVQUANT=q8_0 bash scripts/start.sh`). When `pi` exits, `start
 remember the result.
 
 **Images.** The main GGUF is text only; vision comes from a separate projector (~1.2 GB, BF16,
-images only, no audio). Download it once:
+images only, no audio). Download it once (pinned revisions, sha256-checked):
 
 ```bash
-curl -L -o models/gemma4-26b-a4b-qat/mmproj-BF16.gguf \
-  https://huggingface.co/unsloth/gemma-4-26B-A4B-it-GGUF/resolve/c099eb48e663fd284577b04978a94ffccb261841/mmproj-BF16.gguf
-echo "41926ed5f1403cf5add23b0684992805ea6f97253096132e769e65646b8cef9d  models/gemma4-26b-a4b-qat/mmproj-BF16.gguf" | sha256sum --check
+bash scripts/download-models.sh gemma gemmavis
+bash utils/audit-gguf.sh models/gemma4-26b-a4b-qat/mmproj-BF16.gguf
 ```
 
 `--image` keeps the projector on the CPU (there's no VRAM left for it), so encoding an image is a
@@ -164,9 +150,9 @@ few tokens. It's lossless, and at **greedy** it's a real win: 79–88% of drafts
 and the gain disappears into this laptop's ±13% noise. A draft-confidence floor (`p_min > 0`)
 turned the output into `fmt-fmt…` loops, so don't. Want faster coding? Lower the temperature and
 try `MTP=1`. (The EAGLE3 draft was slower and crashier; it's in the [graveyard](../graveyard.md).)
-On our fork, `--spec-draft-sampling probabilistic` gave 27 tok/s at temperature 1.0 against 21-22
-without a draft, in one run, with no change in scores
-([details](../up-next.md)).
+If you try MTP, `--spec-draft-sampling probabilistic` is the mode worth using: 27 tok/s at temperature 1.0
+against 21-22 without a draft (+26%), in one run, with no change in scores
+([graveyard: relaxed draft acceptance](../graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles)).
 
 **[pibench](../pibench.md)** (64K, `NCMOE=20`, q8_0 KV): **18/18 solved**, 100% of hidden tests,
 median **4.8 min** and ~7.1K output tokens per run. Tied for first with Flint, which is a fine
@@ -209,6 +195,15 @@ think for 4–7K tokens each.
   Vulkan. See [troubleshooting](../troubleshooting.md).
 - **256K doesn't fit.** The model was trained for 256K, but on 8 GB the practical ceiling is
   ~128K (≈160K hard limit, all experts in RAM).
+- **Its chat template wastes prompt processing in agent loops** (`scripts/llm gemma` applies the fix). The GGUF's
+  template renders the thinking block as `thinking + '\n<channel|>'`, but the model writes no `\n` there. So after
+  each long tool call the re-rendered history stops matching the cache, and llama-server reprocesses the thinking
+  and the call: 743 and 1,147 tokens on two `write` turns, measured. Short `bash` calls survive (the sliding-window
+  cache has ~512 tokens of slack). [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja) drops that
+  `\n` and brings it to 14 tokens: `EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja"`. It also keeps
+  the empty thought block of a tool call made with thinking off, which the stock template drops from the history,
+  so each such turn was reprocessed whole; with the fix, 5 / 14 / 14 / 25 / 25 tokens per turn with thinking off
+  or on. Method in [`bench/moe-cache/`](../../bench/moe-cache/README.md).
 - Harmless load warnings about control-token types (`<|tool_response>`, `</s>`) and
   `failed to fit params ... n_gpu_layers already set by user` can be ignored.
 
@@ -216,15 +211,15 @@ think for 4–7K tokens each.
 
 All are env vars for `scripts/llm gemma` and `scripts/start.sh` (both end in `scripts/run-server.sh`; `-h` lists them all).
 
-| Knob | What it does | Default |
+| Variable | Default | What it does |
 |---|---|---|
-| `BACKEND` | `cuda` \| `vulkan` \| `cpu` | auto (CUDA if built) |
-| `CTX` | context window in tokens | 32768 |
-| `NCMOE` | expert layers kept in RAM; lower = faster, more VRAM | all (or the auto-tuned value) |
-| `KVQUANT` | KV cache type: `q8_0` for long context | f16 (off); q8_0 in `scripts/llm` |
-| `MOE_CACHE` | VRAM cache of the experts instead of `NCMOE`'s fixed layers | auto in `scripts/llm` (off with `--static` or in `start.sh`) |
-| `TEMP` / `TOP_P` / `TOP_K` | sampling (Unsloth's recommendation) | 1.0 / 0.95 / 64 |
-| `MTP` / `NMAX` | speculative decoding with the MTP head; draft length | off / 2 |
-| `AUTOTUNE` | measure the fastest `NCMOE` for your GPU (`1` force, `0` never) | ask once |
-| `STOP_ON_EXIT` | stop the server when pi exits (`1`/`0`) | ask |
-| `--image` | load the vision projector | off |
+| `BACKEND` | auto (CUDA if built) | `cuda` \| `vulkan` \| `cpu` |
+| `CTX` | 32768 | context window in tokens |
+| `NCMOE` | all (or the auto-tuned value) | expert layers kept in RAM; lower = faster, more VRAM |
+| `KVQUANT` | f16 (off); q8_0 in `scripts/llm` | KV cache type: `q8_0` for long context |
+| `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `start.sh`) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
+| `TEMP` / `TOP_P` / `TOP_K` | 1.0 / 0.95 / 64 | sampling (Unsloth's recommendation) |
+| `MTP` / `NMAX` | off / 2 | speculative decoding with the MTP head; draft length |
+| `AUTOTUNE` | ask once | measure the fastest `NCMOE` for your GPU (`1` force, `0` never) |
+| `STOP_ON_EXIT` | ask | stop the server when pi exits (`1`/`0`) |
+| `--image` | off | load the vision projector |

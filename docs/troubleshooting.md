@@ -5,7 +5,7 @@ possible moment. Format: what you see → what's really going on → what to do.
 
 **Contents:** [Downloads & model files](#downloads--model-files) ·
 [Memory](#memory) · [Model-specific](#model-specific) · [Thinking & templates](#thinking--templates) ·
-[pi & processes](#pi--processes) · [Images](#images)
+[pi & processes](#pi--processes) · [Experiments & training](#experiments--training) · [Images](#images)
 
 ---
 
@@ -111,13 +111,15 @@ as a 13.6 GB download was filling the page cache: pressure stayed above 50% for 
 journalctl -u systemd-oomd | grep -i killed   # "Killed …vte-spawn-….scope due to memory pressure"
 ```
 
-**Fix:**
+**Fix:** start models with `scripts/llm <name>`. It runs the server in its own systemd scope
+(`llm-<name>`), so if oomd fires it takes only the server; it refuses a big model when RAM is short or
+memory pressure is already up; and it stops the server itself if pressure climbs past 30 while it loads.
+Otherwise:
 
 - Don't load a big model (over ~15 GB) while a download or another heavy job is running.
-- Start the server in its own scope, so that if oomd fires it takes only the server:
-  `systemd-run --user --scope --unit=llama-<model> bash scripts/run-qwen.sh`.
-- On a big model's first load, watch `cat /proc/pressure/memory` (`some avg10`); stop the
-  server if it climbs past ~30.
+- Without `scripts/llm`, give the server its own scope by hand:
+  `systemd-run --user --scope --unit=llama-<model> bash scripts/run-qwen.sh`, and on a big model's first
+  load watch `cat /proc/pressure/memory` (`some avg10`); stop the server if it climbs past ~30.
 - A download killed halfway leaves a `.incomplete` file under `models/<dir>/.cache/`; delete it
   and download again rather than trusting a resume.
 
@@ -134,18 +136,13 @@ And always test with an actual request, not just a successful load.
 
 ### A size that fit at night runs out of memory in the daytime
 
-**What's going on:** the desktop's own VRAM use swings. With Chrome and a few apps open it took ~1.7 GB
-(2026-11-05); at night, with little open, 0.33–0.46 GB. The MoE cache sizes here were measured at night, and
-Nemotron Bolt's default placement ran out of VRAM at load next to the daytime desktop.
+**What's going on:** the desktop's own VRAM use swings: ~1.7 GB with Chrome and a few apps open
+(2026-11-05), 0.33–0.46 GB at night. Our sizes were measured at night.
 
-**Fix:** check `nvidia-smi` before launching. `MOE_CACHE=auto` now shrinks the cache by however much more
-VRAM is in use than the size was measured with (`MOE_CACHE_ADAPT=0` turns that off), and refuses below
-1 GiB. For anything else, close the browser or lower `NCMOE`/`-ngl`. The shrunk caches cost 9–13% of decode
-speed and 5–24% on short turns, and are still far faster than static offload at the same VRAM
-([measured](../bench/moe-cache/README.md)). Flint's shrunk size falls under the floor: close the browser.
-`scripts/llm` says so before loading anything ("the expert cache doesn't fit next to what is on the GPU
-now"); `scripts/llm <name> --static` runs without the cache instead, which may still run out of memory next
-to a busy desktop. Gemma's `MOE_CACHE=auto` (run-server.sh) shrinks the same way, from an estimated ~700 MiB.
+**Fix:** check `nvidia-smi` before launching, then close the browser, or run `scripts/llm <name> --static`
+(no expert cache; may still not fit next to a busy desktop). The expert cache already shrinks itself for
+a busy desktop and `scripts/llm` refuses up front when it no longer fits (Flint's does, next to the
+daytime desktop). Numbers: [the daytime runs](../bench/moe-cache/README.md).
 
 ### `error: invalid argument: --moe-cache-mib` (or `--moe-cache-cpu-share`, `--moe-cache-max-batch`)
 
@@ -168,19 +165,13 @@ K and V in the compute buffer, which grows with context. Spark-X2.6-4B's q8_0 ca
 
 ### Bonsai 2: server aborts on the first request, `no device code compatible with CUDA arch 750`
 
-**What's going on:** PrismML's own llama.cpp build has no Turing (sm_75) code for its
-flash-attention kernel with a **q8_0** KV cache.
-
-**Fix:** run Bonsai on our fork (the default since 2026-11-02), where q8_0 works and gives 32K
-context. On PrismML's build, use an **f16** KV cache and 16K.
+You're on PrismML's own build; run Bonsai on our fork (`scripts/llm bonsai2`), where q8_0 works at 32K
+([the story](models/bonsai2-27b.md)).
 
 ### Dory: slow, and VRAM goes *down* as you add loops
 
-**What's going on:** the Dory build counts every pass through the looped block as extra layers,
-so `-ngl 99` doesn't mean "everything" any more. At 4 loops it left 2.9 GB of weights and most of
-the KV cache on the CPU: 3.8 tok/s instead of 19.
-
-**Fix:** `-ngl 999`. The repo's Dory default already uses it.
+`-ngl 99` isn't "everything" for a looped model; use `-ngl 999` (`scripts/llm dory` does).
+[Why](models/dory1.0-4b.md#how-does-it-fit-in-8-gb).
 
 ### Spark: HTTP 400, `Unexpected reasoning effort medium. Supported types are high (default) and low.`
 
@@ -188,8 +179,8 @@ the KV cache on the CPU: 3.8 tok/s instead of 19.
 hands it to the chat template, and Spark's template accepts only `high` or `low`. pi's default is
 `medium`, so every request is rejected before a single token is generated.
 
-**Fix:** `--thinking high` (what Spark's card evaluates with) or `--thinking low`.
-`scripts/start_spark.sh` passes `--thinking high` for you unless you pick a level yourself.
+**Fix:** `scripts/llm spark` passes `--thinking high` (what Spark's card evaluates with) unless you
+pick a level yourself; with pi directly, use `--thinking high` or `--thinking low`.
 
 ### Bonsai 2: HTTP 500 when pi asks for "high" thinking
 
@@ -197,17 +188,8 @@ hands it to the chat template, and Spark's template accepts only `high` or `low`
 values than pi's levels.
 
 **Fix:** already handled: `config/pi-provider.json` maps pi's levels onto ones Bonsai accepts,
-and `start_bonsai2.sh` defaults to `medium` (higher levels think for minutes per turn). Register
-the provider with `bash scripts/configure-pi.sh`.
-
-### Qwen3-VL: a big photo takes minutes, or kills the server
-
-**What's going on:** a 4K photo becomes ~4,096 image tokens. With the vision projector on the CPU
-that took **270 s**; on the GPU, uncapped, it ran the card out of memory and aborted the server.
-
-**Fix:** projector on the GPU and a cap on image tokens: `MMPROJ_GPU=1 IMAGE_MAX_TOKENS=1024`
-(both the `qwen3vl` defaults). The same photo then encodes in **5.4 s**. 2048 also fits, with less
-headroom.
+and `scripts/llm bonsai2` defaults to `--thinking medium` (higher levels think for minutes per turn).
+Register the provider with `bash scripts/configure-pi.sh`.
 
 ## Thinking & templates
 
@@ -220,7 +202,13 @@ it (see above), Flint's template has no thinking switch at all.
 
 **Fix:** to really disable thinking, start the server with `--reasoning off` (or
 `--chat-template-kwargs '{"enable_thinking":false}'`, for templates that support it), e.g. through
-`EXTRA_ARGS`.
+`EXTRA_ARGS`: `EXTRA_ARGS="--reasoning off" scripts/llm groot`.
+
+### My `EXTRA_ARGS` flag seems to clash with the launcher's
+
+**What's going on:** `scripts/llm` adds your `EXTRA_ARGS` **after** its own flags (so Gemma keeps its
+template fix when you pass `EXTRA_ARGS=--seed 1`). To replace one of its flags rather than add to it,
+run `scripts/run-qwen.sh` or `scripts/run-server.sh` directly with the knobs you want.
 
 ### The answer comes back empty
 
@@ -254,8 +242,10 @@ so killing the PID you got back (`kill $!`) can miss the actual `llama-server`. 
 an interrupted script you can end up with an orphan holding all the VRAM, and the next model fails
 to load.
 
-**Fix:** `bash scripts/stop-server.sh` (it finds the process by its port). If something survives,
-`kill -9` it, and check that `nvidia-smi` shows the memory free before loading the next model.
+**Fix:** `scripts/llm stop --force` (whatever holds the port), or for a server `scripts/llm` started,
+`systemctl --user stop llm-<name>.scope`, which takes the whole scope with it. `bash scripts/stop-server.sh`
+also finds the process by its port. If something survives, `kill -9` it, and check that `nvidia-smi` shows
+the memory free before loading the next model.
 
 ### `pkill -f llama-server` kills your own shell (exit 144)
 
@@ -265,13 +255,12 @@ the `pkill`, because its command line contains the pattern.
 **Fix:** stop servers by port (`scripts/stop-server.sh`) or by PID. If you must pattern-match, use
 the bracket trick: `pgrep -f '[l]lama-server'`.
 
-## Experiments and training
+## Experiments & training
 
-### A training run "scored" like the untouched model
-
-A DoRA run hit its time limit, and the eval that followed quietly ran the base model, adapter or no
-adapter. `train_style.py eval` now refuses a run with no weights. After any timeout, check that the
-adapter exists before you trust the score that follows it.
+The lessons about trusting a result (a "trained" score from the base model, a low score that looks like
+progress, a replay that can't reproduce a loop) are in
+[fine-tuning → Lessons from the training runs](fine-tuning.md#lessons-from-the-training-runs). The tooling
+gotchas are here.
 
 ### A training run is much slower than usual
 
@@ -298,18 +287,24 @@ reads `--tag -3k` as two flags, so write `--tag=-3k`.
 Attention memory grows with the square of the length, so the longest example decides. Set a token cap,
 `logits_to_keep` and `use_cache=False`, and run the fit test on the largest examples, not the first few.
 
-### A low score that looks like progress
-
-A new projector scored 35/150, up from 14, and was still blind: it gave one identical answer to all 30
-tanks, signals and gauges. Before you believe a small gain, check that answers change with the picture.
-
-### A replay can't reproduce a loop
-
-Our first replay of stuck conversations left the thinking out of the history and understated the loops,
-15/52 against 32/52. Real prompts include it, which the recorded token counts showed. Compare your token
-count with the real run's. Tool-call arguments cut off by `max_tokens` also come back as invalid JSON.
-
 ## Images
+
+### `scripts/imagine` refuses: `a llama-server … is using the GPU on :8080`
+
+**What's going on:** an image model and a language model don't both fit in 8 GB, so `scripts/imagine`
+won't start while a llama-server is serving.
+
+**Fix:** `scripts/llm stop` (or `scripts/llm stop --force` for a server it didn't start), then run
+`scripts/imagine` again. If it then says the GPU has too much in use, close the browser.
+
+### Qwen3-VL: a big photo takes minutes, or kills the server
+
+**What's going on:** a 4K photo becomes ~4,096 image tokens. With the vision projector on the CPU
+that took **270 s**; on the GPU, uncapped, it ran the card out of memory and aborted the server.
+
+**Fix:** `scripts/llm qwen3vl` already puts the projector on the GPU and caps image tokens
+(`MMPROJ_GPU=1 IMAGE_MAX_TOKENS=1024`, the `qwen3vl` defaults). The same photo then encodes in
+**5.4 s**. 2048 also fits, with less headroom.
 
 ### The model "can't see" an image you gave it
 

@@ -71,7 +71,8 @@ are a hard test for it. The question for the camera, real photos of people, is s
 
 ```bash
 python -I bench/cactus/fetch.py models/cactus                      # once, from Hugging Face only
-mkdir -p models/cactus/py && cp -r <cactus-compute/cactus@ee2ffc6>/cactus models/cactus/py/
+git clone https://github.com/cactus-compute/cactus /tmp/cx && git -C /tmp/cx checkout ee2ffc67fe0f9537d4928e158440c7d228a63100
+mkdir -p models/cactus/py && cp -r /tmp/cx/cactus models/cactus/py/
 bash bench/cactus/sandbox.sh -I /bench/cactus/mirage_glance.py 30   # no network
 ```
 

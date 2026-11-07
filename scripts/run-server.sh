@@ -23,7 +23,7 @@
 #   CTX        context window                 (default: 32768; ~max at NCMOE=22 on 8 GB)
 #   NCMOE      if set to N, keep only the first N layers' experts on CPU and put
 #              the rest on the GPU (faster, uses more VRAM). Empty = all on CPU.
-#   MOE_CACHE  opt-in: N MiB (or auto, below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every expert
+#   MOE_CACHE  off unless set (scripts/llm gemma sets auto): N MiB (or auto, below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every expert
 #              in RAM, NCMOE ignored. Upstream PR #30966.
 #              Measured +43% decode at 32K (MOE_CACHE=3267 vs NCMOE=22). docs/how-it-fits.md §12.
 #              auto = a size measured to fit, with KVQUANT=q8_0: 3267 at 32K, 3500 at 64K (2026-11-04: 4084,

@@ -41,14 +41,16 @@ the measured fit, with ~0.3 GB to spare. See [How it fits](../how-it-fits.md).
 ## Install & run
 
 Spark's architecture is in upstream llama.cpp (since PR #27868, 2026-09-06). The repo runs it on
-our llama.cpp fork's `adventures` branch (upstream of 2026-10-28 plus two PRs; see
-[getting-started](../getting-started.md#3-build-llamacpp-once-per-flavour)), the same build as
+our default build (the fork's `moe-cache-max-batch` branch, which contains the `adventures` branch the numbers below
+were measured on: upstream of 2026-10-28 plus two PRs; see
+[getting-started](../getting-started.md#3-build-llamacpp-once)), the same build as
 [Dory](dory1.0-4b.md). Build our llama.cpp once: [getting-started.md](../getting-started.md). (First measured on upstream of
 2026-10-15; the fork build gives 49.8 tok/s and 1,641 tok/s prompt, 2026-10-30.)
 
 ```bash
 # 1. Download the official Q8_0 GGUF, pinned revision, sha256-checked
 bash scripts/download-models.sh spark
+bash utils/audit-gguf.sh models/spark-x2.6-4b/Spark-X2.6-4B-Q8_0.gguf   # then audit it
 
 # 2. Serve it and open pi
 scripts/llm spark
@@ -57,7 +59,7 @@ scripts/llm spark
 CTX=65536 scripts/llm spark
 
 # One question, no chat:
-scripts/llm spark -p "explain @README.md" --no-session </dev/null
+scripts/llm spark -p "explain @README.md" --no-session
 
 # Done? Free the GPU:
 scripts/llm stop
@@ -66,7 +68,7 @@ scripts/llm stop
 (The building block: `bash scripts/start_spark.sh`, or `QMODEL=spark bash scripts/run-qwen.sh` for the server
 alone; every knob in [Knobs](#knobs) below still applies.)
 
-**Thinking level:** `start_spark.sh` runs pi with `--thinking high`. pi sends its thinking level
+**Thinking level:** `scripts/llm spark` (and `start_spark.sh`) runs pi with `--thinking high`. pi sends its thinking level
 as the request's `reasoning_effort`, and Spark's chat template accepts only `high` or `low`. pi's
 default, `medium`, gets every request rejected with HTTP 400 ("Unexpected reasoning effort
 medium"). If you launch pi yourself, pass `--thinking high` or `--thinking low`.
@@ -125,8 +127,8 @@ each.
 
 ## Gotchas
 
-- **The thinking-level trap** (above): `medium` → HTTP 400. Use `start_spark.sh`, or
-  `--thinking high`/`low`.
+- **The thinking-level trap** (above): `medium` → HTTP 400. `scripts/llm spark` passes
+  `--thinking high`; with raw pi, pass `--thinking high`/`low`.
 - **128K doesn't fit** next to Q8_0 weights; 108K is the default. `UBATCH=256` only saves
   92 MiB, not enough for 128K. The official Q4_K_M (3.3 GiB) would free ~0.8 GB for full 128K,
   but nobody has tried it here yet.

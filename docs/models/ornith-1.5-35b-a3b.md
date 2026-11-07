@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | On disk | 21.7 GB (`Q4_K_M`) + 0.9 GB vision projector |
-> | Where it lives | experts of 34 of 40 layers in RAM, everything else on the GPU (7.1 GB VRAM) |
+> | Where it lives | every expert in RAM with a 2983 MiB VRAM cache of the recently used ones, everything else on the GPU (`scripts/llm`); `--static`: experts of 34 of 40 layers in RAM (7.1 GB VRAM) |
 > | Context | **128K** (the model does 256K) |
-> | Generation | **~31 tok/s** (32–33 tok/s with one more layer on the GPU) |
+> | Generation | **40.4 tok/s** with `scripts/llm` (expert cache; ~13% less next to a busy daytime desktop); ~31 with `--static` (33.9 in the cache's A/B) |
 > | Prompt processing | ~490–510 tok/s (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, **1.4K–1.8K tokens** |
 > | [pibench](../pibench.md) | 14/18 solved (94% of hidden tests), **2.2 min** median per run, the quickest of the big models |
@@ -87,25 +87,24 @@ benchmark sampling (temp 1.0, top-p 0.95, top-k 20). `scripts/qwen-bench.py`, si
 | `NCMOE=37`, batch 2048 | 5.6 GB | 26.2 tok/s | 471 tok/s | ✓ |
 | `NCMOE=36`, batch 2048 | 6.1 GB | 27.1 tok/s | 479 tok/s | ✓ |
 | `NCMOE=35`, batch 2048 | 6.6 GB | 29.5 tok/s | 489 tok/s | ✓ |
-| **`NCMOE=34`, batch 2048 (default)** | **7.1 GB** | **~31 tok/s** ¹ | — | |
+| `NCMOE=34`, batch 2048 (`--static`) | 7.1 GB | ~31 tok/s ¹ | — | |
 | `NCMOE=34`, batch 512 | 6.6 GB | 31.2 tok/s | 176 tok/s | ✓ |
 | `NCMOE=33`, batch 2048 | 7.5 GB | 32.2 tok/s | 507 tok/s | ✓ |
 | `NCMOE=33`, batch 512 | 7.0 GB | 31.3 tok/s | 179 tok/s | ✓ |
 | `NCMOE=32`, batch 512 | 7.5 GB | 33.0 tok/s | 183 tok/s | ✓ |
+| **`MOE_CACHE=auto` (2983 MiB), batch 2048 (default)** | **~7.2 GB** | **40.4 tok/s** ² | 457 tok/s ² | |
 
 ¹ From the two code-check runs (31.4 and 30.9 tok/s).
+² A/B/A against `NCMOE=34` at 33.9 / 461 tok/s ([bench/moe-cache](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)).
 
-The default leaves ~0.9 GB of VRAM free on purpose: [Groot](groot-19b-a3b.md) at 7.7 GB ran out
+The `NCMOE=34` split leaves ~0.9 GB of VRAM free on purpose: [Groot](groot-19b-a3b.md) at 7.7 GB ran out
 of memory during pibench with a browser open. `NCMOE=33` is 1 tok/s faster if your desktop is lean.
 Prompt reading is about half of Groot's (887 tok/s): more of each layer's experts live in RAM.
 
-**Faster, same VRAM (2026-11-05, the default in `scripts/llm ornith`):** `MOE_CACHE=auto` puts all experts in RAM and uses 2983 MiB of VRAM
-as a cache of the most recently used ones, with the CPU computing 95% of the misses. At the same ~7.2 GB as
-`NCMOE=34`: **40.4 vs 33.9 tok/s** decode, 29.7 vs 28.5 after a 30K-token prompt, prompt reading unchanged
-(457 vs 461 tok/s). Both peak at ~6.95 GB of the server's own, so the desktop must stay under ~430 MiB of VRAM;
-the launcher shrinks the cache if more is in use at launch. `scripts/llm ornith` turns it on (`--static`: the classic
-`NCMOE=34` split); it needs our fork's `moe-cache-max-batch` build, the default build; measurements in
-[`bench/moe-cache/`](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05).
+**Faster, same VRAM (2026-11-05, the default in `scripts/llm ornith`):** a 2983 MiB GPU cache of the recently used
+experts: **40.4 vs 33.9 tok/s** against `NCMOE=34`, prompt reading unchanged. Next to a ~1.7 GB daytime desktop the
+launcher shrinks it to 1713 MiB, −13% decode. More in
+[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes).
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **1,401 and 1,813 tokens**: half of Qwen3.6's 3,558 for the
@@ -121,7 +120,10 @@ its eyes.
 **[pibench](../pibench.md): 14/18 solved**, 94% of hidden tests, median **2.2 min** per run and
 2.7K output tokens: the fewest tokens of any model we've run, and the quickest jobs of any
 big model (only the 8B E4B, at 2.0 min, was quicker). The bug fix, the CLI and
-the JavaScript page were 3/3 (the CLI in under a minute, three tool calls). The four misses:
+the JavaScript page were 3/3 (the CLI in under a minute, three tool calls). The four misses are in
+[How it behaves](#how-it-behaves).
+
+## How it behaves
 
 - 📚 **books, 1/3.** Once it read the UTF-8 pages as Latin-1 (`Noahâ\x80\x99s Ark`), like
   [LFM2.5](lfm2.5-24b-a2b.md). Once it **made up the site's URL scheme**
@@ -161,7 +163,7 @@ Env vars for `scripts/llm ornith` / `scripts/run-qwen.sh` with `QMODEL=ornith`.
 
 | Knob | Default | What it does |
 |---|---|---|
-| `NCMOE` | 34 | layers whose experts stay in RAM (33 at batch 2048 and 32 at batch 512 also fit, with less headroom) |
+| `NCMOE` | 34 | with `--static`: layers whose experts stay in RAM (33 at batch 2048 and 32 at batch 512 also fit, with less headroom) |
 | `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `BATCH` / `UBATCH` | 2048 / 2048 | 512 costs nothing in generation but reads prompts ~2.8× slower |
 | `CTX` | 131072 | context window |

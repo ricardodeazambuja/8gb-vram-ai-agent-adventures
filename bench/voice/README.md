@@ -2,7 +2,7 @@
 
 First tests of LFM3-Audio-2B: speech out, speech in, spoken tool calls and a live conversation over
 `/v1/realtime`. The write-up and the plans are in
-[Voice agents](../../docs/up-next.md#-voice-agents-agents-that-talk-to-people).
+[Voice agents](../../docs/up-next.md#️-voice-agents-agents-that-talk-to-people).
 
 ## Run it
 

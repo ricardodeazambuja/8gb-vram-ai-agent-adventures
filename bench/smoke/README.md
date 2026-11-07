@@ -1,6 +1,7 @@
 # 💨 Quick checks for the helper models
 
-One command starts each model the documented way (`scripts/run-qwen.sh`), tests it, and stops it.
+One command starts each model with the backend script under `scripts/llm` (`scripts/run-qwen.sh`), tests it, and
+stops it.
 
 ```bash
 bash scripts/download-models.sh clefflash d1 eg2 locate

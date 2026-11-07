@@ -28,6 +28,7 @@ Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 bash scripts/download-models.sh vibe3b vibe15
+bash utils/audit-gguf.sh models/vibethinker-3b/VibeThinker-3B.Q8_0.gguf   # then audit it (and the 1.5B file)
 scripts/llm vibe3b                                   # server + shim + pi (vibe15 for the 1.5B)
 scripts/llm vibe3b serve                             # or the plain server, for one-shot work
 ```

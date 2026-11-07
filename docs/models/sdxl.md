@@ -10,6 +10,11 @@
 > | Licence | Open RAIL++ |
 > | Launch | `scripts/imagine "..." -m sdxl` |
 
+## What is it?
+
+Stable Diffusion XL base, the older latent model: two text encoders and a VAE, 25 steps for a 1024×1024 picture.
+What it has over the newer two is training: styles and a person, on this laptop.
+
 The slowest of our three, with garbled sign text. It's still here because it's the one we taught styles
 and a person: [Teaching SDXL](../image-generation.md#teaching-sdxl-a-style-or-a-person). Full comparison:
 [Making pictures on 8 GB](../image-generation.md).

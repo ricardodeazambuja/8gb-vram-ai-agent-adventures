@@ -45,7 +45,8 @@ call, and it gets an extra `no_action(reason)` tool so it can still decline.
 
 ## The results
 
-RTX 2070 Max-Q (8 GB), both models with their vision projector on the GPU, measured 2026-10-28/29.
+RTX 2070 Max-Q (8 GB). LFM3-VL-2B and Qwen3-VL-8B ran with their vision projector on the GPU, measured
+2026-10-28/29; the Gemma 4 26B and Groot rows were measured on 2026-11-01.
 Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
 
 **glance** (v2 scenes; 12 per kind, the "30" rows have 30 per kind):
@@ -113,20 +114,27 @@ Full tables: [`results/summary.md`](../bench/visual-control/results/summary.md).
   click tool". The thinking model took that literally and wrote coordinates as text. v2 fixed
   both and LFM3-VL went from 52 to 60/60; the v1 results are in `results/v1/`.
 
-**Verdict:** LFM3-VL-2B with thinking makes a good set of eyes plus a reflex: one picture, one
-tool call, a harness that keeps the state. Don't hand it a conversation or a maze.
+## Since then
 
-## Run it yourself
+Two later results change the picture for the small models:
 
-```bash
-systemd-run --user --scope --unit=llama-lfm3vl -E QMODEL=lfm3vl bash scripts/run-qwen.sh --image
-python3 bench/visual-control/run_control.py glance lfm3vl --think on   # any Python with Pillow
-python3 bench/visual-control/run_control.py grid lfm3vl --think on --memory stateless
-python3 bench/visual-control/run_control.py summary
-```
+| Model | Glance, 150 scenes | Never-seen scenes | Mazes | Per decision | Where |
+|---|---:|---:|---:|---:|---|
+| LFM3-VL-2B, untouched, thinking off, forced call | 117/150 | — | 0/8 | 0.4 s | the table above |
+| [LFM3-VL-2B tuned](fine-tuning.md#serving-it-through-llamacpp) (norm-only / IA3 baked in), thinking off, in `llama-server` | **150/150** | 149 / 148 | — | 0.3 s, 3.1 GB | [fine-tuning](fine-tuning.md#did-it-hold-up-2026-10-30) |
+| LFM3-VL-2B tuned on glance + grid (IA3), harness skips moves seen blocked | 150/150 | 149 | **7/8** | — | [fine-tuning](fine-tuning.md#did-it-hold-up-2026-10-30) |
+| [Cactus Mirage](../bench/cactus/README.md) (21.6 MB, CPU), code applies the rules | 80/150 | — | — | 2.2 s | [bench/cactus](../bench/cactus/README.md) |
 
-`--tool-choice required` forces a call, `--n` sets the number of scenes or episodes, and
-`examples` saves one picture of each scene.
+A few minutes of training put the rules of these scenes into LFM3-VL's weights: thinking off, it beats
+its own thinking-on score (144/150) at a fraction of the time, and holds on drawings it never trained on.
+With the harness rule it solves 7 of 8 mazes, the best maze score in this repo. Mirage only reports
+what it sees and Python applies each rule, an easier job; it reads text well (click 30/30) but not
+dials, tank levels or colours.
+
+**Verdict:** for a fixed set of scenes, a tuned LFM3-VL-2B with thinking off is the eyes plus a
+reflex: one picture, one tool call, in 0.3 s, and with a harness that keeps the state it even gets
+through mazes. Untuned, use it with thinking on, one picture per request, and don't hand it a
+conversation: with its own answers in the context it starts copying them.
 
 ## LocateAnything-3B: boxes instead of tool calls
 
@@ -179,3 +187,26 @@ Tuned LFM3-VL wins: it finds as much, never clicked something that wasn't there,
 every other decision in the glance set. LocateAnything's remaining case is finding many things at
 once with exact boxes. One tuned seed; web pages are live.
 
+## Run it yourself
+
+```bash
+scripts/llm lfm3vl                                                       # LFM3-VL-2B with its projector
+python3 bench/visual-control/run_control.py glance lfm3vl --think on     # any Python with Pillow
+python3 bench/visual-control/run_control.py grid lfm3vl --think on --memory stateless
+python3 bench/visual-control/run_control.py summary                     # rebuilds results/summary.md from the saved JSON
+```
+
+`--tool-choice required` forces a call (with `no_action` offered), `--tool-choice auto-noaction` only
+offers `no_action`, `--new` runs the glance on never-seen drawings and `--shift` on degraded pictures,
+`--n` sets the number of scenes or episodes, and `examples` saves one picture of each scene. For a tuned
+model, start it with `MODEL=models/lfm3-vl-2b-baked/ia3.gguf scripts/llm lfm3vl` and use `--think off`
+([how to make that file](fine-tuning.md#serving-it-through-llamacpp)).
+
+For your own pictures, [`examples/look.py`](../examples/look.py) asks LFM3-VL for one tool call and
+[`examples/locate.py`](../examples/locate.py) asks LocateAnything for boxes:
+
+```bash
+python3 examples/look.py                                    # the demo: a pressure gauge, thinking on
+python3 examples/look.py --fast                             # thinking off: quicker, less accurate untuned
+python3 examples/locate.py page.png "the Save button" --all  # every match, or none
+```

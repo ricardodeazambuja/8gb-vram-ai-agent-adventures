@@ -51,9 +51,9 @@
 #              8192 locate/eg2/d1/clefflash, 131072 lfm3)
 #   NCMOE      MoE only: keep only the first N layers' experts on CPU, rest on GPU
 #              (faster, more VRAM). NCMOE= (empty) = all experts on CPU.
-#              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 25, lfm25 27; the distill's
+#              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 27, ornith 34, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
-#   MOE_CACHE  MoE only, opt-in: N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
+#   MOE_CACHE  MoE only, off unless set (scripts/llm sets auto for qwen36, distill, flint, ornith): N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
 #              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-cache-max-batch branch (the default
 #              build; upstream PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
 #              auto = qwen36 2900, flint 2168, ornith 2983 (each the VRAM its NCMOE default uses); distill 2770 with
@@ -83,7 +83,7 @@
 #              "precise coding" thinking preset; bonsai2 1.0/0.95/20, min-p 0.05 per its card;
 #              qwen3vl 0.7/0.8/20/1.5, the card's VL preset; dory, spark 1.0/0.95/0 (off)/0;
 #              lfm25 0.1/1.0/50/0 + repeat-penalty 1.05)
-#   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot 1 / 2048 / 2048)
+#   NP / BATCH / UBATCH  slots / batch sizes           (default: 1 / 512 / 512; flint, groot, ornith, lfm25, bolt 1 / 2048 / 2048)
 #   EXTRA_ARGS any extra llama-server flags
 #   PRINT_CONFIG  1 = print the resolved model, alias, context and projector, then exit
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)

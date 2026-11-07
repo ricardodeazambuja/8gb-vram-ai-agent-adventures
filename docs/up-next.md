@@ -181,7 +181,7 @@ changes the output when it is, goes first. The paper reports it beating expert m
 near-lossless code generation and tool calling at 50% on Qwen3-Coder-480B and Kimi-K2.
 
 Why it fits here: our big MoE models keep every expert in RAM, so 25–40% fewer experts is several GB of RAM back
-(Bolt and Ornith are RAM-bound), and the [VRAM expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)
+(Bolt and Ornith are RAM-bound), and the [VRAM expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
 holds a larger share of what's left. The catch: REAP works on Hugging Face checkpoints, and a 35B model in BF16 is
 ~70 GB, more than our 32 GB of RAM (its layer-wise mode may get around that; untested); the other route is scoring in
 our llama.cpp fork and writing a GGUF without the dropped experts.
@@ -214,12 +214,14 @@ that size. The cost is evaluations: 32 copies × 16 maze runs × 20 decisions at
 A first test: ES on LFM3-1.7B's norm weights for multi-step maze driving (step 13 above), against the
 gradient-trained norm-only adapter.
 
+<a id="strata"></a>
+
 ### 🪨 Strata, an engine built for big MoE models on gaming PCs ([Niko1221/Strata](https://github.com/Niko1221/Strata), MIT, read 2026-11-06)
 
 Built with parts of llama.cpp/ggml, around the same idea as our fork's cache: attention and shared layers on the
 GPU, an expert cache that fills the rest of VRAM, every expert in RAM computed by the CPU in parallel, plus the
 model's own MTP layer drafting 2–3 tokens. Its main model, Qwen3.8-Flash-Next, doesn't fit here
-([graveyard](graveyard.md#qwen38-flash-next-80b-too-big-for-this-machine)). **Qwen3.6-35B-A3B is worth an A/B:** its
+([graveyard](graveyard.md#the-ones-we-never-let-in-the-door)). **Qwen3.6-35B-A3B is worth an A/B:** its
 docs measure 64.0 vs 41.1 tok/s against stock llama.cpp (`-ncmoe 28`) on an RTX 3060 12 GB with MTP off, and MTP
 on gave another 1.6x on a 32 GB card. Our cache gives 1.58x over static offload, so the engines may be close without
 MTP, and MTP is what we lack. Catches: it only runs Unsloth's MTP GGUFs, the smallest being UD-Q4_K_XL (22.9 GB,
@@ -270,8 +272,8 @@ temperatures we use.
 | LFM3-1.7B, LFM3-VL-2B, LFM3-Audio-2B, d1-2B (support merged upstream 2026-10-27) | their [model pages](models/); `scripts/llm lfm3`, `lfm3vl`, `lfm3audio`, `d1` |
 | ThinkingCap Gemma 4 26B: half the thinking, 17/18 | [its page](models/thinkingcap-gemma4-26b-a4b.md) |
 | EmbeddingGemma 2, Clef-Flash, LocateAnything-3B, VibeThinker | their model pages; [`examples/`](../examples/README.md) |
-| Our llama.cpp fork (2026-10-30), PrismML's merge (2026-11-02), the recheck | [getting started](getting-started.md#3-build-llamacpp-once-per-flavour), [`bench/recheck/`](../bench/recheck/README.md) |
-| The MoE expert cache, now the default in `scripts/llm` | [how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch) |
+| Our llama.cpp fork (2026-10-30), PrismML's merge (2026-11-02), the recheck | [getting started](getting-started.md#3-build-llamacpp-once), [`bench/recheck/`](../bench/recheck/README.md) |
+| The MoE expert cache, now the default in `scripts/llm` | [how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) |
 | Relaxed draft acceptance | [graveyard](graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles) |
 | The first image models, style and person training | [Making pictures](image-generation.md) |
 | Cactus's Mirage (dropped) | [`bench/cactus/`](../bench/cactus/README.md) |

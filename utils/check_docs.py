@@ -4,7 +4,7 @@
     python3 utils/check_docs.py          # report problems, exit 1 if any
     python3 utils/check_docs.py --fix    # also regenerate docs/cheatsheet.md's model table
 
-Checks, over README.md, docs/**/*.md, scripts/README.md, examples/README.md and bench/README.md:
+Checks, over README.md, docs/**/*.md, scripts/README.md, examples/README.md and bench/**/README.md:
   * the model table in docs/cheatsheet.md matches `scripts/llm list --md` (the single source of truth);
   * every `scripts/llm NAME`, `QMODEL=NAME`, `download-models.sh NAME…`, `imagine … -m NAME`,
     `examples/X.py` and `examples/chat.py -m NAME` names something that exists;
@@ -21,7 +21,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 DOCS = [REPO / "README.md", *sorted((REPO / "docs").rglob("*.md")), REPO / "scripts" / "README.md",
-        REPO / "examples" / "README.md", REPO / "bench" / "README.md"]
+        REPO / "examples" / "README.md", REPO / "bench" / "README.md", *sorted((REPO / "bench").glob("*/README.md"))]
 CHEAT = REPO / "docs" / "cheatsheet.md"
 START, END = "<!-- llm-list:start (generated: python3 utils/check_docs.py --fix) -->", "<!-- llm-list:end -->"
 LLM_SUBCOMMANDS = {"list", "ls", "names", "status", "stop", "help"}

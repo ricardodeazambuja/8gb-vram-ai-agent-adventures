@@ -1,6 +1,8 @@
 # 🔁 Launch recheck
 
-`bash bench/recheck/run.sh` starts every chat model with its documented launch command, then runs
+`bash bench/recheck/run.sh` starts every chat model with the backend script under `scripts/llm` (`run-qwen.sh`, or
+`run-server.sh` for the Gemmas) at its defaults, which means the static `NCMOE` split for the MoEs, not the expert
+cache `scripts/llm` turns on for five of them. Then it runs
 `scripts/qwen-bench.py` (speed, a tool call, a long prompt) and `scripts/qwen-codecheck.py` (`merge_intervals`
 against 500 random inputs, 16,000-token budget, in a no-network container). `run.sh flint groot` runs just those.
 

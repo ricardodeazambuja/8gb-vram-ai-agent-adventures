@@ -89,125 +89,19 @@ the feature's 8. The Gemma 12B coder never changed a file, so its 28% is that fl
 by a whole point, and these chores take minutes, not hours. This tells you who is dependable
 on small, self-contained jobs. It doesn't tell you who will refactor your monorepo.
 
-## What actually happened
-
-We read every transcript (108 of them, so you don't have to). The interesting part isn't who
-won, it's *how* they won and lost.
-
-### The one rule that explains almost everything
-
-Every model ran its own code. Every single time. What separated a pass from a fail was
-whether the model **looked at the values it produced**, or just checked that a file existed.
-
-The failures, almost without exception, were results the model printed and then strolled past:
-
-- Qwen3.6 scraped 30 quotes, checked that each had an `author` key, and declared victory. Every
-  author was an empty string.
-- The distill collected 15 "(about)" links instead of 15 Goodreads links, printed them, counted
-  them, and moved on. Its final message called them "(about) / Goodreads page links".
-- Spark gave every book five stars (it counted the star icons, and every book has five icons;
-  the real rating hides in a CSS class name), and in another run returned one quote ten times
-  per page thanks to a loop that read `page` instead of `quote`.
-- The distill and Bonsai both let `requests` mangle "Noah's" into "Noahâs", because the site
-  doesn't declare its character set.
-
-The two perfect scorers reacted to what they saw. Flint checked its CSV's raw bytes with `xxd`.
-Gemma spotted the mangled title in its own output, grepped the live page for it, found the
-missing charset with `curl -I` and fixed the decoding. Same trap, opposite ending.
-
-### How they work, side by side
-
-Averages per attempt, from the transcripts (`python3 bench/trace.py --stats`):
-
-| Model | Solved | Tool calls | Thinking (chars) | `curl` probes | Test runs (`pytest`) | Tool errors | Looked at its output |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Flint | **100%** | 16.3 | 11.6K | **2.8** | 1.1 | 1.4 | 83% |
-| Gemma 4 26B | **100%** | 12.2 | 12.1K | 1.4 | 0.9 | 1.4 | 67% |
-| Qwen3.8 distill | 89% | 13.0 | 4.4K | 0.1 | **1.5** | 1.8 | 50% |
-| Qwen3.6 | 89% | 13.8 | **3.2K** | 1.3 | 1.1 | 1.8 | 72% |
-| Nemotron Bolt 74B | 83% | **11.0** | 7.0K | 1.1 ¹ | 0.7 | **1.1** | 72% |
-| Spark 4B | 78% | 18.9 | 17.2K | 1.4 | 1.3 | 2.8 | **94%** |
-| Bonsai 2 27B | 78% | 12.2 | 13.6K | 1.8 | 0.3 | 1.8 | 67% |
-| Nemotron Bolt E4B | 39% | 15.4 | 15.4K | 0.0 ¹ | 1.4 | 5.5 | 67% |
-
-¹ Both Nemotrons probe pages with little `python3 -c "requests…"` one-liners rather than `curl`,
-which this column doesn't count.
-
-"Looked at its output" means that, after writing files, it opened or printed one at least once
-(share of attempts). As the next
-sections show, *looking* isn't the same as *reading*: Spark looked the most and still waved
-through wrong values.
-
-### Look first, then write
-
-Flint fetched and grepped the pages before writing any scraper (about three probes per
-attempt, the most of the 18/18 models). The distill almost never looked (0.1 probes per attempt) and wrote
-scrapers from memory: blazingly fast and usually right, and wrong in exactly the ways memory is
-wrong, like which of two links is which.
-
-### More thinking ≠ more passing
-
-Spark reasoned a lot (about 17,000 characters of thinking per attempt) and solved 14/18. The
-distill thought little (about 4,400) and tied Qwen3.6. Flint and Gemma think a
-lot *and* look at the data, which seems to be the winning combination. The Nemotrons make the
-same point from both ends: the E4B thought the second most and came last, while Bolt 74B thought
-less than half as much and solved 15.
-
-### Bigger isn't automatically better
-
-Bolt 74B has roughly twice the total parameters of anything else here, and more than twice the
-active parameters of the other MoEs. It finished fifth of eight: careful, tidy (the fewest tool calls and tool errors), and done in
-by the same unlabelled character set that tripped the distill and Bonsai. Its 2-bit quantization
-may cost it something we can't separate from the model itself. What the size *does* buy is
-breadth (text, images and video, 128K), at a price: 6.4 minutes per attempt, the slowest of the models that finish on time.
-
-### Context is a capability
-
-No model with 64K or more of context ran out of it. Some attempts ran out of *time* (one each for
-Bolt, E4B and Ornith, 14 for looping LFM3-VL), which is a different story. Bonsai 2, at 16K,
-got cut off mid-thought in two thirds of its attempts; nine of those still passed because the
-files were already written. On a longer job, that's a job half done. Given 32K on the merged fork, it solved
-16/18: the books chore went from 0/3 to 2/3 and the JavaScript page from 2/3 to 3/3, and only 2 attempts filled
-the context, both after they had passed.
-
-### The code chores barely separate them
-
-Bug fix, feature and CLI: 51 of 54 attempts solved across the first six models (63 of 72 with the
-two Nemotrons, the E4B accounting for most of the misses). The three web chores decided the
-ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
-
-### Five more, and only one of them an agent
-
-The 2026-11-02 batch shows that a tool-calling template doesn't make a model an agent.
-
-- **Dory** (4B) solved 14/18, tied with Spark and Bonsai, and passed 95% of the hidden tests. It thinks
-  hard (31K characters a job; among models that solved at least half their jobs, only LFM3-1.7B thinks more) and
-  takes its time (7.2 min a job). It fell into both of the books site's traps: five stars for every book in two attempts,
-  "Noahâ\x80\x99s" in one, and in the third a curly apostrophe turned into a straight one, so the titles didn't match.
-- **Qwen3-VL** solved one job, the login, with one script in 18 seconds. Elsewhere it got stuck
-  re-sending the same edit: 181 of its 254 `edit` calls changed nothing.
-- **The Gemma 12B agentic** worked hard and finished nothing. It made 31 tool calls a job, and 57 of
-  them were missing a file path. At 13 tok/s on our fork (part of the model in
-  RAM), 11 of its 18 jobs ran out of time. It came within one test of the bug fix (26/27), and in at least one job
-  spent the rest of its time writing the same three lines over and over inside one `write`.
-- **The Gemma 12B coder** never touched a file. It made 6 tool calls in 18 jobs and put its code in
-  the reply instead, so nothing was saved and nothing was tested.
-- **VibeThinker 3B** did the same, as its page predicts: 5 tool calls in 18 jobs, the rest
-  answers in chat, and some of its calls were JSON with broken escaping that even the proxy can't repair.
-
 ## Each model in one breath
 
 - **Flint** — the careful one. Probes, tests, audits beyond the bug report, cleans up its scratch
   files. Its one vice is wandering: the same scraping chore took 6 minutes once and 13 the next.
 - **Gemma 4 26B** — the surprise. Weak published agentic scores, perfect here. Thinks long, acts
-  in few steps, chases odd data. The only one of the first six to fumble pi's tool format (8 calls without a
+  in few steps, chases odd data. The only one of the first batch to fumble pi's tool format (8 calls without a
   file path), and it recovered every time.
 - **Qwen3.8 distill** — the sprinter. Among the quickest big models per attempt, test-driven on code, writes scrapers
   from memory. Double-check its data.
 - **Qwen3.6** — direct and quick, checks shallowly. Once fixed only the reported bugs and missed
   the hidden one; once overwrote a provided input file without asking.
 - **Spark** — the overthinker. Busiest, chattiest, checks its output most often, and still waves
-  through plausible-looking wrong values. Twice as fast as the big models, so its mistakes at
+  through plausible-looking wrong values. Not slow either (3.3 min a job), so its mistakes at
   least arrive quickly.
 - **Nemotron Bolt 74B** — the slow thinker. 14 tok/s and long reasoning, so 5–10 minutes a job.
   Probes pages, tests edge cases nobody asked for, and still fell into the charset trap twice
@@ -247,13 +141,125 @@ The 2026-11-02 batch shows that a tool-calling template doesn't make a model an 
 The run-by-run notes, with transcript paths and quotes, are in
 [`bench/results/notes.md`](../bench/results/notes.md).
 
+## What actually happened
+
+This section is the first batch (2026-10-23): Flint, Gemma 4 26B, the distill, Qwen3.6, Bonsai 2 at
+16K and Spark, plus the two Nemotrons the same night. We read every one of the first six's transcripts
+(108 of them, so you don't have to). The interesting part isn't who won, it's *how* they won and lost.
+The later models are in [Each model in one breath](#each-model-in-one-breath) and
+[Five more](#five-more-and-only-one-of-them-an-agent).
+
+### The one rule that explains almost everything
+
+Every model ran its own code. Every single time. What separated a pass from a fail was
+whether the model **looked at the values it produced**, or just checked that a file existed.
+
+The failures, almost without exception, were results the model printed and then strolled past:
+
+- Qwen3.6 scraped 30 quotes, checked that each had an `author` key, and declared victory. Every
+  author was an empty string.
+- The distill collected 15 "(about)" links instead of 15 Goodreads links, printed them, counted
+  them, and moved on. Its final message called them "(about) / Goodreads page links".
+- Spark gave every book five stars (it counted the star icons, and every book has five icons;
+  the real rating hides in a CSS class name), and in another run returned one quote ten times
+  per page thanks to a loop that read `page` instead of `quote`.
+- The distill and Bonsai both let `requests` mangle "Noah's" into "Noahâs", because the site
+  doesn't declare its character set.
+
+The two perfect scorers reacted to what they saw. Flint checked its CSV's raw bytes with `xxd`.
+Gemma spotted the mangled title in its own output, grepped the live page for it, found the
+missing charset with `curl -I` and fixed the decoding. Same trap, opposite ending.
+
+### How they work, side by side (first batch)
+
+Averages per attempt for the eight first-batch models, from the transcripts (`python3 bench/trace.py --stats`):
+
+| Model | Solved | Tool calls | Thinking (chars) | `curl` probes | Test runs (`pytest`) | Tool errors | Looked at its output |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Flint | **100%** | 16.3 | 11.6K | **2.8** | 1.1 | 1.4 | 83% |
+| Gemma 4 26B | **100%** | 12.2 | 12.1K | 1.4 | 0.9 | 1.4 | 67% |
+| Qwen3.8 distill | 89% | 13.0 | 4.4K | 0.1 | **1.5** | 1.8 | 50% |
+| Qwen3.6 | 89% | 13.8 | **3.2K** | 1.3 | 1.1 | 1.8 | 72% |
+| Nemotron Bolt 74B | 83% | **11.0** | 7.0K | 1.1 ¹ | 0.7 | **1.1** | 72% |
+| Spark 4B | 78% | 18.9 | 17.2K | 1.4 | 1.3 | 2.8 | **94%** |
+| Bonsai 2 27B | 78% | 12.2 | 13.6K | 1.8 | 0.3 | 1.8 | 67% |
+| Nemotron Bolt E4B | 39% | 15.4 | 15.4K | 0.0 ¹ | 1.4 | 5.5 | 67% |
+
+¹ Both Nemotrons probe pages with little `python3 -c "requests…"` one-liners rather than `curl`,
+which this column doesn't count.
+
+"Looked at its output" means that, after writing files, it opened or printed one at least once
+(share of attempts). As the next
+sections show, *looking* isn't the same as *reading*: Spark looked the most and still waved
+through wrong values.
+
+### Look first, then write
+
+Flint fetched and grepped the pages before writing any scraper (about three probes per
+attempt, the most of the first batch). The distill almost never looked (0.1 probes per attempt) and wrote
+scrapers from memory: blazingly fast and usually right, and wrong in exactly the ways memory is
+wrong, like which of two links is which.
+
+### More thinking ≠ more passing
+
+Spark reasoned a lot (about 17,000 characters of thinking per attempt) and solved 14/18. The
+distill thought little (about 4,400) and tied Qwen3.6. Flint and Gemma think a
+lot *and* look at the data, which seems to be the winning combination. The Nemotrons make the
+same point from both ends: the E4B thought the second most and came last, while Bolt 74B thought
+less than half as much and solved 15.
+
+### Bigger isn't automatically better
+
+Bolt 74B has roughly twice the total parameters of anything else here, and more than twice the
+active parameters of the other MoEs. It finished fifth of the first batch's eight: careful, tidy (the fewest tool calls and tool errors), and done in
+by the same unlabelled character set that tripped the distill and Bonsai. Its 2-bit quantization
+may cost it something we can't separate from the model itself. What the size *does* buy is
+breadth (text, images and video, 128K), at a price: 6.4 minutes per attempt, the slowest of the first batch (Dory, at 7.2, is the only slower one
+that finishes on time).
+
+### Context is a capability
+
+No model with 64K or more of context ran out of it. Some attempts ran out of *time* (one each for
+Bolt, E4B, Ornith and Qwen3-VL, 11 for the Gemma 12B agentic, 14 for looping LFM3-VL), which is a
+different story. Bonsai 2, at 16K,
+got cut off mid-thought in two thirds of its attempts; nine of those still passed because the
+files were already written. On a longer job, that's a job half done. Given 32K on the merged fork, it solved
+16/18: the books chore went from 0/3 to 2/3 and the JavaScript page from 2/3 to 3/3, and only 2 attempts filled
+the context, both after they had passed.
+
+### The code chores barely separate them (first batch)
+
+Bug fix, feature and CLI: 51 of 54 attempts solved across the first batch's six models (63 of 72 with the
+two Nemotrons, the E4B accounting for most of the misses). The three web chores decided the
+ranking: 45 of 54 (55 of 72). Real-world data is where agents trip.
+
+## Five more, and only one of them an agent
+
+The 2026-11-02 batch shows that a tool-calling template doesn't make a model an agent.
+
+- **Dory** (4B) solved 14/18, tied with Spark and Bonsai, and passed 95% of the hidden tests. It thinks
+  hard (31K characters a job; among models that solved at least half their jobs, only LFM3-1.7B thinks more) and
+  takes its time (7.2 min a job). It fell into both of the books site's traps: five stars for every book in two attempts,
+  "Noahâ\x80\x99s" in one, and in the third a curly apostrophe turned into a straight one, so the titles didn't match.
+- **Qwen3-VL** solved one job, the login, with one script in 18 seconds. Elsewhere it got stuck
+  re-sending the same edit: 181 of its 254 `edit` calls changed nothing.
+- **The Gemma 12B agentic** worked hard and finished nothing. It made 31 tool calls a job, and 57 of
+  them were missing a file path. At 13 tok/s on our fork (part of the model in
+  RAM), 11 of its 18 jobs ran out of time. It came within one test of the bug fix (26/27), and in at least one job
+  spent the rest of its time writing the same three lines over and over inside one `write`.
+- **The Gemma 12B coder** never touched a file. It made 6 tool calls in 18 jobs and put its code in
+  the reply instead, so nothing was saved and nothing was tested.
+- **VibeThinker 3B** did the same, as its page predicts: 5 tool calls in 18 jobs, the rest
+  answers in chat, and some of its calls were JSON with broken escaping that even the proxy can't repair.
+
 ## Same scores, less waiting: the MoE expert cache (2026-11-04)
 
 The three MoE models ran the whole bench again with a GPU cache of recently used experts instead of fixed
-layers ([how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch)),
+layers ([how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)),
 same VRAM. Scores held (Qwen3.6 17/18, Gemma 26B 17/18 with the miss at 5 of 6 hidden tests, Flint 18/18)
-and decode inside the sessions got faster: Qwen3.6 +59%, Gemma +26%, Flint +23%. It's opt-in
-(`MOE_CACHE=auto`) and needs our fork's `moe-offload` build; the scoreboard above keeps the original batch.
+and decode inside the sessions got faster: Qwen3.6 +59%, Gemma +26%, Flint +23%. The cache is now the
+default in `scripts/llm` for qwen36, distill, flint, ornith and gemma (default build `moe-cache-max-batch`);
+the scoreboard above keeps the original runs.
 
 ## Three bugs we found in our own setup
 

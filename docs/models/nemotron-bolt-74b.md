@@ -48,11 +48,12 @@ once: [getting-started.md](../getting-started.md). Then:
 ```bash
 # once: 22 GB + 1.7 GB, pinned and sha256-checked
 bash scripts/download-models.sh bolt
+bash utils/audit-gguf.sh models/nemotron-bolt-74b-a9b/NVIDIA-Nemotron-3.5-Bolt-74B-A9B-24GB.gguf   # then audit it
 
 # go
 scripts/llm bolt                               # server + pi
 scripts/llm bolt --image                       # with vision (projector on the CPU)
-scripts/llm bolt -p "explain @README.md" --no-session </dev/null
+scripts/llm bolt -p "explain @README.md" --no-session
 scripts/llm stop
 ```
 
@@ -101,20 +102,12 @@ are its weak spot: 21 % in pixels as asked, 64 % even in its own format. It take
 
 ## How it compares
 
-Against the other big models that run 128K here (all our measurements; full tables on the
-[scoreboard](../scoreboard.md)):
+The full comparison with the other big models that run 128K here is on the [scoreboard](../scoreboard.md). In
+short: 15/18 on pibench against 18/18 for Flint and Gemma 4 26B and 16/18 for Qwen3.6 and the distill, and 14 tok/s
+where the other big MoEs reach 30–49 tok/s with `scripts/llm`'s expert cache. Bolt has no cache run: at 128K it
+didn't load next to a daytime desktop ([bench/moe-cache](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)).
 
-| | **Bolt 74B** | Flint | Gemma 4 26B | Qwen3.6 | Qwen3.8 distill |
-|---|---:|---:|---:|---:|---:|
-| Parameters (active) | **74B (9B)** | 40B (2.5B) | 26B (4B) | 35B (3B) | 35B (3B) |
-| Generation | 14.0 tok/s | 24.3 tok/s | 23.5 tok/s | 22.8 tok/s | **26.2 tok/s** |
-| Prompt speed | 310 tok/s | **542 tok/s** | — | 221 tok/s | 167 tok/s |
-| pibench | 15/18 | **18/18** | **18/18** | 16/18 | 16/18 |
-| Median time per attempt | 6.4 min | 4.3 min | 4.8 min | 3.4 min | **2.5 min** |
-| Vision probe | 91 % | text only | **100 %** | **100 %** | 88 % |
-| Terminal-Bench 2.1 (vendor) | 51.0 | **54.9** | 35 | 43–45 | — |
-
-On paper it's second only to Flint; on this laptop it's slower and less reliable than the three
+On paper (Terminal-Bench 2.1: 51.0, vendor numbers) it's second only to Flint (54.9); on this laptop it's slower and less reliable than the three
 35B-class models. Pick it when you want the most knowledge in one model and can wait for it.
 
 ## How it behaves

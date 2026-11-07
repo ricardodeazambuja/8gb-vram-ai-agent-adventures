@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | On disk | 17.7 GB (`UD-IQ4_XS`) + 0.9 GB vision projector |
-> | Where it lives | experts of 32 of 40 layers in RAM, everything else on the GPU (7.6 GB VRAM) |
+> | Where it lives | every expert in RAM with a 2900 MiB VRAM cache of the recently used ones, everything else on the GPU (`scripts/llm`); `--static`: experts of 32 of 40 layers in RAM (7.6 GB VRAM) |
 > | Context | **128K** |
-> | Generation | 22.8 tok/s |
+> | Generation | **39.4 tok/s** with `scripts/llm` (expert cache; ~9% less next to a busy daytime desktop); 22.8–24.9 with `--static` |
 > | Prompt processing | 221 tok/s (15.6K-token prompt) |
 > | [pibench](../pibench.md) | 16/18 solved (96% of hidden tests) |
 > | [Vision probe](../vision-probe.md) | 100% overall |
@@ -38,15 +38,10 @@ of the 40 layers in RAM and puts the other 8 on the GPU, for 7.6 GB of VRAM. Bec
 of the 40 layers keep a KV cache (2 KV heads × 256), 128K of context at q8_0 costs just
 1.42 GB. The general idea is explained in [how-it-fits.md](../how-it-fits.md).
 
-**Faster, same VRAM (2026-11-04, the default in `scripts/llm qwen36`):** a GPU cache of the most recently used experts instead of
-fixed layers, with the CPU computing 95% of the misses: **39.4 vs 24.9 tok/s** decode (A/B/A), prompt speed
-unchanged. In a full pibench batch: 17/18 solved, decode 32.9 vs 20.7 tok/s, median run 2.6 vs 3.4 min.
-`MOE_CACHE=auto` (2900 MiB, less if the desktop uses more than ~380 MiB of VRAM) on our fork's
-`moe-cache-max-batch` build (the default build), which also sends batches of up to 128 tokens through the cache: tool-call turns of
-48–128 new tokens are read 11–17% faster (2026-11-05;
-[step 14](../../bench/moe-cache/README.md)). `scripts/llm qwen36` turns it on; `scripts/llm qwen36 --static`
-gives the classic per-layer split above. See
-[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-opt-in-our-forks-moe-offload-branch).
+**Faster, same VRAM (2026-11-04, the default in `scripts/llm qwen36`):** a 2900 MiB GPU cache of the recently used
+experts instead of fixed layers: **39.4 vs 24.9 tok/s** decode, and in a full pibench batch 17/18 solved, median run
+2.6 vs 3.4 min. `scripts/llm qwen36 --static` gives the per-layer split above. Method, numbers and the build it needs:
+[how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes).
 
 ## Install & run
 
@@ -60,6 +55,7 @@ mamba create -y -n llamacpp -c conda-forge huggingface_hub
 
 # 2. Download + sha256-check the model and its vision projector (~18.6 GB)
 bash scripts/download-models.sh qwen36
+bash utils/audit-gguf.sh models/qwen36-35b-a3b/Qwen3.6-35B-A3B-UD-IQ4_XS.gguf   # then audit it (and the mmproj)
 
 # 3. Server + pi in one go (expert cache on; add --static for the per-layer split)
 scripts/llm qwen36
@@ -107,9 +103,13 @@ about ±13%.
 | Config | VRAM | Generation | Prompt (15.6K tokens) | Tool call |
 |---|---:|---:|---:|---|
 | `--cpu-moe` (all experts in RAM), 128K | 4.5 GB | 15.7 tok/s ¹ | — | ✓ |
-| **`NCMOE=32`, 128K (default)** | **7.6 GB** | **22.8 tok/s** | **221 tok/s** | ✓ |
+| `NCMOE=32`, 128K (`--static`) | 7.6 GB | 22.8 tok/s | 221 tok/s | ✓ |
+| **`MOE_CACHE=auto` (2900 MiB), 128K (default)** | **same as `NCMOE=32`** | **39.4 tok/s** ² | unchanged ² | ✓ |
 
 ¹ measured while a 50 GB download was hogging the machine.
+² A/B/A against `NCMOE=32` at 24.9 tok/s, light desktop ([how-it-fits §12](../how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)).
+Next to a ~1.7 GB daytime desktop the launcher shrinks the cache to ~1580 MiB: 38.7 → 35.3 tok/s (−9%), still
++62% over static offload at that VRAM ([step 16](../../bench/moe-cache/README.md)).
 
 **Code check** (`merge_intervals`, tested against 500 random inputs): correct, 0/500 wrong,
 but it took **3,558 tokens** to get there, and one of its own five doctests had a wrong
@@ -140,7 +140,8 @@ projector chewing on the CPU.
 ## Gotchas
 
 - It thinks for a long time. Short `max_tokens` limits end in `finish=length` with no answer.
-- `NCMOE=32` leaves only ~0.5 GB of VRAM headroom. If your desktop is greedy, use `NCMOE=34`.
+- With `--static`, `NCMOE=32` leaves only ~0.5 GB of VRAM headroom. If your desktop is greedy, use `NCMOE=34`.
+  (The cache adapts by itself: it shrinks if the desktop uses more than ~380 MiB at launch.)
 - Box coordinates come back as `bbox_2d` on a 0–1000 grid, whatever you ask for. Convert.
 - "Killed" right after a clean load is the host-RAM OOM killer, not VRAM. See
   [troubleshooting.md](../troubleshooting.md).
@@ -151,7 +152,7 @@ All are env vars for `scripts/llm qwen36` / `scripts/run-qwen.sh` (`-h` lists ev
 
 | Knob | Default | What it does |
 |---|---|---|
-| `NCMOE` | 32 | layers whose experts stay in RAM; lower = faster, more VRAM; empty = all in RAM (~4.5 GB VRAM) |
+| `NCMOE` | 32 | with `--static`: layers whose experts stay in RAM; lower = faster, more VRAM; empty = all in RAM (~4.5 GB VRAM) |
 | `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `CTX` | 131072 | context window |
 | `KVQUANT` | q8_0 | KV cache type |

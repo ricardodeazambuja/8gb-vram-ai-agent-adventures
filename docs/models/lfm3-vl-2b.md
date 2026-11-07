@@ -84,9 +84,8 @@ conversation history, it starts copying its own previous answers.
 
 ## As a pair of eyes
 
-Let [LFM3-1.7B](lfm3-1.7b.md) drive and LFM3-VL report what it sees: 57/60, against 60/60 for VL alone,
-in 5.0 GB for both. `bash bench/beyond-vision/run.sh eyes` runs that test, and
-[`eyes_probe.py`](../../bench/beyond-vision/eyes_probe.py) shows how the two servers are wired.
+Let [LFM3-1.7B](lfm3-1.7b.md) drive and LFM3-VL report what it sees: 57/60 in 5.0 GB for both
+([details](../fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01); `bash bench/beyond-vision/run.sh eyes`).
 
 To run a [fine-tuned copy](../fine-tuning.md#serving-it-through-llamacpp), point `MODEL` at the baked file:
 
@@ -104,7 +103,8 @@ identical to the source repo's, no hidden characters, no Jinja internals; the pr
 
 - Needs a llama.cpp build from after 2026-10-27.
 - Boxes come back in 0–1000 coordinates whatever you ask for; scale them yourself.
-- Thinking off, it's weak at one-picture decisions (109/150), but fine-tuning fixes that: 150/150 in
-  `llama-server`, and through mazes as well. See [Fine-tuning](../fine-tuning.md#one-adapter-for-both-jobs).
+- Thinking off, it's weak at one-picture decisions (117/150 in the [visual control](../visual-control.md) probe,
+  109/150 served by `llama-server` in the fine-tuning check), but fine-tuning fixes that: 150/150 in `llama-server`,
+  and 7/8 mazes. See [Fine-tuning](../fine-tuning.md#did-it-hold-up-2026-10-30).
 - Not an agent: in long conversations with tools it falls into loops. `TEMP=0.7` stops the loops, but it still solved 0/6. Use [LFM3-1.7B](lfm3-1.7b.md)
   for that, or give it one picture and one decision at a time ([visual control](../visual-control.md)).

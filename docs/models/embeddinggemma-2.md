@@ -32,6 +32,7 @@ Build our llama.cpp once: [getting-started.md](../getting-started.md). Then:
 
 ```bash
 bash scripts/download-models.sh eg2
+bash utils/audit-gguf.sh models/embeddinggemma-2/embeddinggemma-2-Q8_0.gguf   # then audit it
 scripts/llm eg2                         # server on port 8080, 4 slots (it only serves; no pi)
 curl -s localhost:8080/v1/embeddings -H 'Content-Type: application/json' \
   -d '{"input":["task: search result | query: how do I stop the server?"]}'
@@ -46,7 +47,7 @@ repo search, and `bash bench/smoke/run.sh eg2` is the quick check.
 
 Reruns of the quick check are in [`bench/smoke/`](../../bench/smoke/README.md).
 
-**Smoke test (2026-10-28, `vendor/llama.cpp-lfm3`, Q8_0, all on the GPU, 1.5 GB):** 768-d vectors;
+**Smoke test (2026-10-28, `vendor/llama.cpp-lfm3` (deleted 2026-11-02; reruns on the fork: [bench/smoke](../../bench/smoke/README.md)), Q8_0, all on the GPU, 1.5 GB):** 768-d vectors;
 5 of 6 toy queries found the right passage among 8 (the miss was a near tie, 0.678 vs 0.674);
 256 short passages embedded in 0.9 s (280/s).
 
