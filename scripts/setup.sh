@@ -46,10 +46,14 @@ else
 fi
 
 # --- 2. download the GGUF ---------------------------------------------------
+# Pinned to the revision we measured and checked against its sha256, like every other model
+# (scripts/download-models.sh gemma). MODEL_REPO / MODEL_FILE still override it, unpinned.
 if [ -f "$MODEL_DIR/$MODEL_FILE" ]; then
   echo ">> model already present: $MODEL_DIR/$MODEL_FILE"
+elif [ "$MODEL_REPO" = unsloth/gemma-4-26B-A4B-it-qat-GGUF ] && [ "$MODEL_FILE" = gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf ]; then
+  ENV_NAME="$ENV_NAME" bash "$REPO_ROOT/scripts/download-models.sh" gemma
 else
-  echo ">> downloading $MODEL_FILE (~14 GB) into $MODEL_DIR ..."
+  echo ">> downloading $MODEL_FILE from $MODEL_REPO (your override: NOT pinned or checked) into $MODEL_DIR ..."
   if mamba run -n "$ENV_NAME" hf --help >/dev/null 2>&1; then
     mamba run --no-capture-output -n "$ENV_NAME" hf download "$MODEL_REPO" "$MODEL_FILE" --local-dir "$MODEL_DIR"
   else

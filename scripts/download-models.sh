@@ -28,6 +28,8 @@
 #            self-improvement post-training (docs/models/ornith-1.5-35b-a3b.md)
 #   lfm25    LFM2.5-24B-A2B QAD Q4_0 (LiquidAI, ~13.6 GB) — conv/attention hybrid MoE, 2B active;
 #            Q4_0 trained with quantization-aware distillation (docs/models/lfm2.5-24b-a2b.md)
+#   gemma    Gemma 4 26B-A4B QAT UD-Q4_K_XL + its MTP head (unsloth, ~14.5 GB; the file we measured: revision
+#            c1f25db7, re-uploaded upstream since) · gemmavis = its vision projector (1.2 GB)
 #   tcgemma  ThinkingCap gemma-4-26B-A4B-it IQ4_XS (bottlecap.ai, ~13.6 GB + 1.2 GB vision) —
 #            Gemma 4 26B post-trained to think less (docs/up-next.md)
 #   lfm3     LFM3-1.7B Q8_0 (LiquidAI, ~1.9 GB) — tri-hybrid 1.7B for agents; needs llama.cpp >= 2026-10-27
@@ -60,7 +62,7 @@
 #
 # Usage:
 #   bash scripts/download-models.sh              # the default pair: qwen36 distill
-#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl | klein | kleinte | kleinvae | iris | iriste | sdxl | sdxlvae)
+#   bash scripts/download-models.sh distill      # just one (qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | gemma | gemmavis | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl | klein | kleinte | kleinvae | iris | iriste | sdxl | sdxlvae)
 #
 # Overrides: ENV_NAME (env with huggingface_hub, default llamacpp), FOLLOW_MAIN=1.
 #
@@ -89,6 +91,8 @@ MODELS=(
   "groot|GrootTeam/Groot-19B-A3B-261023-GGUF|2fa1ec958e3bbf7312cf0af97802ff26bfdc5260|groot-19b-a3b|Groot-19B-A3B-261023-Q4_K_M.gguf:0716cae1f19a39a786a463f7b8c068d50b3d7a74532fce73e5ea23ed98130796 mmproj-Groot-19B-A3B-261023-BF16.gguf:05a5c8a279b2589306824864d76d663063ba69ff1f399e6a283fae988fdff360"
   "ornith|ornith-ai/Ornith-1.5-35B-A3B-GGUF|12393612fd4f730ff5aadc23e9b8f9648aa49ceb|ornith-1.5-35b-a3b|Ornith-1.5-35B-Q4_K_M.gguf:42739874cc2ccfdb8523b23fbe52e29b2a7555c8176737ca9ca0b5d59859d41f mmproj-Ornith-1.5-35B-BF16.gguf:1921a36a85aee56cd2abd27f46701802c9d85a33474792e600df6c3b282a135d"
   "lfm25|LiquidAI/LFM2.5-24B-A2B-GGUF|0912d33141f77e10705345a6732bfd83f0252fdc|lfm2.5-24b-a2b|LFM2.5-24B-A2B-QAD-Q4_0.gguf:d1c03f73ecaf61017d70419eec9e5dc0b05d50ae26c23d522829b934fbabf8a5"
+  "gemma|unsloth/gemma-4-26B-A4B-it-qat-GGUF|c1f25db7cf31985b52caa1db777eb72d17ca1c7c|gemma4-26b-a4b-qat|gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf:dcf179a91153e3a7ece792e48ef872180d9d6ef9b7677f0a0bd3e83cfe624d5e mtp-gemma-4-26B-A4B-it.gguf:62bd3af7f66c9308de9a5454233852f8c7324c93767e8dfb824ed45b9179864a"
+  "gemmavis|unsloth/gemma-4-26B-A4B-it-GGUF|c099eb48e663fd284577b04978a94ffccb261841|gemma4-26b-a4b-qat|mmproj-BF16.gguf:41926ed5f1403cf5add23b0684992805ea6f97253096132e769e65646b8cef9d"
   "tcgemma|bottlecapai/ThinkingCap-gemma-4-26B-A4B-it-GGUF|bb52b322579d218a9931261d6c9cd7403d80eb96|thinkingcap-gemma4-26b-a4b|ThinkingCap-gemma-4-26B-A4B-it-IQ4_XS.gguf:c84bb3c8b997cc7c8fbd5922f3abb362f92ebf5d290654a90bcef5a10c021085 mmproj-ThinkingCap-gemma-4-26B-A4B-it-f16.gguf:4030b92de0d559d7a0cde19659761adc3d8454f06503adb8dac425acfd67c239"
   "eg2|ggml-org/embeddinggemma-2-GGUF|58faf90940886df2d62be555c8765d00dac362c5|embeddinggemma-2|embeddinggemma-2-Q8_0.gguf:2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135"
   "clefflash|ggml-org/Clef-Flash-GGUF|6e2a164d70aae2af7fce86005da3f91805565b1d|clef-flash|Clef-Flash-Q4_K_M.gguf:eef2968c238a80d49d340430f22410ea3db9934ad1c6fdb233a503cbf9a9b54e"
@@ -170,7 +174,7 @@ for want in "${WANT[@]}"; do
       fi
     done
   done
-  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl | klein | kleinte | kleinvae | iris | iriste | sdxl | sdxlvae)"; FAIL=1; }
+  [ "$found" = 1 ] || { echo "ERROR: unknown model '$want' (use qwen36 | distill | bonsai2 | qwen3vl | dory | spark | flint | bolt | e4b | groot | ornith | lfm25 | gemma | gemmavis | tcgemma | lfm3 | lfm3vl | lfm3audio | bonsai2q2 | vibe3b | vibe15 | twil | d1 | eg2 | clefflash | locate | lfm25vl | klein | kleinte | kleinvae | iris | iriste | sdxl | sdxlvae)"; FAIL=1; }
 done
 
 exit "$FAIL"

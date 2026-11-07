@@ -127,12 +127,20 @@ config() {
   [ "$BACKEND" = gemma ] && script="run-server.sh"
   [ "$BACKEND" = qwen ] && envs+=("QMODEL=$name")
   local kv
-  for kv in "${ENVS[@]}" "$@"; do unset_in_env "$kv" && envs+=("$kv"); done
+  for kv in "${ENVS[@]}" "$@"; do kv=$(with_user "$kv"); [ -n "$kv" ] && envs+=("$kv"); done
   env "${envs[@]}" PRINT_CONFIG=1 bash "$REPO/scripts/$script"
 }
 
 # true if KEY=VALUE's KEY is not set by the user (their own export wins over llm's default)
 unset_in_env() { local key=${1%%=*}; [ -z "${!key:-}" ]; }
+
+# with_user KEY=VALUE: the setting to pass on. The user's own export wins, except EXTRA_ARGS, where theirs is
+# added after llm's (so `EXTRA_ARGS=--seed 1 scripts/llm gemma` keeps Gemma's template fix).
+with_user() {
+  if unset_in_env "$1"; then echo "$1"
+  elif [ "${1%%=*}" = EXTRA_ARGS ]; then echo "EXTRA_ARGS=${1#EXTRA_ARGS=} $EXTRA_ARGS"
+  fi
+}
 
 # drop the MoE cache from ENVS (--static, and llm list, which only wants paths)
 drop_cache() { local e kept=(); for e in "${ENVS[@]}"; do [[ $e == MOE_CACHE=* ]] || kept+=("$e"); done; ENVS=("${kept[@]}"); }
@@ -231,7 +239,7 @@ start_server() { # name fg
   [ "$BACKEND" = gemma ] && script="run-server.sh"
   [ "$BACKEND" = qwen ] && envs+=("QMODEL=$name")
   local kv
-  for kv in "${ENVS[@]}"; do unset_in_env "$kv" && envs+=("$kv"); done
+  for kv in "${ENVS[@]}"; do kv=$(with_user "$kv"); [ -n "$kv" ] && envs+=("$kv"); done
   echo ">> starting $name ($(numfmt --to=iec "$size")B, context $ctx) in scope $unit"
   if [ "$fg" = 1 ]; then
     exec "${run[@]}" env "${envs[@]}" bash "$REPO/scripts/$script" "${extra[@]}"
