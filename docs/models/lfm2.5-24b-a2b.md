@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | On disk | 13.6 GB (`Q4_0`, quantization-aware distilled) |
-> | Where it lives | experts of 25 of 38 MoE layers in RAM, everything else on the GPU (7.6 GB VRAM) |
+> | Where it lives | every expert in RAM, a 3.7 GB cache of the busy ones on the GPU (6.8 GB VRAM; `--static`: experts of 25 of 38 MoE layers in RAM, 7.3 GB) |
 > | Context | **128K** |
-> | Generation | **31.5 tok/s** (32.4 tok/s at batch 512) |
+> | Generation | **39–44 tok/s** with the expert cache (31–34 with `--static`) |
 > | Prompt processing | **~940 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 3.1K–3.3K tokens |
 > | [pibench](../pibench.md) | 10/18 solved (86% of hidden tests), 4.2 min median per run |
@@ -104,10 +104,13 @@ top-k 50, repeat-penalty 1.05, no top-p). `scripts/qwen-bench.py`, single runs.
 With the static split: slower to generate than Groot (39.5), faster than Qwen3.6 (23); prompt reading about the
 same as Groot.
 
-**Expert cache: measured faster, not yet the launcher default.** A 4212 MiB cache against `NCMOE=27` at the same
-VRAM: 48.5 vs 34.0 tok/s (+42%), 37.9 vs 29.2 after a 30K-token prompt, prompt reading 920 vs 992 tok/s
-([bench/moe-cache](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)). `scripts/llm lfm25`
-still uses `NCMOE=27`; `MOE_CACHE=4212 scripts/llm lfm25` tries the cache.
+**Expert cache: the launcher default since 2026-11-07.** `NCMOE=27` peaks at ~7.28 GB of its own, which leaves
+the desktop only ~110 MiB by the [VRAM rule](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05).
+A 3712 MiB cache peaks at 6.78 GB, leaves ~600 MiB, and decodes faster: **43.5 vs 33.8 tok/s (+29%)**; turns and
+prompt reading the same within noise ([step 17](../../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)). `MOE_CACHE=auto` uses 3712 MiB and shrinks it for a busier
+desktop; `scripts/llm lfm25 --static` gives the old split. The VRAM-matched 4212 MiB cache did 46.8–48.5 tok/s
+(+38–42%), and 37.9 vs 29.2 after a 30K-token prompt
+([step 3](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)).
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **3,290 and 3,071 tokens**: as wordy as Qwen3.6 (3,558).

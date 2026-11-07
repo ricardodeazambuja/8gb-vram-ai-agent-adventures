@@ -53,17 +53,19 @@
 #              (faster, more VRAM). NCMOE= (empty) = all experts on CPU.
 #              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 27, ornith 34, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
-#   MOE_CACHE  MoE only, off unless set (scripts/llm sets auto for qwen36, distill, flint, ornith): N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
+#   MOE_CACHE  MoE only, off unless set (scripts/llm sets auto for qwen36, distill, flint, ornith, groot, lfm25): N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
 #              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-cache-max-batch branch (the default
 #              build; upstream PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
 #              auto = qwen36 2900, flint 2168, ornith 2983 (each the VRAM its NCMOE default uses); distill 2770 with
 #              batch 2048 (+34% decode, long prompts 2.3x faster; room for a ~700 MiB desktop, see
-#              bench/moe-cache/README.md). See docs/how-it-fits.md §12.  (default: empty = off)
+#              bench/moe-cache/README.md); groot 2821 (+20%) and lfm25 3712 (+29%), each smaller than its NCMOE
+#              default's VRAM (bench/moe-cache/models/step17-groot-lfm25-size.sh). See docs/how-it-fits.md §12.
+#              (default: empty = off)
 #   MOE_CACHE_MAX_BATCH  batches up to N tokens go through the cache, bigger ones copy every expert they use
 #              (--moe-cache-max-batch)
 #              (default: empty = the binary's 32; with MOE_CACHE=auto, distill 256, qwen36 and flint 128)
 #   MOE_CACHE_ADAPT  1 = MOE_CACHE=auto shrinks the cache by however much more VRAM is in use at launch than its
-#              size leaves room for (qwen36 380, distill 700, flint 500, ornith 430 MiB); 0 = the measured size
+#              size leaves room for (qwen36 380, distill 700, flint 500, ornith 430, groot 730, lfm25 600 MiB); 0 = the measured size
 #              as is  (default: 1)
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU instead of copied over PCIe
 #              (--moe-cache-cpu-share)  (default: 0.95)
@@ -299,6 +301,9 @@ case "$QMODEL" in
     # batch 2048 costs ~3 tok/s but doubles prefill (393 -> 887 tok/s). NCMOE 25 fits (7.72 GB) but
     # ran out of memory in pibench with a browser open; 27 is as fast (39.2 tok/s, 7.17 GB).
     _ncmoe=27
+    # MOE_CACHE=auto: 2821 MiB, decode 47.4 vs 39.5 tok/s for NCMOE=27, own peak 6657 MiB (desktop <= ~730;
+    # NCMOE=27 peaks at 7029, desktop <= ~360). bench/moe-cache/models/step17-groot-lfm25-size.sh
+    _moecache=2821; _moecache_desk=730
     _batch=2048
     _temp=1.0 ;;
   ornith)
@@ -335,6 +340,9 @@ case "$QMODEL" in
     # Measured (docs/models/lfm2.5-24b-a2b.md): NCMOE 27 / batch 2048 = 7.6 GB, 31-32 tok/s, prefill
     # ~940; 26 needs batch 512 (32.4 tok/s, prefill 325); 25 OOMs even at batch 512.
     _ncmoe=27
+    # MOE_CACHE=auto: 3712 MiB, decode 43.5 vs 33.8 tok/s for NCMOE=27, own peak 6784 MiB (desktop <= ~600;
+    # NCMOE=27 peaks at 7278, desktop <= ~110). bench/moe-cache/models/step17-groot-lfm25-size.sh
+    _moecache=3712; _moecache_desk=600
     _batch=2048
     _topp=1.0; _topk=50; _rpen=1.05
     _temp=0.1 ;;

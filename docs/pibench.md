@@ -258,7 +258,7 @@ The three MoE models ran the whole bench again with a GPU cache of recently used
 layers ([how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)),
 same VRAM. Scores held (Qwen3.6 17/18, Gemma 26B 17/18 with the miss at 5 of 6 hidden tests, Flint 18/18)
 and decode inside the sessions got faster: Qwen3.6 +59%, Gemma +26%, Flint +23%. The cache is now the
-default in `scripts/llm` for qwen36, distill, flint, ornith and gemma (default build `moe-cache-max-batch`);
+default in `scripts/llm` for qwen36, distill, flint, ornith, groot, lfm25 and gemma (default build `moe-cache-max-batch`);
 the scoreboard above keeps the original runs.
 
 ## Three bugs we found in our own setup

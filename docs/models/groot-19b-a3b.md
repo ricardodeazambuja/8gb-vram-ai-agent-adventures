@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | On disk | 11.7 GB (`Q4_K_M`) + 0.9 GB vision projector |
-> | Where it lives | experts of 27 of 40 layers in RAM, everything else on the GPU (7.2 GB VRAM) |
+> | Where it lives | every expert in RAM, a 2.8 GB cache of the busy ones on the GPU (6.7 GB VRAM; `--static`: experts of 27 of 40 layers in RAM, 7.0 GB) |
 > | Context | **128K** |
-> | Generation | **39–40 tok/s** (42 tok/s at batch 512) |
+> | Generation | **47–48 tok/s** with the expert cache (39–40 with `--static`) |
 > | Prompt processing | **870–890 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 2.3K–3.0K tokens |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), 3.1 min median per run |
@@ -92,10 +92,12 @@ The fastest generation of any big model here with the static split (Qwen3.6 23, 
 and very fast prompt reading (LFM2.5 reached about 940). With the expert cache the distill (52.7), Ornith (40.4) and
 Qwen3.6 (39.4) pass it.
 
-**Expert cache: measured faster, not yet the launcher default.** A 3321 MiB cache against `NCMOE=27` at about the
-same VRAM: 47.6 vs 41.0 tok/s (+16%; the cache run had 128 MiB more VRAM, so slightly flattering), prompt reading
-741 vs 790 tok/s ([bench/moe-cache](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)).
-`scripts/llm groot` still uses `NCMOE=27`; `MOE_CACHE=3321 scripts/llm groot` tries the cache.
+**Expert cache: the launcher default since 2026-11-07.** `NCMOE=27` peaks at ~7.03 GB of its own, which leaves
+the desktop only ~360 MiB by the [VRAM rule](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)
+(that's why `NCMOE=25` ran out of memory in pibench with a browser open). A 2821 MiB cache peaks at 6.66 GB, leaves
+~730 MiB, and decodes faster: **47.4 vs 39.5 tok/s (+20%)**; turns and prompt reading the same within noise
+([step 17](../../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)). `MOE_CACHE=auto` uses 2821 MiB and shrinks it for a busier desktop; `scripts/llm groot --static`
+gives the old split. A bigger cache (3321 MiB) did 51.4 tok/s but leaves the desktop only ~230 MiB.
 
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): correct twice,
 own doctests pass, 0/500 wrong, in **2,315 and 2,988 tokens**. That's a bit under Qwen3.6

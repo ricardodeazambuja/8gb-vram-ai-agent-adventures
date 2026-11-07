@@ -121,3 +121,8 @@ Twelve of the fourteen tool-capable code checks passed; LFM3-VL failed this time
 sample). Pi, VibeThinker: the one-shot skips them (TwIL hasn't been through pibench yet; VibeThinker's pi goes
 through its shim launcher), so only their servers were checked.
 
+Groot and LFM2.5 then got the cache too (sizes: [`bench/moe-cache`](../moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)).
+The same check through `scripts/llm` right after ([`results/2026-11-07-llm-groot-lfm25-cache/`](results/2026-11-07-llm-groot-lfm25-cache/)):
+Groot 48.1 tok/s (+20% on its static run above), 773 tok/s on the long prompt, 7001 MiB in use (was 7367); LFM2.5
+39.1 tok/s (+25%), 896 tok/s, 7171 MiB (was 7659). Both: pi one-shot `READY`, tool call ✓, 0/500 wrong.
+

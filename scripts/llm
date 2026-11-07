@@ -16,8 +16,8 @@
 #
 # What it adds on top of scripts/run-qwen.sh and scripts/run-server.sh, which hold every per-model
 # setting (llm only picks the backend and a few defaults):
-#   * the MoE expert cache (MOE_CACHE=auto) where we measured it: qwen36, distill, flint, ornith and
-#     gemma, 9-62% faster decode at the same VRAM; it shrinks itself for a busy desktop and refuses
+#   * the MoE expert cache (MOE_CACHE=auto) where we measured it: qwen36, distill, flint, ornith, groot,
+#     lfm25 and gemma, 9-62% faster decode at the same VRAM or less; it shrinks itself for a busy desktop and refuses
 #     below 1 GB with a clear message (use --static then, or close the browser);
 #   * vision models start with their projector; Gemma and ThinkingCap get the template fix that
 #     stops prompt reprocessing in agent loops (docs/models/gemma4-26b-a4b.md);
@@ -48,7 +48,7 @@ qwen3vl lfm3vl lfm25vl locate eg2 d1 clefflash lfm3audio"
 model() {
   BACKEND=qwen; JOB=agent; ACTION=pi; ENVS=(); IMAGE=0; DL="$1"; PI_DEFAULT=()
   case "$1" in
-    groot)    DESC="Groot-19B-A3B: the everyday coding agent, fastest of the big ones (pibench 18/18)" ;;
+    groot)    DESC="Groot-19B-A3B: the everyday coding agent, fastest of the big ones (pibench 18/18)"; ENVS=(MOE_CACHE=auto) ;;
     flint)    DESC="Flint 40B MoE: the careful coder (18/18)"; ENVS=(MOE_CACHE=auto) ;;
     gemma)    BACKEND=gemma; DL="(scripts/setup.sh)"
               DESC="Gemma 4 26B-A4B: agent that also sees (18/18, vision 100%)"
@@ -65,7 +65,7 @@ model() {
                     ALIAS=thinkingcap-gemma-4-26b-a4b CTX=65536 KVQUANT=q8_0 NCMOE=23
                     "EXTRA_ARGS=--chat-template-file $REPO/config/thinkingcap-gemma4-26b-nonl.jinja") ;;
     bolt)     DESC="Nemotron 3.5 Bolt 74B: the biggest, slow and thoughtful (15/18)" ;;
-    lfm25)    DESC="LFM2.5-24B-A2B: not a Qwen, trained in agent harnesses (10/18)" ;;
+    lfm25)    DESC="LFM2.5-24B-A2B: not a Qwen, trained in agent harnesses (10/18)"; ENVS=(MOE_CACHE=auto) ;;
     spark)    DESC="Spark-X2.6-4B: small and fast (14/18)"
               PI_DEFAULT=(--thinking high) ;;     # it rejects pi's default "medium" (HTTP 400)
     dory)     DESC="Dory1.0-4B looped: Spark's score at 4B (14/18)" ;;

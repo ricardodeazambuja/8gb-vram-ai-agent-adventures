@@ -39,8 +39,8 @@ images with known answers: OCR, bounding boxes, charts, counting, engineering dr
 we haven't run it (yet). The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md). The name under each model starts it: `scripts/llm <name>`
 ([below](#using-the-models)). Speeds are with the experts split by layer (`NCMOE`); for Qwen3.6, the
-Qwen3.8 distill, Flint, Ornith and Gemma, `scripts/llm` uses our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
-instead: 19–58% faster decode at the same VRAM next to a quiet desktop (Qwen3.6 24.9 → 39.4 tok/s; the
+Qwen3.8 distill, Flint, Ornith, Groot, LFM2.5 and Gemma, `scripts/llm` uses our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
+instead: 19–58% faster decode at the same VRAM or less next to a quiet desktop (Qwen3.6 24.9 → 39.4 tok/s; the
 distill +34%), about 10% less than that next to a busy one.
 
 ## The helpers

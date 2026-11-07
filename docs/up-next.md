@@ -27,10 +27,6 @@ the desktop held 2.5 GB of VRAM, so these still need a run:
 - [ ] **Rerun the vision probe through `scripts/llm`** (`run_vision.py gemma-llm qwen36-llm distill-llm
       ornith-llm`), so its numbers are the launcher defaults (cache, Gemma's q8_0 KV). Today it uses the backend
       scripts with the static split, and the pages say so.
-- [ ] **Groot and LFM2.5-24B with the cache:** measured faster (+16% and +42%, [Groot](models/groot-19b-a3b.md),
-      [LFM2.5](models/lfm2.5-24b-a2b.md)) but not the launcher default, because `MOE_CACHE=auto` has no measured size
-      for them that leaves room for a desktop. Measure each one's peak next to a ~0.5 and a ~1.7 GB desktop, give
-      them a size and a desktop allowance in `run-qwen.sh`, then add them to `scripts/llm`'s cache list.
 
 ## In progress
 
@@ -288,6 +284,7 @@ temperatures we use.
 | EmbeddingGemma 2, Clef-Flash, LocateAnything-3B, VibeThinker | their model pages; [`examples/`](../examples/README.md) |
 | Our llama.cpp fork (2026-10-30), PrismML's merge (2026-11-02), the recheck | [getting started](getting-started.md#3-build-llamacpp-once), [`bench/recheck/`](../bench/recheck/README.md) |
 | The MoE expert cache, now the default in `scripts/llm` | [how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) |
+| Groot and LFM2.5 get the expert cache by default (2026-11-07): +20% and +29% decode, and more room for the desktop than their static splits | [`bench/moe-cache`](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07) |
 | Every model through `scripts/llm` (2026-11-07): loads, pi one-shot, status/stop, contexts, Spark/Bonsai thinking flags; the recheck at launcher defaults (cached models 28–62% faster); TwIL's first speed and code check | [`bench/recheck/`](../bench/recheck/README.md#through-scriptsllm-2026-11-07) |
 | VibeThinker's audit (2026-11-07): clean, templates identical to the source | [security](security.md#audits-so-far) |
 | Relaxed draft acceptance | [graveyard](graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles) |

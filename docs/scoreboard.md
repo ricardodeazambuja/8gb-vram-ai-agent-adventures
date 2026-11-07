@@ -34,9 +34,9 @@ Two health warnings before the numbers:
 
 ¹ Processing a ~14–17K-token prompt, which is what a coding agent's first turn costs. "—" = not
 measured the same way. Speeds are with the experts split by layer (`NCMOE`); `scripts/llm` runs Qwen3.6, the
-distill, Flint, Ornith and Gemma with the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
-instead: 19–58% faster decode at the same VRAM next to a quiet desktop (Qwen3.6 39.4, Gemma 30.0,
-Flint 32.1, Ornith 40.4 tok/s; the distill +34%), about 10% less than that next to a busy one (9–13%).
+distill, Flint, Ornith, Groot, LFM2.5 and Gemma with the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
+instead: 19–58% faster decode at the same VRAM or less next to a quiet desktop (Qwen3.6 39.4, Gemma 30.0,
+Flint 32.1, Ornith 40.4, Groot 47.4, LFM2.5 43.5 tok/s; the distill +34%), about 10% less than that next to a busy one (9–13%).
 ² 27 tok/s at 128K with a q8_0 KV cache ([how it fits](how-it-fits.md)).
 ³ With `CTX=131072 LOOP_KV=last_loop`: 30.1 tok/s.
 

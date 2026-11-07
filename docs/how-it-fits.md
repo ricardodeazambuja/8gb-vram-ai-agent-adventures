@@ -48,7 +48,7 @@ The flags:
   Lower N = more experts on the GPU = faster, but more VRAM.
 
 In this repo that's the `NCMOE` knob of the static split. `scripts/llm` no longer uses it by default
-for Qwen3.6, the distill, Flint, Ornith and Gemma: they get the expert cache of
+for Qwen3.6, the distill, Flint, Ornith, Groot, LFM2.5 and Gemma: they get the expert cache of
 [§12](#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes), which keeps all experts in RAM
 and caches the busy ones on the GPU. `--static` gives you this split instead:
 
@@ -289,10 +289,14 @@ every miss, the cache gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of m
 | Gemma 4 26B-A4B (32K) | 21.0 tok/s (`NCMOE=22`) | **30.0 tok/s** (3267 MiB) | +43% |
 | Flint (128K) | 26.9 tok/s (`NCMOE=42`) | **32.1 tok/s** (2168 MiB) | +19% |
 | Ornith 1.5 35B-A3B (128K) | 33.9 tok/s (`NCMOE=34`) | **40.4 tok/s** (2983 MiB) | +19% |
+| Groot-19B-A3B (128K) | 39.5 tok/s (`NCMOE=27`) | **47.4 tok/s** (2821 MiB, ~370 MiB *less* VRAM) | +20% |
+| LFM2.5-24B-A2B (128K) | 33.8 tok/s (`NCMOE=27`) | **43.5 tok/s** (3712 MiB, ~490 MiB *less* VRAM) | +29% |
 
 Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512, Flint and Ornith 2048). Each model ran
 baseline, cache, then baseline again, two 400-token runs each. The table shows the first baseline; for Ornith,
-measured later, it shows the mean of both baselines. Prompt speed didn't change. VRAM
+measured later, it shows the mean of both baselines; Groot and LFM2.5 (2026-11-07,
+[step 17](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07))
+got a smaller cache than their split's VRAM, because their splits left the desktop only ~360 and ~110 MiB. Prompt speed didn't change. VRAM
 in use was 86–186 MiB lower for Qwen3.6 and within 10 MiB for the other two. The cache also held up over a 2,500-token answer: 33–37
 tok/s, while `NCMOE=32` sank to 18–21 tok/s as the CPU package hit 100 °C (83 °C with the cache). Flint's
 gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.
@@ -305,7 +309,7 @@ Qwen3.6's is still 62% faster than static offload at the same VRAM. The method,
 scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
 
 ```bash
-scripts/llm qwen36            # the launcher turns the cache on for qwen36, distill, flint, ornith and gemma
+scripts/llm qwen36            # the launcher turns the cache on for qwen36, distill, flint, ornith, groot, lfm25 and gemma
 scripts/llm qwen36 --static   # the classic NCMOE split instead
 # the building blocks underneath:
 QMODEL=qwen36 MOE_CACHE=auto bash scripts/run-qwen.sh   # the measured size per model, smaller if the desktop uses more VRAM than measured; or a MiB number

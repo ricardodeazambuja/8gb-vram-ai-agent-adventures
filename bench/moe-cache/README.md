@@ -49,7 +49,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `pibench_speed.py RAW... MODEL...` | prefill and decode speed inside real pibench sessions, fitted from pi's per-call tokens and `durationMs`; output in `logs/pibench-speed.txt` |
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
-| `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), reruns at matched VRAM `step5-qwen38.sh` and `step12-ornith.sh`, logs and tuner output |
+| `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), reruns at matched VRAM `step5-qwen38.sh` and `step12-ornith.sh`, the launcher sizes for Groot and LFM2.5 `step17-groot-lfm25-size.sh`, logs and tuner output |
 | `experimental/` | the fork's `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); logs |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
@@ -195,6 +195,30 @@ size leaves room for (`MOE_CACHE_ADAPT=0` keeps the measured size; below 1024 Mi
 number in MiB is used as given. Groot's cache run had
 128 MiB more VRAM, so its gain is slightly flattering. The tuner's picks: Groot 3264 MiB / share 0.9, LFM2.5
 3968 / 0.95.
+
+### Groot and LFM2.5: sizes for the launcher (`models/step17-groot-lfm25-size.sh`, 2026-11-07)
+
+Step 3 measured them faster but gave them no `MOE_CACHE=auto` size, so `scripts/llm` kept the static split. Night,
+desktop 432–435 MiB, batch 2048, 128K, q8_0 KV, share 0.95, cache-path limit 32: `NCMOE=27` / the cache at step 3's
+size / 500 MiB less / `NCMOE=27` again, each with two 400-token `srvbench` runs and the turn test
+([`step17.log`](models/logs/step17.log)). Desktop room is the rule above: 7687 − 300 − the server's own peak.
+
+| Model | Setting | Own peak | Desktop room | Decode | Turns of 48 / 200 / 600 tokens |
+|---|---|---:|---:|---:|---|
+| Groot | `NCMOE=27` (both runs) | 7029–7031 MiB | ~360 MiB | 39.5 | 0.77 / 1.19 / 1.57 s |
+| Groot | cache 3321 MiB | 7159 | ~230 | 51.4 (+30%) | 0.66 / 1.13 / 1.56 s |
+| Groot | **cache 2821 MiB** | **6657** | **~730** | **47.4 (+20%)** | 0.73 / 1.23 / 1.62 s |
+| LFM2.5 | `NCMOE=27` (both runs) | 7274–7278 | ~110 | 33.8 | 1.08 / 1.45 / 1.67 s |
+| LFM2.5 | cache 4212 MiB | 7296 | ~90 | 46.8 (+38%) | 1.01 / 1.36 / 1.60 s |
+| LFM2.5 | **cache 3712 MiB** | **6784** | **~600** | **43.5 (+29%)** | 1.06 / 1.43 / 1.69 s |
+
+The static splits these two have used all along leave little room for the desktop: ~360 MiB for Groot (it ran
+out of memory in pibench with a browser open at `NCMOE=25`) and ~110 MiB for LFM2.5. The cache needs ~3.84 GB
+(Groot) and ~3.08 GB (LFM2.5) besides itself, so a smaller cache is both faster than the split and gives the
+desktop more room. `MOE_CACHE=auto` now uses the bold rows (Groot 2821 MiB, room for 730; LFM2.5 3712, room for
+600), and `scripts/llm groot` and `lfm25` turn it on. With a ~1.7 GB daytime desktop the launcher shrinks them to
+~1850 and ~2615 MiB. Turns cost the same within noise. The 6K-token prompt read 10–15% slower with the cache on
+each first `srvbench` run, which starts cold, and within 5% of the split on the second.
 
 ### Qwen3.8: batch 512 or 2048? (`models/step6-qwen38-ubatch.sh`, `step7-turns.sh`)
 
