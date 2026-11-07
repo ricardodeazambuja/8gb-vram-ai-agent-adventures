@@ -18,15 +18,6 @@ says where it went.
 3. **LFM3-Audio's open parts:** tool calls over `/v1/realtime`, and recorded human speech instead of its own
    voice ([voice agents](#️-voice-agents-agents-that-talk-to-people) below).
 
-### When the GPU is quiet (browser closed, or at night)
-
-`scripts/llm` and `scripts/imagine` (2026-11-06) were tested live on the small models, the helpers and Klein, but
-the desktop held 2.5 GB of VRAM, so these still need a run:
-
-- [ ] **Rerun the vision probe through `scripts/llm`** (`run_vision.py gemma-llm qwen36-llm distill-llm
-      ornith-llm`), so its numbers are the launcher defaults (cache, Gemma's q8_0 KV). Today it uses the backend
-      scripts with the static split, and the pages say so.
-
 ## In progress
 
 | What | Status |
@@ -284,6 +275,7 @@ temperatures we use.
 | Our llama.cpp fork (2026-10-30), PrismML's merge (2026-11-02), the recheck | [getting started](getting-started.md#3-build-llamacpp-once), [`bench/recheck/`](../bench/recheck/README.md) |
 | The MoE expert cache, now the default in `scripts/llm` | [how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) |
 | Groot and LFM2.5 get the expert cache by default (2026-11-07): +20% and +29% decode, and more room for the desktop than their static splits | [`bench/moe-cache`](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07) |
+| The vision probe through `scripts/llm` (2026-11-07): same scores within one answer's noise, 5–27% less time per image | [vision probe](vision-probe.md#the-results) |
 | Every model through `scripts/llm` (2026-11-07): loads, pi one-shot, status/stop, the "stop the server too?" question (n / y / Enter, and not asked for a server it didn't start), contexts, Spark/Bonsai thinking flags; the recheck at launcher defaults (cached models 28–62% faster); TwIL's first speed and code check | [`bench/recheck/`](../bench/recheck/README.md#through-scriptsllm-2026-11-07) |
 | VibeThinker's audit (2026-11-07): clean, templates identical to the source | [security](security.md#audits-so-far) |
 | Relaxed draft acceptance | [graveyard](graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles) |

@@ -42,6 +42,22 @@ thinking off scored 68%. LocateAnything-3B (boxes only,
 ThinkingCap Gemma also take images but didn't sit this probe. Flint, Spark, Dory, LFM3-1.7B, LFM2.5-24B, the
 Nemotron E4B, VibeThinker and TwIL are text-only.
 
+**Through `scripts/llm` (2026-11-07).** The MoEs above ran with the static `NCMOE` split. Five of them again at
+the launcher's defaults (the expert cache; Gemma at 32K with a q8_0 KV):
+
+| Model | Overall, static split → `scripts/llm` | Time per image |
+|---|---:|---:|
+| Gemma 4 26B-A4B | 100% → **100%** | 70 → **51 s** |
+| Qwen3.6-35B-A3B | 100% → 94% | 43 → 39 s |
+| Ornith-1.5-35B-A3B | 97% → 98% | 33 → 31 s |
+| Qwen3.8 distill | 88% → 92% | 35 → 27 s |
+| Groot-19B-A3B | 74% → 79% | 44 → 35 s |
+
+Every score change but one is the same picture, the dot count, and they go both ways: Qwen3.6 lost two of its
+three counts, Groot and the distill gained. One answer per image, so that's sampling, not the cache; the main
+table stands. The time per image dropped 5–27%. Rows `*-llm` in
+[`summary.md`](../bench/vision/results/summary.md).
+
 <p align="center"><img src="../bench/vision/results/overlays/gemma26b-bbox-shapes-3.png" alt="Gemma 4 26B's boxes (magenta) drawn over the true boxes (green): all six shapes overlap closely" width="560"><br><em>Gemma's boxes (magenta) over the truth (green). Not bad for a model that refused to use pixels.</em></p>
 
 ## What we learned

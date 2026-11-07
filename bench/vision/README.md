@@ -31,6 +31,8 @@ python3 bench/vision/run_vision.py --score-only  # re-score saved answers -> res
 ```
 
 Every model runs with its own projector (`--image`) and the backend script's defaults (`run_vision.py` starts
-`run-qwen.sh` or `run-server.sh`, not `scripts/llm`), so the MoEs ran with the static `NCMOE` split. Twelve items, one answer
+`run-qwen.sh` or `run-server.sh`, not `scripts/llm`), so the MoEs ran with the static `NCMOE` split. The keys
+ending in `-llm` (`gemma-llm`, `qwen36-llm`, `distill-llm`, `ornith-llm`, `groot-llm`; 2026-11-07) start the same
+models through `scripts/llm`, with the expert cache ([write-up](../../docs/vision-probe.md#the-results)). Twelve items, one answer
 each: a probe of capabilities, not a benchmark; a single wrong field moves a category by several
 points.

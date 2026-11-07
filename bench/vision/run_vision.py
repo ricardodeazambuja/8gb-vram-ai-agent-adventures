@@ -4,6 +4,7 @@
     python3 bench/vision/run_vision.py                     # all models
     python3 bench/vision/run_vision.py qwen3vl gemma26b    # some of them
     python3 bench/vision/run_vision.py --score-only        # re-score saved answers
+    python3 bench/vision/run_vision.py qwen36-llm          # through scripts/llm (expert cache, Gemma's KV)
 
 No agent and no tools: the image and the question go straight to llama-server's chat API, and the
 JSON answer is scored against the generator's ground truth. Answers are saved per model/item under
@@ -39,6 +40,12 @@ MODELS = {  # key -> (launch env, launch script) ; every one with its vision pro
     "groot": ({"QMODEL": "groot"}, "scripts/run-qwen.sh"),
     "ornith": ({"QMODEL": "ornith"}, "scripts/run-qwen.sh"),
     "lfm3vl": ({"QMODEL": "lfm3vl"}, "scripts/run-qwen.sh"),
+    # The same models through scripts/llm, at the launcher's defaults (expert cache; Gemma's q8_0 KV, 32K; 2026-11-07).
+    "gemma-llm": ({"LLM": "gemma"}, "llm"),
+    "qwen36-llm": ({"LLM": "qwen36"}, "llm"),
+    "distill-llm": ({"LLM": "distill"}, "llm"),
+    "ornith-llm": ({"LLM": "ornith"}, "llm"),
+    "groot-llm": ({"LLM": "groot"}, "llm"),
 }
 MAX_TOKENS = 12000
 TIMEOUT = 900
@@ -56,6 +63,12 @@ def start(key):
     if healthy():
         sys.exit("ERROR: something is already serving on port 8080; stop it first (scripts/stop-server.sh)")
     env, script = MODELS[key]
+    if script == "llm":  # scripts/llm starts the server in its own scope and returns once it answers
+        r = subprocess.run([os.path.join(REPO, "scripts/llm"), env["LLM"], "serve", "--image"], cwd=REPO,
+                           env={**os.environ, "LLM_LOG": os.path.join(RES, "server.log")}, check=False)
+        if r.returncode != 0 or not healthy():
+            sys.exit(f"ERROR: scripts/llm {env['LLM']} did not start; see {RES}/server.log")
+        return None
     log = open(os.path.join(RES, "server.log"), "a")
     proc = subprocess.Popen(["bash", os.path.join(REPO, script), "--image"], cwd=REPO,
                             env={**os.environ, **env}, stdout=log, stderr=log, start_new_session=True)
@@ -70,6 +83,10 @@ def start(key):
 
 
 def stop(proc):
+    if proc is None:  # started by scripts/llm
+        subprocess.run([os.path.join(REPO, "scripts/llm"), "stop"], check=False)
+        time.sleep(3)
+        return
     try:
         os.killpg(proc.pid, signal.SIGTERM)
         proc.wait(timeout=30)
