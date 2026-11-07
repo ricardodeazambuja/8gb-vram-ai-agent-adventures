@@ -29,6 +29,7 @@ says where it went.
 |---|---|---|
 | [TIPS / TIPSv2](https://github.com/google-deepmind/tips) (Google DeepMind, Apache 2.0, other materials CC-BY 4.0; [paper](https://arxiv.org/abs/2410.16512), [v2](https://arxiv.org/abs/2604.12012)) | small (S/14 or B/14 first) | Embeds images and text, one vector per image patch. Compare with EmbeddingGemma 2's vision side: an automatic style score for the image experiments, and text queries on outdoor scenes for WildSeed. Not for clicks: at 448×448 it works on a 32×32 grid. Needs Python and `.npz` weights, so the user's approval first, then only in `bench/finetune/sandbox.sh`. A copy of the weights is in `../tips/pytorch/checkpoints`; check that the v2 files can still be downloaded before deleting them. |
 | [Clef](https://huggingface.co/Cloudflare/clef) (Cloudflare, Apache 2.0) | 19.5 GB, dense | The big sibling of Clef-Flash; untested. |
+| [Nemotron-3.5-Lightning-30B-A3B](https://huggingface.co/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF) (NVIDIA, its own license: the card says "other"; GGUFs by ggml-org, revision `8cd0821`) | Q4_0 18.9 GB, the same tier as our other big MoEs, plus an MTP head (`mtp-…-Q4_0.gguf`, 1.16 GB); hybrid Mamba-2 MoE with 6 attention layers, so a long context is cheap | The official, smaller way into the family ThinkingCap (next row) builds on. A Mac test with stock llama.cpp ([llama-modchip](#modchip) below) measured 57 tok/s decode and 2.8× on copy-heavy code edits with `ngram-mod`. Read the license before downloading. |
 | [ThinkingCap Nemotron-3.5-Lightning-30B-A3B](https://huggingface.co/bottlecapai/ThinkingCap-NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF) (bottlecap.ai, Apache 2.0) | Q4_K_M 25.4 GB (only that or f16); experts in RAM, bigger than Ornith, so browser closed | A new family for the lineup, already trained to think less ([ThinkingCap Gemma](models/thinkingcap-gemma4-26b-a4b.md) halved Gemma's thinking for 17/18). LFM2.5's card benchmarks against its base. |
 | [ThinkingCap Qwen3.8-27B RCO-4.2bpw](https://huggingface.co/bottlecapai/ThinkingCap-Qwen3.8-27B-GGUF-RCO-4.2bpw) | 14.3 GB + mmproj 0.9, dense 27B mostly on the CPU | Low priority: the plain 27B ran at 2.5 tok/s ([graveyard](graveyard.md)); shorter thinking won't rescue that. |
 | [LFM3-Omni-2B](https://huggingface.co/LiquidAI/LFM3-Omni-2B-GGUF), [d1-Omni-2B](https://huggingface.co/LiquidAI/d1-Omni-2B-GGUF) (Liquid AI) | small | The Omni versions of [LFM3-Audio](models/lfm3-audio-2b.md) and [d1](models/d1-2b.md): images and video too. Untested. |
@@ -243,6 +244,40 @@ What to take from it, in order:
    [12/18](models/lfm3-1.7b.md)); their held-out data-analysis tasks
    ([SmolDataEnvs](https://huggingface.co/datasets/FineEnvs/SmolDataEnvs-harbor-train) is the training set) as a
    seventh pibench chore, after a review, since each task is a third-party Docker image.
+
+<a id="modchip"></a>
+
+### 🕹️ llama-modchip: ideas only, none of its code ([synchopate/llama-modchip](https://github.com/synchopate/llama-modchip), Apache 2.0, read 2026-11-07 at `3cba01e`)
+
+A CPU-first llama.cpp patch set (Nemotron Lightning 30B, DeepSeek-V4-Flash 284B in 64 GB). **We reuse ideas,
+never its code:** its patches replace whole llama.cpp files, its Hugging Face repos ship prebuilt `llama-server`
+binaries next to the GGUFs, its quickstart pipes `curl` into `python3`, and its server reads settings from a
+`/dev/shm` file other processes can write. Its own numbers are large and lightly checked: the headline CPU decode
+ran with 4 of 6 experts per token (`apple-silicon/README.md`). Worth trying here, all with stock llama.cpp or a
+few lines of our own:
+
+1. **`--spec-type ngram-mod`**, upstream llama.cpp's n-gram drafter. The independent Mac test
+   (`apple-silicon/results/spec.json`, stock build `5266f24da`, greedy, Nemotron Lightning) measured 55 → 155
+   tok/s on a code edit (copy a file with one change, 93% of drafts accepted), and no change on new code or text
+   (56 tok/s); upstream's `ngram-simple` defaults gave 90. Our questions: does it hold with experts computed on the
+   CPU (every drafted token can pull in its own experts), on pi's snippet edits rather than whole-file copies,
+   and at our sampling temperatures (Gemma's MTP only paid off near greedy, see
+   [scripts/README](../scripts/README.md#speculative-decoding-mtp))? First test: Qwen3.6, three prompts
+   (copy-edit, new code, text), ~15 min; then one pibench batch if it helps.
+2. **Software prefetch in the CPU K-quant dot products** (Q4_K/Q5_K/Q6_K, a few lines in
+   `ggml-cpu/arch/x86/quants.c`, written ourselves). Their reason (keep a CPU KV cache in L3) doesn't apply, since
+   our KV is on the GPU; the one plausible gain is crossing 4 KB page boundaries, where hardware prefetchers stop.
+   Low priority, and only with a before/after `srvbench`.
+3. **A per-op CPU timer** (an env variable that sums time per op and tensor type for one graph): would show where
+   the CPU time goes when it computes cache misses. Diagnostic only, in our fork.
+
+Not for us: 2 MB huge pages (our experts are mmapped from ext4, and this kernel lacks
+`CONFIG_READ_ONLY_THP_FOR_FS`, so file pages can't be huge); Fractal-64 (changes the on-disk layout of upstream's
+`Q2_0`); RouteCrack/Stockfish drafting (tables trained on Nemotron text); fewer experts per token (`--override-kv`
+does it already, and our [pruning study](../bench/moe-cache/README.md#pruned-qwen36-even-10-fewer-experts-changes-one-top-token-in-ten-expertsprune-evalsh-2026-11-05)
+says Qwen3.6 is sensitive); the Claude Code gateway and HARP-Cache (pi reprocesses only ~25 tokens a turn).
+One aside it led to: in our own pibench transcripts, LFM2.5 starts every new session with nothing cached, while
+Qwen3.6, Flint and Groot usually reuse ~1.3–1.9K tokens of pi's prompt. Seconds per session; not urgent.
 
 <a id="strata"></a>
 
