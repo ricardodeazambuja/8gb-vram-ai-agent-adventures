@@ -277,38 +277,6 @@ the recently used ones in a VRAM cache of a size you choose (`--moe-cache-mib`; 
 Consecutive tokens reuse many of the same experts: with 20% of Qwen3.6's experts in the cache, 77%
 of lookups hit.
 
-On a miss, the merged code copies the expert to the GPU. Here that is the slow part: this laptop's PCIe
-3.0 link runs at x8, measured at 6.45 GB/s, and copying one expert takes ~0.23 ms. The CPU can compute the
-same expert from RAM in ~0.1 ms ([measurements](../bench/moe-cache/RESULTS.md), [`bw.cu`](../bench/moe-cache/bw/bw.cu)). The open upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966)
-(Aman Gupta) adds `--moe-cache-cpu-share F`, which hands that share of the misses to the CPU. Copying
-every miss, the cache gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of misses on the CPU:
-
-| Model (context) | Static (`--static`): `--n-cpu-moe` | Cache + CPU share 0.95, same VRAM | Gain |
-|---|---:|---:|---:|
-| Qwen3.6-35B-A3B (128K) | 24.9 tok/s (`NCMOE=32`) | **39.4 tok/s** (2900 MiB) | +58% |
-| Gemma 4 26B-A4B (32K) | 21.0 tok/s (`NCMOE=22`) | **30.0 tok/s** (3267 MiB) | +43% |
-| Flint (128K) | 26.9 tok/s (`NCMOE=42`) | **32.1 tok/s** (2168 MiB) | +19% |
-| Ornith 1.5 35B-A3B (128K) | 33.9 tok/s (`NCMOE=34`) | **40.4 tok/s** (2983 MiB) | +19% |
-| Groot-19B-A3B (128K) | 39.5 tok/s (`NCMOE=27`) | **47.4 tok/s** (2821 MiB, ~370 MiB *less* VRAM) | +20% |
-| LFM2.5-24B-A2B (128K) | 33.8 tok/s (`NCMOE=27`) | **43.5 tok/s** (3712 MiB, ~490 MiB *less* VRAM) | +29% |
-
-Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512 for Qwen3.6 and Gemma, 2048 for the other four). Each model ran
-baseline, cache, then baseline again, two 400-token runs each. The table shows the first baseline; for Ornith,
-measured later, it shows the mean of both baselines; Groot and LFM2.5 (2026-11-07,
-[step 17](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07))
-got a smaller cache than their split's VRAM, because their splits left the desktop only ~360 and ~110 MiB. Prompt speed didn't change. VRAM
-in use was 86–186 MiB lower for Qwen3.6 and within 10 MiB for Gemma and Flint. The cache also held up over a 2,500-token answer: 33–37
-tok/s, while `NCMOE=32` sank to 18–21 tok/s as the CPU package hit 100 °C (83 °C with the cache). Flint's
-gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.
-
-For Qwen3.6, Gemma, Flint and Ornith the cache sizes match the expert bytes `--n-cpu-moe` puts on the GPU
-(Qwen3.6's 2900 is a little under its 3070); Groot and LFM2.5 were sized for the desktop instead (above), and the
-distill runs 2770 for the same reason ([bench/moe-cache](../bench/moe-cache/README.md)). Gemma at pibench's 64K is the exception: the matching 4084 MiB ran out of memory at load (and so did
-`NCMOE=20` itself that day, with the desktop using ~0.7 GB), so it gets 3500, peaking at 7.5 GB after a 34K-token
-prompt. Next to a busy daytime desktop (~1.7 GB) the launcher's smaller caches cost 9–13% of decode speed, and
-Qwen3.6's is still 62% faster than static offload at the same VRAM. The method,
-scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
-
 ```bash
 scripts/llm qwen36            # the launcher turns the cache on for qwen36, distill, flint, ornith, groot, lfm25 and gemma
 scripts/llm qwen36 --static   # the classic NCMOE split instead
@@ -319,14 +287,63 @@ BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto \
   EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja" bash scripts/run-server.sh   # what `scripts/llm gemma` runs (3267 MiB)
 ```
 
-`--moe-cache-cpu-share` and `--moe-cache-max-batch` aren't in upstream llama.cpp yet; the default build
-has them (the numbers above were measured on its parent, `moe-offload` `3a72c57be`), see
-[getting started §3](getting-started.md#3-build-llamacpp-once).
+`--moe-cache-cpu-share` and `--moe-cache-max-batch` aren't in upstream llama.cpp yet; the default build has
+them, see [getting started §3](getting-started.md#3-build-llamacpp-once).
 
-**In real agent sessions too.** A full [pibench](pibench.md) batch with `MOE_CACHE=auto` (2026-11-04,
-18 attempts per model, same 64K/128K contexts as the scored batch) against the scored batch from 2026-10-23.
-Decode and prefill come from pi's own record of every model call (tokens and duration), fitted as
-`time = input/prefill + output/decode + overhead`:
+### Why the misses go to the CPU
+
+On a miss, the merged code copies the expert to the GPU. Here that is the slow part: this laptop's PCIe
+3.0 link runs at x8, measured at 6.45 GB/s, and copying one expert takes ~0.23 ms. The CPU can compute the
+same expert from RAM in ~0.1 ms ([measurements](../bench/moe-cache/RESULTS.md), [`bw.cu`](../bench/moe-cache/bw/bw.cu)).
+The open upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (Aman Gupta) adds
+`--moe-cache-cpu-share F`, which hands that share of the misses to the CPU. Copying every miss, the cache
+gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of misses on the CPU:
+
+| Model (context) | Static (`--static`): `--n-cpu-moe` | Cache + CPU share 0.95, same VRAM | Gain |
+|---|---:|---:|---:|
+| Qwen3.6-35B-A3B (128K) | 24.9 tok/s (`NCMOE=32`) | **39.4 tok/s** (2900 MiB) | +58% |
+| Gemma 4 26B-A4B (32K) | 21.0 tok/s (`NCMOE=22`) | **30.0 tok/s** (3267 MiB) | +43% |
+| Flint (128K) | 26.9 tok/s (`NCMOE=42`) | **32.1 tok/s** (2168 MiB) | +19% |
+| Ornith 1.5 35B-A3B (128K) | 33.9 tok/s (`NCMOE=34`) | **40.4 tok/s** (2983 MiB) | +19% |
+| Groot-19B-A3B (128K) | 39.5 tok/s (`NCMOE=27`) | **47.4 tok/s** (2821 MiB, ~370 MiB *less* VRAM) | +20% |
+| LFM2.5-24B-A2B (128K) | 33.8 tok/s (`NCMOE=27`) | **43.5 tok/s** (3712 MiB, ~490 MiB *less* VRAM) | +29% |
+
+How it was measured, and what else changed:
+
+- **Runs.** Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512 for Qwen3.6 and Gemma, 2048 for
+  the other four). Each model ran baseline, cache, then baseline again, two 400-token runs each. The table
+  shows the first baseline; for Ornith, measured later, the mean of both.
+- **Builds.** The first four ran on our fork's `moe-offload` branch (`3a72c57be`,
+  [`RESULTS.md`](../bench/moe-cache/RESULTS.md)); Groot and LFM2.5 on the current default,
+  `moe-cache-max-batch` (`69ca796dd`), at its default cache batch limit, which leaves the cache's behaviour
+  unchanged ([step 17](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)).
+- **VRAM.** 86–186 MiB lower than the split for Qwen3.6, within 10 MiB for Gemma and Flint. Groot and LFM2.5
+  got a smaller cache than their split's VRAM, because their splits left the desktop only ~360 and ~110 MiB.
+- **Prompt speed.** A ~6K-token prompt read 5–6% slower with the cache on each model's first, cold run (10–15%
+  for Groot and LFM2.5), and within 5% of the split on the second.
+- **Long answers.** Over a 2,500-token answer the cache held 33–37 tok/s on Qwen3.6, while `NCMOE=32` sank to
+  18–21 tok/s as the CPU package hit 100 °C (83 °C with the cache).
+- **Least sure:** Flint, whose second baseline came in at 24.2 and 17.4 tok/s.
+
+### How big a cache
+
+- **Qwen3.6, Gemma, Flint and Ornith:** the size matches the expert bytes `--n-cpu-moe` puts on the GPU
+  (Qwen3.6's 2900 is a little under its 3070).
+- **Groot, LFM2.5 and the distill (2770):** sized to leave the desktop room instead
+  ([bench/moe-cache](../bench/moe-cache/README.md)).
+- **Gemma at pibench's 64K:** the matching 4084 MiB ran out of memory at load (and so did `NCMOE=20` itself
+  that day, with the desktop using ~0.7 GB), so it gets 3500, peaking at 7.5 GB after a 34K-token prompt.
+- **A busy desktop:** `MOE_CACHE=auto` shrinks the cache when the desktop uses more VRAM than at measurement
+  time. Next to a ~1.7 GB daytime desktop that costs 9–13% of decode speed, and Qwen3.6's smaller cache is
+  still 62% faster than static offload at the same VRAM.
+
+The method, scripts and raw logs are in [`bench/moe-cache/`](../bench/moe-cache/README.md).
+
+### In real agent sessions too
+
+A full [pibench](pibench.md) batch with `MOE_CACHE=auto` (2026-11-04, 18 attempts per model, same 64K/128K
+contexts as the scored batch) against the scored batch from 2026-10-23. Decode and prefill come from pi's own
+record of every model call (tokens and duration), fitted as `time = input/prefill + output/decode + overhead`:
 
 | Model | Solved (before → cache) | Decode tok/s | Prefill tok/s | Model time, all 18 runs | Median run |
 |---|---|---|---|---|---|
@@ -334,15 +351,17 @@ Decode and prefill come from pi's own record of every model call (tokens and dur
 | Gemma 4 26B (3500 MiB) | 18/18 → 17/18 | 25.6 → **32.3** (+26%) | 327 → 322 | 92.7 → 75.3 min | 4.8 → 4.5 min |
 | Flint | 18/18 → 18/18 | 21.5 → **26.4** (+23%) | 426 → 354 (−17%) | 87.7 → 79.0 min | 4.3 → 3.6 min |
 
-Scores held: Gemma's one miss passed 5 of 6 hidden tests, and Qwen3.6's one fewer failure is within its
-run-to-run spread. The two batches ran on different builds two weeks apart, but the decode gains agree with
-the same-build A/B above. After a single 30K-token prompt the cache still wins, by less: Qwen3.6 28.5 vs
-22.1 tok/s (+29%), Flint 21.6 vs 19.5 (+11%), over 600-token answers
-([the long-prompt test](../bench/moe-cache/README.md#after-a-long-prompt-600-tokens-and-a-warm-up-that-didnt-help-longctx-2026-11-05)).
-Flint's prefill is the cost: batches over 32 tokens
-bypass the cache and copy the used experts of all 47 MoE layers, where `NCMOE=42` keeps 7 of them on the
-GPU. Shrinking that would take a different change (prefill on the CPU for some layers, or a bigger batch so
-each copy serves more tokens), not a warmer cache. Numbers: [`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt),
+- **Scores held.** Gemma's one miss passed 5 of 6 hidden tests, and Qwen3.6's one fewer failure is within its
+  run-to-run spread. The two batches ran on different builds two weeks apart, but the decode gains agree with
+  the same-build A/B above.
+- **After a long prompt** the cache still wins, by less. After a single 30K-token prompt, over 600-token
+  answers: Qwen3.6 28.5 vs 22.1 tok/s (+29%), Flint 21.6 vs 19.5 (+11%)
+  ([the long-prompt test](../bench/moe-cache/README.md#after-a-long-prompt-600-tokens-and-a-warm-up-that-didnt-help-longctx-2026-11-05)).
+- **Flint's prefill is the cost.** Batches over 32 tokens bypass the cache and copy the used experts of all 47
+  MoE layers, where `NCMOE=42` keeps 7 of them on the GPU. Shrinking that would take a different change
+  (prefill on the CPU for some layers, or a bigger batch so each copy serves more tokens), not a warmer cache.
+
+Numbers: [`pibench-speed.txt`](../bench/moe-cache/logs/pibench-speed.txt),
 [`stats-moecache.txt`](../bench/results/stats-moecache.txt).
 
 The idea comes from [FreeToken](https://github.com/FlashML-org/FreeToken) (read, not run: it executes
