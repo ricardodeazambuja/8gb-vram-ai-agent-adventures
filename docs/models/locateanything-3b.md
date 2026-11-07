@@ -60,7 +60,7 @@ of VRAM. Clicks, picks and real pages: [visual control](../visual-control.md#loc
 
 The projector declares `clip.projector_type = locateanything`, which upstream llama.cpp didn't know (2026-10-29).
 Support is in the open upstream PR [#24749](https://github.com/ggml-org/llama.cpp/pull/24749); we reviewed it and
-applied it to our fork (2026-10-30). The GGUF port came from another fork, so whether its Q/K order was right for
+applied it in a worktree (2026-10-30), then carried it into our fork. The GGUF port came from another fork, so whether its Q/K order was right for
 the PR could only be settled by a test: the first one (2026-10-30) found 15/15 shapes at mean IoU 0.94, so it was.
 Clicks, picks and real pages followed the same day ([visual control](../visual-control.md#locateanything-3b-boxes-instead-of-tool-calls)).
 

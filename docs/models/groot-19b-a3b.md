@@ -87,11 +87,13 @@ RTX 2070 Max-Q (8 GB), 32 GB RAM, q8_0 KV, flash attention on, sampling from the
 | `NCMOE=25`, batch 2048 | 7.7 GB | 39.5 tok/s | 887 tok/s | ✓ |
 | `NCMOE=26`, batch 2048 | 7.4 GB | 40.2 tok/s | 888 tok/s | ✓ |
 | `NCMOE=27`, batch 2048 (`--static`; the default until 2026-11-07) | 7.2 GB | 39.2 tok/s | 871 tok/s | ✓ |
-| **`MOE_CACHE=auto` (2821 MiB), batch 2048 (default)** | **6.7 GB** | **47.4 tok/s** | same within noise | |
+| **`MOE_CACHE=auto` (2821 MiB), batch 2048 (default)** | **6.7 GB** of its own (`NCMOE=27`: 7.0 in the same run) | **47.4 tok/s** | within 5% on a second run (10–15% slower on the first) | |
 
 The fastest generation of any big model here with the static split (Qwen3.6 23, the distill 26, Flint 24 tok/s),
 and very fast prompt reading (LFM2.5 reached about 940). With the expert cache on every model, as `scripts/llm` runs
-them, it's second only to the distill (49.0): Groot 47.4, LFM2.5 43.5, Ornith 40.4, Qwen3.6 39.4 tok/s.
+them, it's about as fast as the distill: Groot 47.4 and the distill 49.0, then LFM2.5 43.5, Ornith 40.4 and Qwen3.6
+39.4 tok/s ([§12](../how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes), [step 16](../../bench/moe-cache/README.md), [step 17](../../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)). Single runs vary by
+about ±13%: Ornith did 44.5 in step 16, and through `scripts/llm` the recheck had Groot 48.1 and the distill 44.5.
 
 **Expert cache: the launcher default since 2026-11-07.** `NCMOE=27` peaks at ~7.03 GB of its own, which leaves
 the desktop only ~360 MiB by the [VRAM rule](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)

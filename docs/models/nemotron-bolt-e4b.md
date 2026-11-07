@@ -74,7 +74,7 @@ Notice what's missing: no coding benchmarks at all. That's a hint about what it'
 | Tool calls | work |
 | Code check | answered without a code block, so there was nothing to run |
 
-**[pibench](../pibench.md): 7/18** ([every attempt](../../bench/results/summary.md)), ahead of only Qwen3-VL, LFM3-VL and VibeThinker 3B. Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
+**[pibench](../pibench.md): 7/18** ([every attempt](../../bench/results/summary.md)), ahead of only Qwen3-VL, LFM3-VL, VibeThinker 3B and the two retired Gemma 12B fine-tunes. Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
 books 0/3, JS page 2/3. Median 2.0 minutes per attempt (the quickest), one timeout.
 
 ## How it compares

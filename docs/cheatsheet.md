@@ -40,7 +40,7 @@ an MoE model without the expert cache.
 <!-- llm-list:start (generated: python3 utils/check_docs.py --fix) -->
 | Model | Job | Command | What it is |
 |---|---|---|---|
-| [Groot-19B-A3B](models/groot-19b-a3b.md) | agent | `scripts/llm groot` | the everyday coding agent, fastest of the big ones (pibench 18/18) |
+| [Groot-19B-A3B](models/groot-19b-a3b.md) | agent | `scripts/llm groot` | the everyday coding agent, among the fastest big ones (pibench 18/18) |
 | [Flint 40B MoE](models/flint.md) | agent | `scripts/llm flint` | the careful coder (18/18) |
 | [Gemma 4 26B-A4B](models/gemma4-26b-a4b.md) | agent | `scripts/llm gemma` | agent that also sees (18/18, vision 100%) |
 | [Qwen3.6-35B-A3B](models/qwen3.6-35b-a3b.md) | agent | `scripts/llm qwen36` | our yardstick, agent + vision (16/18, vision 100%) |

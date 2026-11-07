@@ -39,10 +39,11 @@ images with known answers: OCR, bounding boxes, charts, counting, engineering dr
 we haven't run it (yet). The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md). The name under each model starts it: `scripts/llm <name>`
 ([below](#using-the-models)). MoE = mixture of experts: only a few billion of the weights work on each token, and
-the rest (the experts) can wait in RAM. **Speed** is what `scripts/llm` gives next to a quiet desktop. For Qwen3.6,
+the rest (the experts) can wait in RAM. **Speed** is at `scripts/llm`'s settings next to a quiet desktop. For Qwen3.6,
 the Qwen3.8 distill, Flint, Ornith, Groot, LFM2.5 and Gemma that's our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes),
 which keeps the busiest experts on the GPU; in brackets, the older static split (`NCMOE` = how many layers'
-experts sit in RAM; `scripts/llm <name> --static`). Next to a busy desktop the cache gives about 10% less.
+experts sit in RAM; `scripts/llm <name> --static`), from earlier runs. The two come from different runs; the gain at
+the same VRAM is 19–58%, and about 10% less next to a busy desktop ([scoreboard](docs/scoreboard.md) footnote ¹).
 
 ## The helpers
 

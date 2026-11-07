@@ -41,11 +41,11 @@ scripts/llm twil serve                    # the server only
 
 (The building block: `QMODEL=twil bash scripts/run-qwen.sh`; its knobs still apply. Until its pibench run,
 `scripts/llm twil` served it without pi: per [security.md](../security.md) a new model's first shell access is in
-pibench's sandbox. There it only reached the task sites.)
+pibench's sandbox. Its tool calls there named only the task sites.)
 
 **Memory.** The KV cache costs 160 KiB a token in f16, 85 in q8_0 and 45 in q4_0 (40 layers x 8 KV heads x
 128). Measured 2026-11-07 next to a 432 MiB night desktop: 24K at q4_0 uses 6.6 GB of VRAM in all, at load; 32K
-used 7.0 GB (one reading mid-run, not a measured peak). So 24K is safe next to a desktop of up to ~0.7 GB (the estimate from the KV maths;
+used ~7.0 GB (one `nvidia-smi` reading mid-run, not saved to a file, not a peak). So 24K is safe next to a desktop of up to ~0.7 GB (the estimate from the KV maths;
 the load figure alone would allow ~1.1 GB by the VRAM rule, before the cache fills), and q8_0 at 32K
 (2.7 GB of cache) doesn't fit. With a daytime desktop (~1.8 GB with Chrome open) it doesn't fit on the GPU at all.
 
@@ -67,19 +67,21 @@ feature 3/3, login 0/3, books 0/3, JS quotes 1/3.
 
 - **It keeps running out of room.** 14 of 18 attempts ended because the conversation filled the 24K window
   (22.6K tokens at most); six of those had already passed every test. It thinks a lot, 26K characters a job,
-  and the web pages it fetched with `curl` (50–100K characters a job on the two failing web chores) share the
+  and the web pages it fetched with `curl` (22–48K characters of tool output a job on the two failing web chores, counted from the transcripts) share the
   same room. It never wrote the books scraper at all.
 - **Tools work without tool-use training.** 237 calls (194 of them `bash`). The 35 that failed were the
-  commands' own errors (shell quoting, Python tracebacks), `edit`s whose old text didn't match, and four cut off
+  commands' own errors (shell quoting, Python tracebacks), `edit`s whose old text didn't match, and two cut off
   when the context ran out. Twice it wrote a call inside its thinking, where pi can't see it, and that attempt
   ended there.
 - **The bug fix:** twice it fixed the reported bugs but not the hidden case (22/27): once it declared itself done,
   once the context ran out first.
-- In the sandbox it only reached the task sites (`quotes.toscrape.com`, `books.toscrape.com`, `goodreads.com`).
+- The only hosts in its tool calls were the task sites (`quotes.toscrape.com`, `books.toscrape.com`, `goodreads.com`),
+  by a scan of the transcripts (`bench/results/raw/`, kept on this disk, not committed); the sandbox's firewall
+  blocks everything else anyway.
 
-**More context doesn't help.** One repeat at 32K the same night (`CTX=32768`, 7.0 GB of VRAM in use with the
+**More context doesn't help.** One repeat at 32K the same night (`CTX=32768`, ~7.0 GB of VRAM in use with the
 desktop): 3/6 solved (bug fix ✗, word count ✓, feature ✓, login ✓, books ✗ at the 20-minute timeout, JS quotes ✗),
-the same rate as at 24K, and twice as slow per job (median 16.7 min). With the extra room it thinks longer (43K
+about the same rate as at 24K (50% against 44%, from only six attempts), and twice as slow per job (median 16.7 min). With the extra room it thinks longer (43K
 characters a job instead of 26K, peak context 28.7K tokens) and still ran out in two attempts
 ([stats](../../bench/results/stats-twil-32k.txt)). The launcher stays at 24K.
 

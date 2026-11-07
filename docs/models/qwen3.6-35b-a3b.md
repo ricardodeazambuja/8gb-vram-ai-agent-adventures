@@ -91,8 +91,8 @@ both columns:
 
 Caveats, because there are always caveats: these are Qwen's numbers, run with Qwen's agent
 scaffold at 200K context, on the full-precision model. On Terminal-Bench 2.1, other vendors
-put it at 43 ([NVIDIA's table](nemotron-bolt-74b.md#official-numbers)) and 44.9 ([Recursive's chart](flint.md#official-numbers)). And Gemma 4 26B scores 57.4 on
-SWE-bench Verified in NVIDIA's table, so harnesses matter a lot.
+put it at 43 ([NVIDIA's Dory table](dory1.0-4b.md#official-numbers); 44.38 in [its Bolt table](nemotron-bolt-74b.md#official-numbers)) and 44.9 ([Recursive's chart](flint.md#official-numbers)). And Gemma 4 26B scores 57.4 on
+SWE-bench Verified in that same Dory table, so harnesses matter a lot.
 
 ## Our numbers
 

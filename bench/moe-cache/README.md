@@ -336,8 +336,8 @@ too.
 The peak VRAM in these runs also says how much desktop the launchers' `MOE_CACHE=auto` sizes leave room for,
 by the rule above (7687 − 300 − the server's own peak): Qwen3.6 at 2900 MiB peaked at 6973–7005 MiB of its own,
 which leaves ~380 MiB; Flint at 2168, ~6883, ~500; Qwen3.8 at 2900 (batch 2048), ~6833, ~550, hence its 2770.
-The cache sizes match the VRAM of each model's `NCMOE` default (except Groot and LFM2.5, sized for the desktop in
-step 17), and those defaults are as tight (Qwen3.6's
+The cache sizes match the VRAM of each model's `NCMOE` default (except the distill's 2770, above, and Groot and LFM2.5,
+sized for the desktop in step 17), and those defaults are as tight (Qwen3.6's
 `NCMOE=32` ended the long-prompt test at 7335 MiB with 331 already in use, ~7000 of its own). With a busier
 desktop, give a smaller `MOE_CACHE` in MiB, or a larger `NCMOE`.
 

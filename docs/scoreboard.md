@@ -34,14 +34,18 @@ Two health warnings before the numbers:
 | [TwIL-8B](models/twil-8b.md) | dense 8B | Q4_K_M (verbose), 5.35 GB | 24K | 38.0 tok/s | same | 644 tok/s | 8/18 | text only | `scripts/llm twil` |
 
 ¹ Processing a ~14–17K-token prompt, which is what a coding agent's first turn costs. "—" = not
-measured the same way. "Speed, static split" has the experts split by layer (`NCMOE`, what `--static` gives);
-"With `scripts/llm`" is what the launcher runs: for Qwen3.6, the distill, Flint, Ornith, Groot, LFM2.5 and Gemma
-that's the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes), 19–58%
-faster at the same VRAM or less next to a quiet desktop and about 10% less than that next to a busy one (9–13%);
-"same" means no cache, so nothing changes. The distill's two columns aren't at the same VRAM; matched
-(`NCMOE=31` against a 3661 MiB cache) it's 39.3 against 52.7 tok/s, +34%.
-² 27 tok/s at 128K with a q8_0 KV cache ([how it fits](how-it-fits.md)): the smaller cache frees VRAM for more
-experts on the GPU, so more context comes out faster here.
+measured the same way. "Speed, static split" has the experts split by layer (`NCMOE`, what `--static` gives), from
+each model page's own runs. "With `scripts/llm`" is the launcher's [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
+at the size it picks, next to a quiet desktop: how-it-fits §12's A/B for Qwen3.6, Gemma, Flint and Ornith,
+[step 16](../bench/moe-cache/README.md#two-experiments-in-the-fork-experimental) for the distill, [step 17](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)
+for Groot and LFM2.5. "same" means no cache, so nothing changes. **The two columns come from different runs, so
+don't divide one by the other:** the gain at matched VRAM is §12's paired A/B, 19–58% (the distill +34%, `NCMOE=31`
+against a 3661 MiB cache), and about 10% less than that next to a busy desktop (9–13%). Repeat runs wander: Ornith did
+44.5 in step 16, and one pass through `scripts/llm` in the [recheck](../bench/recheck/README.md#through-scriptsllm-2026-11-07)
+gave Qwen3.6 32.0 and Gemma 34.8.
+² 27 tok/s at 128K with a q8_0 KV cache and the same `NCMOE=22` split ([how it fits §4](how-it-fits.md#4-quantize-the-kv-cache-too-usually):
+with an f16 cache 128K only fits at `NCMOE=27`, 19.5 tok/s). It comes from a different run than the 32K figure, so
+the two aren't a like-for-like comparison.
 ³ With `CTX=131072 LOOP_KV=last_loop`: 30.1 tok/s.
 
 **pibench** = our six-chore agentic benchmark, solved attempts out of 18
@@ -168,7 +172,7 @@ whether it *reads* what it looked at. The full story, with examples, is in
 
 | If you want… | Pick | Why |
 |---|---|---|
-| **An everyday coding agent** | [**Groot-19B-A3B**](models/groot-19b-a3b.md) | 18/18 on pibench, among the fastest big models (47.4 tok/s with `scripts/llm`'s expert cache, 887 tok/s prompts), 128K, 3.1 min median per job. `scripts/llm groot` |
+| **An everyday coding agent** | [**Groot-19B-A3B**](models/groot-19b-a3b.md) | 18/18 on pibench, among the fastest big models (47.4 tok/s with `scripts/llm`'s expert cache; prompts 887 tok/s with the static split, 773 through the launcher in the [recheck](../bench/recheck/README.md#through-scriptsllm-2026-11-07)), 128K, 3.1 min median per job. `scripts/llm groot` |
 | Long agent sessions (128K) | [**Flint**](models/flint.md) | 18/18 on pibench, the best published agentic scores here, 128K, prompts 2.5× faster than Qwen3.6. Can't see images. |
 | A dependable all-rounder that sees | [**Gemma 4 26B-A4B**](models/gemma4-26b-a4b.md) | 18/18 on pibench and 100% on the vision probe. Slower per job than the Qwens. |
 | Quick turns | [**Qwen3.8 distill**](models/qwen3.8-35b-a3b-distill.md) | One of the quickest big models per job (2.5 min median; Ornith 2.2), 16/18, 128K; with `scripts/llm`'s expert cache it decodes about as fast as Groot (49.0 and 47.4 tok/s, ±13% run to run). Double-check its scraped data. |

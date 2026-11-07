@@ -202,7 +202,7 @@ in git history at `2764962`). The per-model numbers in the write-up: `python3 be
 | Not committed | Size | Why it's OK |
 |---|---|---|
 | Model weights, adapters, pictures | 284 GB (`du -sh models`, 2026-11-06) | Downloads are pinned, and the commands above rebuild the rest |
-| Raw pibench transcripts in `bench/results/` (`raw/` 890 MB, plus `raw-moecache/`, `raw-bonsai2-32k/`, `raw-twil-32k/`, `agent-doom/`, `steering-doom/`, `temp07-doom/`, `raw-gemma-probe/`) | 1.2 GB in all (2026-11-06) | Scores and per-run stats are committed. Later analysis of the raw text, like a new replay, needs a new run |
+| Raw pibench transcripts in `bench/results/` (`raw/` 945 MB, plus `raw-moecache/`, `raw-bonsai2-32k/`, `raw-twil-32k/`, `agent-doom/`, `steering-doom/`, `temp07-doom/`, `raw-gemma-probe/`) | 1.2 GB in all (2026-11-07) | Scores and per-run stats are committed. Later analysis of the raw text, like a new replay, needs a new run |
 | The server logs in `loop/logs/` | small | The beyond-vision ones were copied to `bench/beyond-vision/results/logs/`; the others weren't |
 
 ## Known gaps

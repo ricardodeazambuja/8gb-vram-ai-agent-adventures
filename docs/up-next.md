@@ -214,10 +214,12 @@ gradient-trained norm-only adapter.
 ### 🪢 Harness adapters: a LoRA per model and agent harness ([blog post](https://huggingface.co/blog/harness-hub/harness-adapters), 2026-11-06)
 
 Hugging Face trains one small LoRA per model and harness with reinforcement learning (GRPO), inside the
-unmodified harness: pi, hermes, claude-code. Their models are three of ours: LFM2.5-24B-A2B, LFM3-1.7B and TwIL-8B.
-The reward is the task's verifier plus a small bonus for fewer tool calls, and a proxy,
+unmodified harness: the published LFM2.5 adapters are for pi, hermes and claude-code; the runs in progress for
+pi, opencode and hermes. Their models are three of ours: LFM2.5-24B-A2B, LFM3-1.7B and TwIL-8B.
+The reward is the task's verifier (the runs in progress add a small bonus for fewer tool calls; the published pi
+adapter's card lists the verifier alone), and a proxy,
 [safeagents](https://github.com/huggingface/safeagents), blocks reward-hacking calls (an undeclared tool, a host that
-appears nowhere in the conversation). The post is a preview: only LFM2.5's adapters are out
+appears nowhere in the conversation). The final runs were still training when it was posted; only LFM2.5's adapters are out
 ([collection](https://huggingface.co/collections/harness-hub/lfm25-24b-harness-adapters)). The pi one's card
 ([harness-hub/LFM2.5-24B-A2B-pi](https://huggingface.co/harness-hub/LFM2.5-24B-A2B-pi)) reports, on 100 of their
 data-analysis tasks: pass@1 −4.2 points (within their ±5 noise) and **39% fewer tool calls** on the tasks both solve.
@@ -229,10 +231,11 @@ What to take from it, in order:
 1. **The pi adapter on LFM2.5 in pibench.** An independent check of their claim on our chores. Baseline: 10/18, a median of
    15 tool calls a job (13.3 on average on the solved ones; [results](../bench/results/results.csv)). Open question: it was trained on the BF16 weights and we run Liquid's QAD `Q4_0`; the card
    says lower-precision bases drift from what it learned, and its suggested `Q8_0` (~25 GB) is too big for 32 GB of
-   RAM next to a desktop. Its two clean zeros (a bug fix stopped early, the books site read as Latin-1) are habits, not
+   RAM next to a desktop. Its two clean zeros ([a bug fix stopped early, the books site read as
+   Latin-1](models/lfm2.5-24b-a2b.md)) are habits, not
    wasted calls, so expect fewer calls rather than more solves. Before it runs: pin and audit the GGUF, and diff the
    `chat_template.jinja` the adapter repo ships against Liquid's. Then a `scripts/llm lfm25` option for the LoRA, and
-   a night run (~2.5 h) into its own `RAW=` folder.
+   a night run (~2 h: its 18 attempts took 1.8 h last time) into its own `RAW=` folder.
 2. **Tool calls compared their way:** on the attempts both versions solved, side by side, in `bench/batch_stats.py`.
 3. **safeagents' host rule as a pibench check:** list the hosts every attempt reached and flag any that aren't the
    task's sites. Done by hand for TwIL on 2026-11-07 (only the task sites); `batch_stats.py` could do it for every run.

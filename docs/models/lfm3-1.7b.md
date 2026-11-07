@@ -7,7 +7,7 @@
 > | On disk | 1.85 GB (`Q8_0`) |
 > | Where it lives | entirely on the GPU, 128K context (3.7 GB VRAM) |
 > | Context | **128K** here (the model does 256K) |
-> | Generation | **106 tok/s**, the fastest agent model here (only VibeThinker 1.5B, a one-shot solver, is as fast) |
+> | Generation | **106 tok/s**, the fastest agent model here, with LFM3-VL-2B (VibeThinker 1.5B, a one-shot solver, is a little faster: 108) |
 > | Prompt processing | **4,800 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, but needs **5.9K–6.9K tokens** (fails at the usual 6K cap) |
 > | [pibench](../pibench.md) | **12/18 solved** (88% of hidden tests), 2.2 min median per run |
@@ -65,7 +65,7 @@ prompt is read in about 3 seconds.
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): at the usual
 6,000-token cap, **no answer, twice**: both runs were still reasoning when the cap hit. With
 `--max-tokens 32768` it was **correct twice**, own doctests pass, 0/500 wrong, in **5,872 and
-6,913 tokens**, among the most here (TwIL 7.1K, Qwen3.6 3.6K, Ornith 1.4–1.8K). At 105 tok/s that is
+6,913 tokens**, among the most here (TwIL 7.1K; Dory and Spark used more in the [2026-11-07 recheck](../../bench/recheck/results/2026-11-07-llm/); Qwen3.6 3.6K, Ornith 1.4–1.8K). At 105 tok/s that is
 still about a minute.
 
 **[pibench](../pibench.md): 12/18 solved** ([every attempt](../../bench/results/summary.md)), 88% of hidden tests, median **2.2 min** per run. That

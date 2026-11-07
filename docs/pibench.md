@@ -82,7 +82,7 @@ forever. ⁴ 14 of 18 attempts hit the 20-minute timeout, every one in a loop of
 both Gemma 12B fine-tunes and VibeThinker 3B ran on 2026-11-02, on our fork after the PrismML merge (`7ff495f`), same
 harness, 90 more attempts. VibeThinker went through its [tool-call proxy](models/vibethinker.md). ⁶ The same day,
 same fork: Bonsai with the q8_0 KV cache that lets it [fit 32K](../bench/bonsai-ctx/README.md); the 16K row ran on
-PrismML's own build. ⁷ Both had already passed every test. ⁸ 2026-11-07, same fork (`69ca796`), same harness, 18 more
+PrismML's own build. ⁷ Both had already passed every test. ⁸ 2026-11-07, our fork's `moe-cache-max-batch` build (functionally `69ca796`), same harness, 18 more
 attempts, at its launcher's 24K with a q4_0 KV cache; one repeat at 32K solved 3/6, twice as slow
 ([its page](models/twil-8b.md#our-numbers)). ⁹ Six of them had already passed every test.
 
