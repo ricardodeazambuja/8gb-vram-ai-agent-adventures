@@ -1,4 +1,4 @@
-# 👀 Qwen3-VL-8B-Instruct — the one that reads your screenshots in six seconds
+# 👀 Qwen3-VL-8B-Instruct — the one that reads your screenshots in five seconds
 
 > **TL;DR**
 >

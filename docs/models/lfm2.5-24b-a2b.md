@@ -5,7 +5,7 @@
 > | | |
 > |---|---|
 > | On disk | 13.6 GB (`Q4_0`, quantization-aware distilled) |
-> | Where it lives | every expert in RAM, a 3.7 GB cache of the busy ones on the GPU (6.8 GB VRAM; `--static`: experts of 25 of 38 MoE layers in RAM, 7.3 GB) |
+> | Where it lives | every expert in RAM, a 3.7 GB cache of the busy ones on the GPU (6.8 GB of VRAM of its own at its peak; `--static`: experts of 25 of 38 MoE layers in RAM, 7.3 GB) |
 > | Context | **128K** |
 > | Generation | **39–44 tok/s** with the expert cache (31–34 with `--static`) |
 > | Prompt processing | **~940 tok/s** (15K-token prompt) |
@@ -96,7 +96,7 @@ top-k 50, repeat-penalty 1.05, no top-p). `scripts/qwen-bench.py`, single runs.
 | Config | VRAM | Generation | Prompt (15K tokens) | Tool call |
 |---|---:|---:|---:|---|
 | `NCMOE=28`, batch 2048 | 7.3 GB | 30.2 tok/s | 922 tok/s | ✓ |
-| **`NCMOE=27`, batch 2048 (default)** | **7.6 GB** | **31.2–31.9 tok/s** | **939–945 tok/s** | ✓ |
+| `NCMOE=27`, batch 2048 (`--static`; the default until 2026-11-07) | 7.6 GB | 31.2–31.9 tok/s | 939–945 tok/s | ✓ |
 | `NCMOE=26`, batch 2048 | — | — | — | **out of memory at load** |
 | `NCMOE=26`, batch 512 | 7.5 GB | 32.4 tok/s | 325 tok/s | |
 | `NCMOE=25`, batch 512 | — | — | — | **out of memory at load** |
@@ -116,8 +116,7 @@ desktop; `scripts/llm lfm25 --static` gives the old split. The VRAM-matched 4212
 own doctests pass, 0/500 wrong, in **3,290 and 3,071 tokens**: as wordy as Qwen3.6 (3,558).
 
 **[pibench](../pibench.md): 10/18 solved**, 86% of hidden tests, median 4.2 min per run, 6.7K
-output tokens. Perfect on the feature, the JavaScript page and (2 of 3) the CLI and the login,
-and two clean zeros, each the same mistake three times (below). Run with a concurrent llama.cpp build
+output tokens. Feature and JavaScript page 3/3, CLI and login 2/3, bug fix and books 0/3: two clean zeros, each the same mistake three times (below). Run with the static split (`NCMOE=27`), with a concurrent llama.cpp build
 and downloads on the same laptop, so the times may be a little high.
 
 ## How it behaves
@@ -148,7 +147,8 @@ what comes out.
 - It always thinks. A request with a small `max_tokens` can end inside the reasoning with an
   empty answer.
 - The temp 0.1 default is the card's; Liquid ran most of its own benchmarks at 0.6.
-- `NCMOE=27` leaves ~0.6 GB of VRAM; if your desktop uses more, go to 28.
+- With `--static`, `NCMOE=27` leaves the desktop only ~110 MiB; go to 28 if yours uses more. The default expert cache
+  leaves ~600 MiB and shrinks itself for a busier desktop.
 - The license is Liquid's own (LFM Open License v1.0): Apache-like, but commercial use is only
   licensed for organizations under $10M annual revenue.
 
@@ -158,7 +158,8 @@ Env vars for `scripts/llm lfm25` / `scripts/run-qwen.sh` with `QMODEL=lfm25`.
 
 | Knob | Default | What it does |
 |---|---|---|
-| `NCMOE` | 27 | layers (dense ones included) whose experts stay in RAM; 26 needs batch 512 |
+| `NCMOE` | 27 | with `--static`: layers (dense ones included) whose experts stay in RAM; 26 needs batch 512 |
+| `MOE_CACHE` | auto in `scripts/llm` (off with `--static` or in `run-qwen.sh` alone) | VRAM cache of the experts instead of `NCMOE`'s fixed layers |
 | `BATCH` / `UBATCH` | 2048 / 2048 | 512 gives +1 tok/s but a third of the prompt speed |
 | `CTX` | 131072 | context window |
 | `KVQUANT` | q8_0 | KV cache type |

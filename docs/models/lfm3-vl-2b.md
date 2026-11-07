@@ -20,7 +20,7 @@
 The vision member of **Liquid AI**'s LFM3 family (Oct 2026, LFM Open License v1.0: commercial use
 only under $10M revenue). [LFM3-1.7B](lfm3-1.7b.md)'s tri-hybrid text model plus an image encoder;
 it thinks before answering and is trained for object grounding (boxes). Video input exists in the
-model but isn't in llama.cpp yet. The card is clear about its scope: on-device visual tasks, and
+model but isn't in llama.cpp yet. The [card](https://huggingface.co/LiquidAI/LFM3-VL-2B) is clear about its scope: on-device visual tasks, and
 "not recommended for coding, multi-turn conversations, or complex reasoning" (its one agentic
 benchmark, MM-ToolSandbox, scores 42.5).
 

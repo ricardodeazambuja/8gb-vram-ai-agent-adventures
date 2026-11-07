@@ -7,7 +7,7 @@
 > | On disk | 1.85 GB (`Q8_0`) |
 > | Where it lives | entirely on the GPU, 128K context (3.7 GB VRAM) |
 > | Context | **128K** here (the model does 256K) |
-> | Generation | **106 tok/s**, the fastest model here |
+> | Generation | **106 tok/s**, the fastest agent model here (only VibeThinker 1.5B, a one-shot solver, is as fast) |
 > | Prompt processing | **4,800 tok/s** (15K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, but needs **5.9K–6.9K tokens** (fails at the usual 6K cap) |
 > | [pibench](../pibench.md) | **12/18 solved** (88% of hidden tests), 2.2 min median per run |
@@ -20,7 +20,7 @@ The first text model of **Liquid AI**'s LFM3 family (Oct 2026, LFM Open License 
 licence as [LFM2.5](lfm2.5-24b-a2b.md): commercial use only under $10M revenue). A new
 "tri-hybrid" architecture: 24 layers, 13 gated short convolutions, 5 sliding-window attention and
 6 global attention, 256K context. Like LFM2.5 it was post-trained inside agent harnesses,
-**pi among them**, and it always thinks first. The card claims it beats Qwen3.5 9B on average
+**pi among them**, and it always thinks first. The [card](https://huggingface.co/LiquidAI/LFM3-1.7B) claims it beats Qwen3.5 9B on average
 (49.4 vs 47.2), with SWE-bench Verified 43.4.
 
 ## How does it fit in 8 GB?
@@ -65,7 +65,7 @@ prompt is read in about 3 seconds.
 **Code check** (`merge_intervals` vs 500 random inputs, run with `--sandbox`): at the usual
 6,000-token cap, **no answer, twice**: both runs were still reasoning when the cap hit. With
 `--max-tokens 32768` it was **correct twice**, own doctests pass, 0/500 wrong, in **5,872 and
-6,913 tokens**, the most of any model here (Qwen3.6 3.6K, Ornith 1.4–1.8K). At 105 tok/s that is
+6,913 tokens**, among the most here (TwIL 7.1K, Qwen3.6 3.6K, Ornith 1.4–1.8K). At 105 tok/s that is
 still about a minute.
 
 **[pibench](../pibench.md): 12/18 solved**, 88% of hidden tests, median **2.2 min** per run. That

@@ -38,7 +38,9 @@ alone, in a sandbox, graded by hidden tests; solved attempts out of 18. **Vision
 images with known answers: OCR, bounding boxes, charts, counting, engineering drawings. "not run" means
 we haven't run it (yet). The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md). The name under each model starts it: `scripts/llm <name>`
-([below](#using-the-models)). Speeds are with the experts split by layer (`NCMOE`); for Qwen3.6, the
+([below](#using-the-models)). MoE = mixture of experts: only a few billion of the weights work on each token, and
+the rest (the experts) can wait in RAM. Speeds are with the experts split by layer (`NCMOE` = how many layers'
+experts sit in RAM); for Qwen3.6, the
 Qwen3.8 distill, Flint, Ornith, Groot, LFM2.5 and Gemma, `scripts/llm` uses our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
 instead: 19–58% faster decode at the same VRAM or less next to a quiet desktop (Qwen3.6 24.9 → 39.4 tok/s; the
 distill +34%), about 10% less than that next to a busy one.
@@ -111,7 +113,7 @@ has them all.
 
 ## Things we learned the fun way
 
-- **A 74B model runs at 14 tokens/s on an 8 GB GPU** (and a 40B one at 24). NVIDIA's Nemotron Bolt is
+- **A 74B model runs at 14 tokens/s on an 8 GB GPU** (and a 40B one at 24–32). NVIDIA's Nemotron Bolt is
   trained for 2 bits, and its always-on layers fit on the GPU while 66B of experts sit in RAM.
 - **Mixture-of-experts models only use a few billion parameters per token**, so the bulky experts
   can live in system RAM while the GPU does the busy work. [How it fits](docs/how-it-fits.md).

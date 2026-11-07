@@ -74,7 +74,7 @@ Notice what's missing: no coding benchmarks at all. That's a hint about what it'
 | Tool calls | work |
 | Code check | answered without a code block, so there was nothing to run |
 
-**[pibench](../pibench.md): 7/18,** ahead of only LFM3-VL. Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
+**[pibench](../pibench.md): 7/18,** ahead of only Qwen3-VL, LFM3-VL and VibeThinker 3B. Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
 books 0/3, JS page 2/3. Median 2.0 minutes per attempt (the quickest), one timeout.
 
 ## How it compares
@@ -85,7 +85,7 @@ the [scoreboard](../scoreboard.md)):
 | | **Bolt E4B** | Spark-X2.6-4B | Dory1.0-4B | Qwen3-VL-8B |
 |---|---:|---:|---:|---:|
 | Size | 8B (4B effective) | 4B | 4B, looped | 8B |
-| VRAM | **4.4 GB** | 7.6 GB | 5.7 GB | 7.4 GB |
+| VRAM | **4.4 GB** | 7.55 GB | 5.7 GB | 7.4 GB |
 | Context | 64K | **108K** | 64K | 16K |
 | Generation | **52 tok/s** | 48–50 tok/s | 29 tok/s | 38 tok/s |
 | Prompt speed | 1,531 tok/s | **1,450–1,620 tok/s** | 852 tok/s | 830–900 tok/s |

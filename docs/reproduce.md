@@ -18,7 +18,7 @@ python3 bench/check_numbers.py
 | Seeded requests to one server | replay | the same on this machine: a rerun from a clean clone matched at all 13 points, in all three arms |
 | Trained | adapters, and the glance scores that depend on them | close, not identical: GPU training isn't bit-exact |
 | Agent runs | pibench | the same range: the model, the sandbox and live sites all vary. Small gaps are noise |
-| Speed and VRAM | time per decision, GB | this laptop on that day; expect about ±5% here, and different numbers elsewhere |
+| Speed and VRAM | time per decision, GB | this laptop on that day; expect about ±13% here (the [recheck](../bench/recheck/README.md)'s run-to-run spread), and different numbers elsewhere |
 | Judged by eye | image likeness and style | the same pictures to look at, but the verdict is ours |
 
 ## Setup
@@ -212,7 +212,6 @@ covers only the beyond-vision, glance and steering numbers, and (since 2026-11-0
 
 | Result | What's missing |
 |---|---|
-| The fork speed rechecks | Scripts and raw output aren't committed |
 | Thinking stays in the prompt ("token counts prove it") | The script isn't committed, and it needs the raw transcripts |
 | Random-walk control, LoRA at scale 0, the green-cast figures | No script or result found |
 | Needle tests, and most of the [graveyard](graveyard.md) | No script or raw output |

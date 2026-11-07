@@ -24,7 +24,7 @@ HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8080}"
 
 command -v pi >/dev/null 2>&1 || {
-  echo "ERROR: 'pi' not found. Install with: npm i -g @mariozechner/pi-coding-agent"
+  echo "ERROR: 'pi' not found. Install with: npm i -g @earendil-works/pi-coding-agent"
   exit 1
 }
 

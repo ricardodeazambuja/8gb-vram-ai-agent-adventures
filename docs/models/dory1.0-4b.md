@@ -126,7 +126,7 @@ Flash attention and q8_0 change its predictions about 13× less than dropping on
 6K tokens: enough to rule out a broken setting, not a benchmark.
 
 **[pibench](../pibench.md): 14/18** (2026-11-02, our fork, `start_dory.sh` defaults: 2 loops, 64K). The same
-score as [Spark](spark-x2.6-4b.md), the other 4B, and as Bonsai 2 27B and Ornith 35B. It solved every bug fix,
+score as [Spark](spark-x2.6-4b.md), the other 4B, and as Bonsai 2 27B at 16K (16/18 at its default 32K) and Ornith 35B. It solved every bug fix,
 feature and login job, all three JavaScript scrapes and two of the three CLIs; it never solved the books
 scrape. There it fell for the site's traps: five stars for every book (twice), the undeclared character set
 (`Noahâ\x80\x99s`) and a curly apostrophe turned straight. It thinks a lot (31K characters a job), runs its

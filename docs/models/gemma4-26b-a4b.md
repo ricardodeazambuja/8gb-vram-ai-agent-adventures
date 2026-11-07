@@ -8,7 +8,7 @@
 > | Where it lives | attention + KV cache on the GPU, every expert in RAM with a 3267 MiB VRAM cache of the recently used ones (`scripts/llm`); `--static`: most experts in RAM, a few layers' on the GPU |
 > | Context | 32K by default; 64K for free; up to 128K with a quantized KV cache |
 > | Generation | **30.0 tok/s** with `scripts/llm` (CUDA, expert cache, 32K) · ~23.5 with `--static` · ~4.9 (Vulkan) · ~1.9 (CPU only) |
-> | Prompt processing | ~63 tok/s (llama-bench, CUDA) |
+> | Prompt processing | 290 tok/s on a long prompt with `scripts/llm` ([recheck](../../bench/recheck/README.md#through-scriptsllm-2026-11-07)); 63 in `llama-bench` at its default batch (not comparable) |
 > | [pibench](../pibench.md) | **18/18 solved** (100% of hidden tests), median 4.8 min per run |
 > | [Vision probe](../vision-probe.md) | **100%** overall (OCR, boxes, understanding, CAD), ~70 s per image |
 > | [Security audit](../security.md) | clean |

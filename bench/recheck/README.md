@@ -2,7 +2,7 @@
 
 `bash bench/recheck/run.sh` starts every chat model with the backend script under `scripts/llm` (`run-qwen.sh`, or
 `run-server.sh` for the Gemmas) at its defaults, which means the static `NCMOE` split for the MoEs, not the expert
-cache `scripts/llm` turns on for five of them. `LAUNCH=llm bash bench/recheck/run.sh` starts them through
+cache `scripts/llm` turns on for seven of them (five at the time of the 2026-11-07 run; Groot and LFM2.5 since). `LAUNCH=llm bash bench/recheck/run.sh` starts them through
 `scripts/llm` instead, the way you would ([2026-11-07](#through-scriptsllm-2026-11-07)). Then it runs
 `scripts/qwen-bench.py` (speed, a tool call, a long prompt) and `scripts/qwen-codecheck.py` (`merge_intervals`
 against 500 random inputs, 16,000-token budget, in a no-network container). `run.sh flint groot` runs just those.
@@ -118,8 +118,8 @@ change is within the ±13% noise. One sample each, so the per-model gains are ro
 Ornith 44.5 tok/s). Long prompts read at about the same speed, except the distill's, 2.7× faster: with the cache its launch also
 raises the batch from 512 to 2048 (`_moecache_batch` in `run-qwen.sh`).
 Twelve of the fourteen tool-capable code checks passed; LFM3-VL failed this time and passed on 2026-11-02 (one
-sample). Pi, VibeThinker: the one-shot skips them (TwIL hasn't been through pibench yet; VibeThinker's pi goes
-through its shim launcher), so only their servers were checked.
+sample). TwIL, VibeThinker: the one-shot skipped them (TwIL was server-only until its pibench run later that night, 8/18;
+VibeThinker's pi goes through its shim launcher), so only their servers were checked.
 
 Groot and LFM2.5 then got the cache too (sizes: [`bench/moe-cache`](../moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)).
 The same check through `scripts/llm` right after ([`results/2026-11-07-llm-groot-lfm25-cache/`](results/2026-11-07-llm-groot-lfm25-cache/)):

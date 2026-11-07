@@ -273,7 +273,7 @@ whole terminal vanishes, see [troubleshooting → Memory](troubleshooting.md#mem
 `--n-cpu-moe` (§1) puts *fixed* layers' experts on the GPU, whether or not the next token uses them. The
 GPU expert cache picks experts by use instead. Every expert lives in RAM (`--cpu-moe`), and llama.cpp keeps
 the recently used ones in a VRAM cache of a size you choose (`--moe-cache-mib`; upstream PRs
-[#29887](https://github.com/ggml-org/llama.cpp/pull/29887) and #30637, merged upstream).
+[#29887](https://github.com/ggml-org/llama.cpp/pull/29887) and [#30637](https://github.com/ggml-org/llama.cpp/pull/30637), merged upstream).
 Consecutive tokens reuse many of the same experts: with 20% of Qwen3.6's experts in the cache, 77%
 of lookups hit.
 
@@ -292,17 +292,18 @@ every miss, the cache gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of m
 | Groot-19B-A3B (128K) | 39.5 tok/s (`NCMOE=27`) | **47.4 tok/s** (2821 MiB, ~370 MiB *less* VRAM) | +20% |
 | LFM2.5-24B-A2B (128K) | 33.8 tok/s (`NCMOE=27`) | **43.5 tok/s** (3712 MiB, ~490 MiB *less* VRAM) | +29% |
 
-Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512, Flint and Ornith 2048). Each model ran
+Same flags otherwise (`-np 1`, flash attention, q8_0 KV; batch 512 for Qwen3.6 and Gemma, 2048 for the other four). Each model ran
 baseline, cache, then baseline again, two 400-token runs each. The table shows the first baseline; for Ornith,
 measured later, it shows the mean of both baselines; Groot and LFM2.5 (2026-11-07,
 [step 17](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07))
 got a smaller cache than their split's VRAM, because their splits left the desktop only ~360 and ~110 MiB. Prompt speed didn't change. VRAM
-in use was 86–186 MiB lower for Qwen3.6 and within 10 MiB for the other two. The cache also held up over a 2,500-token answer: 33–37
+in use was 86–186 MiB lower for Qwen3.6 and within 10 MiB for Gemma and Flint. The cache also held up over a 2,500-token answer: 33–37
 tok/s, while `NCMOE=32` sank to 18–21 tok/s as the CPU package hit 100 °C (83 °C with the cache). Flint's
 gain is the least sure: its second baseline came in at 24.2 and 17.4 tok/s.
 
-The cache sizes match the expert bytes `--n-cpu-moe` puts on the GPU (Qwen3.6's 2900 is a little under its
-3070); they are not tuned yet. Gemma at pibench's 64K is the exception: the matching 4084 MiB ran out of memory at load (and so did
+For Qwen3.6, Gemma, Flint and Ornith the cache sizes match the expert bytes `--n-cpu-moe` puts on the GPU
+(Qwen3.6's 2900 is a little under its 3070); Groot and LFM2.5 were sized for the desktop instead (above), and the
+distill runs 2770 for the same reason ([bench/moe-cache](../bench/moe-cache/README.md)). Gemma at pibench's 64K is the exception: the matching 4084 MiB ran out of memory at load (and so did
 `NCMOE=20` itself that day, with the desktop using ~0.7 GB), so it gets 3500, peaking at 7.5 GB after a 34K-token
 prompt. Next to a busy daytime desktop (~1.7 GB) the launcher's smaller caches cost 9–13% of decode speed, and
 Qwen3.6's is still 62% faster than static offload at the same VRAM. The method,

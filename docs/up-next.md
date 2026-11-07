@@ -79,8 +79,8 @@ The agent stays a model we've already measured on [pibench](pibench.md); speech 
 ### C. Hybrid
 
 LFM3-Audio holds the conversation (fast, on the GPU), and hands real work to a pibench-tested model as a tool call.
-On 8 GB the two can't both sit on the GPU: either the agent runs with more experts in RAM (Groot at a higher
-`NCMOE`), or a server swaps models per task.
+On 8 GB the two can't both sit on the GPU: either the agent runs with more experts in RAM (Groot with a smaller
+`MOE_CACHE`), or a server swaps models per task.
 
 ### Experiments, in order
 

@@ -44,12 +44,10 @@ scripts/llm twil serve                    # the server only
 pibench's sandbox. There it only reached the task sites.)
 
 **Memory.** The KV cache costs 160 KiB a token in f16, 85 in q8_0 and 45 in q4_0 (40 layers x 8 KV heads x
-128). Next to 5.0 GiB of weights, 24K at q4_0 (~1.1 GB) leaves room for a ~0.7 GB desktop by estimate;
-32K would need the desktop under ~350 MiB, and q8_0 at 32K (2.7 GB) doesn't fit. These are estimates until the
-first run measures the compute buffer. The first run (2026-11-07, night): 6645 MiB in use at load with a
-432 MiB desktop, so the estimate holds. 32K also ran that night with the same desktop, 7.0 GB in use (one reading
-mid-run, not a measured peak), so the ~350 MiB above was too cautious; it still needs a near-empty desktop. With a daytime desktop (~1.8 GB with Chrome open) it does not fit on the
-GPU at all.
+128). Measured 2026-11-07 next to a 432 MiB night desktop: 24K at q4_0 uses 6.6 GB of VRAM in all, at load; 32K
+used 7.0 GB (one reading mid-run, not a measured peak). So 24K is safe next to a desktop of up to ~0.7 GB (the estimate from the KV maths;
+the load figure alone would allow ~1.1 GB by the VRAM rule, before the cache fills), and q8_0 at 32K
+(2.7 GB of cache) doesn't fit. With a daytime desktop (~1.8 GB with Chrome open) it doesn't fit on the GPU at all.
 
 ## Our numbers
 

@@ -26,7 +26,7 @@ every per-model setting; `PRINT_CONFIG=1` prints what they resolved) and `start-
 
 | Script | What it does |
 |---|---|
-| `build-llama-cuda.sh` | Builds our llama.cpp fork from source against CUDA in `../llama.cpp` (or `SRC_DIR=`). Picks a ref (`LLAMA_REF`), a repo (`LLAMA_REPO`, for forks) and an optional `PATCH`; auto-detects the GPU arch and smoke-tests the result. The per-model commands are in [getting started](../docs/getting-started.md#3-build-llamacpp-once). |
+| `build-llama-cuda.sh` | Builds our llama.cpp fork from source against CUDA in `../llama.cpp` (or `SRC_DIR=`). Picks a ref (`LLAMA_REF`), a repo (`LLAMA_REPO`, for forks) and an optional `PATCH`; auto-detects the GPU arch and smoke-tests the result. The build command is in [getting started](../docs/getting-started.md#3-build-llamacpp-once). |
 | `setup.sh` | Creates the `llamacpp` conda env (llama.cpp + huggingface_hub) and downloads Gemma 4 26B into `models/`. `BACKEND=cuda` also builds the CUDA backend. Idempotent. |
 | `download-models.sh` | Downloads any model in its list, such as `qwen36 flint groot lfm3 lfm3audio eg2 d1 clefflash locate klein`, pinned to a repo revision and sha256-checked. Needs the `hf` CLI in the `ENV_NAME` env (default `llamacpp`). |
 | `configure-pi.sh` | Adds the `llamacpp` provider (every model in `../config/pi-provider.json`) to `~/.pi/agent/models.json`. |
@@ -64,7 +64,8 @@ For the other models, run `bash scripts/run-qwen.sh -h` and see their [model pag
 ## Useful overrides
 
 ```bash
-CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto bash scripts/run-server.sh   # FASTEST: the expert cache, 30.0 vs 21.0 tok/s (what scripts/llm gemma runs)
+CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja" \
+  bash scripts/run-server.sh   # FASTEST: the expert cache, 30.0 vs 21.0 tok/s (what scripts/llm gemma runs, template fix included)
 NCMOE=22    bash scripts/run-server.sh    # the classic split: 8 expert layers on GPU (default is all-CPU experts)
 CTX=65536   bash scripts/run-server.sh    # bigger context (see the ceiling table below)
 BACKEND=cuda bash scripts/run-server.sh   # force native CUDA backend (auto-selected once built)
@@ -107,13 +108,15 @@ GPU, which means slower** — context trades directly against speed:
 
 | Goal | Setting | Max context on 8 GB | Speed |
 |---|---|---|---|
-| **Full speed** (recommended on 8 GB) | `NCMOE=22` | **~32K** | ~23 tok/s |
+| **Fastest** (recommended; what `scripts/llm gemma` runs) | `MOE_CACHE=auto`, `KVQUANT=q8_0` | **~32K** | 30.0 tok/s |
+| Classic split | `NCMOE=22` | **~32K** | ~23 tok/s |
 | Balance | `NCMOE=27`, etc. | ~64K | medium |
 | **Max context** (script default) | `--cpu-moe` (omit `NCMOE`) | **~128K** (≈160K ceiling) | slower (all experts on CPU) |
 
 (The KV cache itself is tiny — ~0.6 GB at 16K — thanks to flash attention and Gemma's
 sliding-window layers, and its size is **independent of the quant**. 256K, the model's trained max,
-does not fit on 8 GB.) If you change `CTX`, pass the **same** value to `configure-pi.sh`:
+does not fit on 8 GB.) With `start.sh`, if you change `CTX`, pass the **same** value to `configure-pi.sh`
+(`scripts/llm` and `start-qwen.sh` keep pi in sync themselves):
 
 ```bash
 # e.g. a 128K window (slower): all experts to RAM, big context

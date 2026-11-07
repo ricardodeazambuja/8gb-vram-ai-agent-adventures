@@ -134,8 +134,8 @@ the JavaScript page were 3/3 (the CLI in under a minute, three tool calls). The 
 - 🧩 **feature, 2/3.** One run wrote the CSV with a byte-order mark (`utf-8-sig`), so the header
   read back as `\ufeffsku`.
 
-The card's big agentic numbers didn't carry over to these chores: it lands with Bonsai 2 and
-Spark, behind its own base Qwen3.6 (16/18). Fast and decisive, and when it's wrong it's wrong
+The card's big agentic numbers didn't carry over to these chores: it lands with Spark, Dory and Bonsai 2
+at 16K (16/18 at 32K), behind its own base Qwen3.6 (16/18). Fast and decisive, and when it's wrong it's wrong
 quickly.
 
 ## Security audit

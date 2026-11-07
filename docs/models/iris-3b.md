@@ -7,6 +7,7 @@
 > | Time per image | 33 s at 1024×1024, 4 steps |
 > | Peak VRAM | 7.3 GB of 7.8 |
 > | Inputs | prompt, picture; masks paste a hard square |
+> | [Security](../security.md#audits-so-far) | text encoder GGUF audited, clean; the model's `.safetensors` pinned only |
 > | Licence | Apache 2.0 |
 > | Launch | `scripts/imagine "..." -m iris` |
 

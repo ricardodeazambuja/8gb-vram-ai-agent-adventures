@@ -22,7 +22,7 @@ Gated DeltaNet with full attention on 10 of them) and was trained on curated cha
 traces from Qwen3.8 teacher models, weighted towards math and code, with tool use included.
 
 Its training examples were 8,192 tokens long, so it learned to get to the point. On a laptop
-generating ~26 tokens per second, "gets to the point" is a feature, not a personality flaw.
+generating 26–49 tokens per second, "gets to the point" is a feature, not a personality flaw.
 The vision part is untouched from the base model.
 
 ## How does it fit in 8 GB?

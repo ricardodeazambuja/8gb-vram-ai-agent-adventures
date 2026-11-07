@@ -8,7 +8,7 @@
 > | Where it lives | entirely on the GPU (3.3 GB VRAM at 16K context) |
 > | Speech to text | 6/6 sentences right, 0.2 s a clip |
 > | Spoken tool calls | 3/3 over the chat API; none over `/v1/realtime` yet |
-> | Live reply | first audio in 0.10–0.18 s |
+> | Live reply | first audio in 0.13–0.17 s |
 > | [pibench](../pibench.md) | not run |
 > | [Security audit](../security.md) | clean |
 > | Launch | `scripts/llm lfm3audio` · [`examples/listen.py`](../../examples/listen.py) · [`examples/speak.py`](../../examples/speak.py) |

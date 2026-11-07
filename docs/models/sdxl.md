@@ -7,6 +7,7 @@
 > | Time per image | 47 s at 1024×1024, 25 steps |
 > | Peak VRAM | 5.8 GB |
 > | Inputs | prompt, picture, mask |
+> | [Security](../security.md#audits-so-far) | plain `.safetensors`, pinned only (no chat template to audit) |
 > | Licence | Open RAIL++ |
 > | Launch | `scripts/imagine "..." -m sdxl` |
 

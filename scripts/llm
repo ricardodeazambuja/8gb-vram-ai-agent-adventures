@@ -17,7 +17,7 @@
 # What it adds on top of scripts/run-qwen.sh and scripts/run-server.sh, which hold every per-model
 # setting (llm only picks the backend and a few defaults):
 #   * the MoE expert cache (MOE_CACHE=auto) where we measured it: qwen36, distill, flint, ornith, groot,
-#     lfm25 and gemma, 9-62% faster decode at the same VRAM or less; it shrinks itself for a busy desktop and refuses
+#     lfm25 and gemma, 19-58% faster decode at the same VRAM or less (docs/how-it-fits.md section 12); it shrinks itself for a busy desktop and refuses
 #     below 1 GB with a clear message (use --static then, or close the browser);
 #   * vision models start with their projector; Gemma and ThinkingCap get the template fix that
 #     stops prompt reprocessing in agent loops (docs/models/gemma4-26b-a4b.md);
@@ -307,7 +307,7 @@ main() {
   start_server "$name" "$fg"
   [ "$action" = pi ] || exit 0
 
-  command -v pi >/dev/null 2>&1 || die "pi is not installed (npm i -g @mariozechner/pi-coding-agent); the server keeps running"
+  command -v pi >/dev/null 2>&1 || die "pi is not installed (npm i -g @earendil-works/pi-coding-agent); the server keeps running"
   local rc=0
   local oneshot=0 arg
   for arg in "${pi_args[@]}"; do case "$arg" in -p|--print) oneshot=1 ;; --thinking|--thinking=*) PI_DEFAULT=() ;; esac; done

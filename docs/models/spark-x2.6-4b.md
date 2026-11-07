@@ -5,9 +5,9 @@
 > | | |
 > |---|---|
 > | On disk | 4.07 GiB (`Q8_0`) |
-> | Where it lives | everything on the GPU (~7.4 GB used) |
+> | Where it lives | everything on the GPU (7.55 GB loaded) |
 > | Context | **108K** (110,592 tokens) |
-> | Generation | **~48–50 tok/s**, behind only LFM3 (106) and the Nemotron Bolt E4B (52) |
+> | Generation | **~48–50 tok/s**, among the fastest agent models here, behind LFM3 (106) and the Nemotron Bolt E4B (52) |
 > | Prompt processing | ~1,450–1,620 tok/s |
 > | [pibench](../pibench.md) | 14/18 solved, 3.3 min median per run |
 > | [Vision probe](../vision-probe.md) | not run (text only) |

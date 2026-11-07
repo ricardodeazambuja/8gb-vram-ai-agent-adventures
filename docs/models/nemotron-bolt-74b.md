@@ -103,12 +103,12 @@ are its weak spot: 21 % in pixels as asked, 64 % even in its own format. It take
 ## How it compares
 
 The full comparison with the other big models that run 128K here is on the [scoreboard](../scoreboard.md). In
-short: 15/18 on pibench against 18/18 for Flint and Gemma 4 26B and 16/18 for Qwen3.6 and the distill, and 14 tok/s
+short: 15/18 on pibench against 18/18 for Flint, Gemma 4 26B and Groot and 16/18 for Qwen3.6 and the distill, and 14 tok/s
 where the other big MoEs reach 30–49 tok/s with `scripts/llm`'s expert cache. Bolt has no cache run: at 128K it
 didn't load next to a daytime desktop ([bench/moe-cache](../../bench/moe-cache/README.md#five-more-moe-models-models-2026-11-05)).
 
-On paper (Terminal-Bench 2.1: 51.0, vendor numbers) it's second only to Flint (54.9); on this laptop it's slower and less reliable than the three
-35B-class models. Pick it when you want the most knowledge in one model and can wait for it.
+On paper (Terminal-Bench 2.1: 51.0, vendor numbers) it's second only to Flint (54.9); on this laptop it's slower and less reliable than
+Qwen3.6 and the distill. Pick it when you want the most knowledge in one model and can wait for it.
 
 ## How it behaves
 

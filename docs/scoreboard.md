@@ -38,7 +38,8 @@ measured the same way. Speeds are with the experts split by layer (`NCMOE`); `sc
 distill, Flint, Ornith, Groot, LFM2.5 and Gemma with the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
 instead: 19–58% faster decode at the same VRAM or less next to a quiet desktop (Qwen3.6 39.4, Gemma 30.0,
 Flint 32.1, Ornith 40.4, Groot 47.4, LFM2.5 43.5 tok/s; the distill +34%), about 10% less than that next to a busy one (9–13%).
-² 27 tok/s at 128K with a q8_0 KV cache ([how it fits](how-it-fits.md)).
+² 27 tok/s at 128K with a q8_0 KV cache ([how it fits](how-it-fits.md)): the smaller cache frees VRAM for more
+experts on the GPU, so more context comes out faster here.
 ³ With `CTX=131072 LOOP_KV=last_loop`: 30.1 tok/s.
 
 **pibench** = our six-chore agentic benchmark, solved attempts out of 18
@@ -119,11 +120,14 @@ lighter.
 | Qwen3.8 distill | 1.15× | 0.76× | 1.00× | **0.16×** | — | — | — | — |
 | **Flint** | 1.07× | **2.45×** | 1.00× | 0.43× | **+0.8** | **+10.0** | −0.1 | — |
 | Nemotron Bolt 74B | 0.61× | 1.40× | 1.00× | 0.73× | — | **+6.6** ᴮ | — | +3.0 ᴮ |
-| Bonsai 2 27B | 1.18× | 1.22× | 0.12× | 0.45× | +2.2 *(base)* | +28.1 *(base)* | +9.7 † | +3.2 † *(base)* |
+| Bonsai 2 27B | 1.67× | 1.25× | 0.25× | 0.45× | +2.2 *(base)* | +28.1 *(base)* | +9.7 † | +3.2 † *(base)* |
 | Qwen3-VL-8B | 1.67× | 3.76× | 0.12× | — | — | — | — | — |
 | Dory 4B (2 loops) | 1.29× | 3.86× | 0.50× | — | −13.9 | −24.9 | — | −12.9 |
 | Spark 4B | 2.11× | 6.58× | 0.84× | 1.32× | −10.6 † | — | — | −8.9 † |
 | Nemotron Bolt E4B | **2.28×** | **6.93×** | 0.50× | — | — | — | — | — |
+
+Groot, Ornith, LFM2.5, ThinkingCap Gemma, LFM3, LFM3-VL and TwIL came later and aren't in this table; their
+numbers are in the one at the top.
 
 ¹ At the launcher's 32K default; Gemma 4 26B also runs 128K (27 tok/s with a q8_0 KV cache).
 ᴮ From NVIDIA's own table, which includes Qwen3.6 (BF16) next to the 2-bit Bolt.
@@ -162,10 +166,10 @@ whether it *reads* what it looked at. The full story, with examples, is in
 
 | If you want… | Pick | Why |
 |---|---|---|
-| **An everyday coding agent** | [**Groot-19B-A3B**](models/groot-19b-a3b.md) | 18/18 on pibench, the fastest of the big models with the static split (39.5 tok/s, 887 tok/s prompts), 128K, 3.1 min median per job. `scripts/llm groot` |
+| **An everyday coding agent** | [**Groot-19B-A3B**](models/groot-19b-a3b.md) | 18/18 on pibench, among the fastest big models (47.4 tok/s with `scripts/llm`'s expert cache, 887 tok/s prompts), 128K, 3.1 min median per job. `scripts/llm groot` |
 | Long agent sessions (128K) | [**Flint**](models/flint.md) | 18/18 on pibench, the best published agentic scores here, 128K, prompts 2.5× faster than Qwen3.6. Can't see images. |
 | A dependable all-rounder that sees | [**Gemma 4 26B-A4B**](models/gemma4-26b-a4b.md) | 18/18 on pibench and 100% on the vision probe. Slower per job than the Qwens. |
-| Quick turns | [**Qwen3.8 distill**](models/qwen3.8-35b-a3b-distill.md) | One of the quickest big models per job (2.5 min median; Ornith 2.2), 16/18, 128K; with `scripts/llm`'s expert cache it decodes fastest of the big ones. Double-check its scraped data. |
+| Quick turns | [**Qwen3.8 distill**](models/qwen3.8-35b-a3b-distill.md) | One of the quickest big models per job (2.5 min median; Ornith 2.2), 16/18, 128K; with `scripts/llm`'s expert cache it decodes about as fast as Groot (49.0 and 47.4 tok/s, ±13% run to run). Double-check its scraped data. |
 | Careful image reading at 128K | [**Qwen3.6-35B-A3B**](models/qwen3.6-35b-a3b.md) | 100% on the vision probe, 16/18 on pibench. |
 | Fast image reading | [**Qwen3-VL-8B**](models/qwen3-vl-8b.md) | 5 s per image, perfect OCR, all on the GPU. Weaker at counting. |
 | A small vision model that acts on what it sees | [**LFM3-VL-2B**](models/lfm3-vl-2b.md) | 60/60 one-picture tool decisions with thinking, ~3 s each, 2.6 GB. One fresh question per step; not an agent ([visual control](visual-control.md)). |

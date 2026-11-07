@@ -11,6 +11,7 @@
 > | Prompt processing | ~350 tok/s (16K-token prompt) |
 > | Code check | correct twice, 0/500 wrong, 2.2K–2.4K tokens |
 > | [pibench](../pibench.md) | **17/18 solved** (98% of hidden tests), **47% less thinking** than the base, 5.5 min median per run |
+> | [Vision probe](../vision-probe.md) | not run |
 > | [Security audit](../security.md) | clean |
 > | Launch | `scripts/llm thinkingcap` (64K, q8_0 KV, `NCMOE=23`, the template fix) |
 

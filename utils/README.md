@@ -9,7 +9,7 @@ Reads a GGUF's header and reports its **architecture**, any **multimodal
 metadata**, its **tensor inventory**, and a one-line **verdict** (text-only /
 multimodal model / `mmproj` projector). This is how we established that the
 Gemma 4 text GGUF carries no vision tensors and that `mmproj-BF16.gguf` is
-vision-only — see [`docs/how-it-fits.md` §14](../docs/how-it-fits.md).
+vision-only — see the "Images" paragraph of [Gemma's page](../docs/models/gemma4-26b-a4b.md).
 
 ```bash
 # the model (text-only):

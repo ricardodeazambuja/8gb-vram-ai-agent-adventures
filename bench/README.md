@@ -52,6 +52,7 @@ sudo sh bench/firewall.sh add                 # once per boot; `remove` undoes i
 bash scripts/stop-server.sh                   # the benchmark needs the GPU to itself
 bash bench/run-bench.sh                       # the default six: flint qwen36 distill spark gemma26b bonsai2, ~6–12 h; resumable
 MODELS="flint qwen36" REPEATS=1 bash bench/run-bench.sh   # a subset
+MOE_CACHE=auto MODELS=groot bash bench/run-bench.sh      # with the launcher's expert cache (the default is the static split)
 python3 bench/summarize.py                    # -> bench/results/summary.md, results.csv
 ```
 

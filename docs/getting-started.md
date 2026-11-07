@@ -47,7 +47,7 @@ build ends with a quick smoke test).
 
 | Build | For | Command |
 |---|---|---|
-| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) at `69ca796dd`: the [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) branch (upstream 2026-10-28 + LocateAnything PR #24749 + Dory PR #30306 + [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) for `PTQ1_0`) + the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) | every model in `scripts/llm list` | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
+| `../llama.cpp`, **our fork**: [`ricardodeazambuja/llama.cpp`](https://github.com/ricardodeazambuja/llama.cpp), branch [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch) at `69ca796dd`: the [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures) branch (upstream 2026-10-28 + LocateAnything PR [#24749](https://github.com/ggml-org/llama.cpp/pull/24749) + Dory PR [#30306](https://github.com/ggml-org/llama.cpp/pull/30306) + [PrismML's fork](https://github.com/PrismML-Eng/llama.cpp) for `PTQ1_0`) + the [MoE expert cache](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) | every model in `scripts/llm list` | `CUDA_VER=12.2 bash scripts/build-llama-cuda.sh` |
 | `../llama.cpp`, extra target | text to speech with LFM3-Audio ([`examples/speak.py`](../examples/speak.py)) | `(cd ../llama.cpp && cmake --build build --target llama-tts)` |
 
 The script treats `../llama.cpp` as its own checkout: if you already have a clone there with a branch
