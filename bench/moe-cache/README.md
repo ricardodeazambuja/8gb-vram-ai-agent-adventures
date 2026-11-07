@@ -11,7 +11,7 @@ and the Gemma 4 template fix on [its model page](../../docs/models/gemma4-26b-a4
 Ideas 1 and 2 already existed in llama.cpp: upstream PR #29887 (merged) and the open PR #30966, cherry-picked onto
 our fork's [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch at `3a72c57be`.
 Our default build is now the [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch)
-branch (`69ca796dd`): `moe-offload` plus the `--moe-cache-max-batch` flag ([below](#two-experiments-in-the-fork-experimental-local-branch-not-pushed)).
+branch (`69ca796dd`): `moe-offload` plus the `--moe-cache-max-batch` flag ([below](#two-experiments-in-the-fork-experimental)).
 Idea 3 isn't needed. Qwen3.6 reprocesses about 25 tokens per turn. Gemma 4 wasted 743 and 1,147 tokens on long
 `write` turns because its chat template adds a `\n` the model never writes;
 [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja) removes it, which brings both turns to 14
@@ -50,7 +50,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
 | `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), reruns at matched VRAM `step5-qwen38.sh` and `step12-ornith.sh`, logs and tuner output |
-| `experimental/` | the fork's local `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); logs |
+| `experimental/` | the fork's `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); logs |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -113,7 +113,7 @@ the test's, an older build, the CPU's temperature, and the 200-token answer. The
 than both our A/B and the `NCMOE=42` baseline.
 
 Why, from the code: batches over 32 tokens skip the cache (`src/llama-moe-cache.cpp`, `max_batch = 32`; since
-made a flag, `--moe-cache-max-batch`, [below](#two-experiments-in-the-fork-experimental-local-branch-not-pushed)) and
+made a flag, `--moe-cache-max-batch`, [below](#two-experiments-in-the-fork-experimental)) and
 copy the used experts of every MoE layer per ubatch (40 on Qwen3.6, 47 on Flint), so prefill runs a few
 percent slower. They also never insert into the cache, so decode after a long prompt starts with an empty
 cache, and until it fills, every miss is copied rather than computed on the CPU.
@@ -135,7 +135,7 @@ with prompt speed 6% and 4% lower. Smaller gains than at short prompts (+58%, +1
 over 30K tokens takes a larger share of each token (not measured). The first 100 tokens are the slowest but
 still ahead: Qwen3.6 26.1 vs 23.3 tok/s, then 28–30 with the cache; Flint 21.6 vs 20.3.
 
-The warm-up was a local experiment in the fork (branch `moe-cache-warm` at `d2503edb4`, not pushed): large
+The warm-up was a local experiment in the fork (branch [`moe-cache-warm`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-warm), `d2503edb4`): large
 batches put their most-used experts into free cache slots, so decode wouldn't start cold. It works as built
 and makes things slightly worse. In `longctx/step1b-warmcheck.sh` (Qwen3.6, 13.7K-token prompt, 300 tokens,
 with the cache statistics on, [`longctx/logs/step1b.log`](longctx/logs/step1b.log)), the decode hit rate fell
@@ -226,10 +226,11 @@ after the turn test, which leaves ~320 MiB for the desktop under the rule above.
 desktop's 334 MiB tonight. It ran, inside the 300 MiB margin. A smaller cache (2900 MiB, say) would leave
 room for a normal desktop; not measured yet.
 
-### Two experiments in the fork (`experimental/`, local branch, not pushed)
+### Two experiments in the fork (`experimental/`)
 
-Built from the fork's local branch `moe-cache-warm` at `ba50735ac` (on top of `moe-offload` 3a72c57be) into
-`../llama.cpp-warm/build-warm` (`WARM_LLAMA`). It adds two environment switches. Qwen3.8, batch 2048,
+Built from the fork's branch [`moe-cache-warm`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-warm) at `ba50735ac` (on top of `moe-offload` 3a72c57be; pushed 2026-11-06) into
+`../llama.cpp-warm/build-warm` (`WARM_LLAMA`). To rebuild it: `git -C ../llama.cpp worktree add ../llama.cpp-warm moe-cache-warm`,
+then a CMake build into `build-warm/` there. It adds two environment switches. Qwen3.8, batch 2048,
 3174 MiB cache, share 0.95 ([`step8.log`](experimental/logs/step8.log)):
 
 - **A softer warm-up** (prompt experts go into free slots without counting as full): decode 48.5 tok/s
@@ -262,7 +263,7 @@ from 44.5 to 50.7 tok/s, and the two identical runs with limit 32 differed by 8%
 the server itself was 6767–6817 MiB, which leaves room for a desktop of ~570 MiB; `MOE_CACHE=auto` uses 2770
 MiB for Qwen3.8 to leave ~700.
 
-The other session has since made this a proper option, `--moe-cache-max-batch N`, on the fork's local branch
+The other session has since made this a proper option, `--moe-cache-max-batch N`, on the fork's branch
 `moe-cache-max-batch` at `69ca796dd` (`moe-offload` plus one commit; default 32, so nothing changes without the
 flag). Pushed on 2026-11-05 as `origin/moe-cache-max-batch`, and the fork's main `build/` now runs it.
 `QMODEL=distill MOE_CACHE=auto` passes `--moe-cache-max-batch 256`; the other models keep 32 until 128 is
