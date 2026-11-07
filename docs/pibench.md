@@ -82,7 +82,8 @@ both Gemma 12B fine-tunes and VibeThinker 3B ran on 2026-11-02, on our fork afte
 harness, 90 more attempts. VibeThinker went through its [tool-call proxy](models/vibethinker.md). ⁶ The same day,
 same fork: Bonsai with the q8_0 KV cache that lets it [fit 32K](../bench/bonsai-ctx/README.md); the 16K row ran on
 PrismML's own build. ⁷ Both had already passed every test. ⁸ 2026-11-07, same fork (`69ca796`), same harness, 18 more
-attempts, at its launcher's 24K with a q4_0 KV cache. ⁹ Six of them had already passed every test.
+attempts, at its launcher's 24K with a q4_0 KV cache; one repeat at 32K solved 3/6, twice as slow
+([its page](models/twil-8b.md#our-numbers)). ⁹ Six of them had already passed every test.
 
 "Hidden tests passed" has a floor: the untouched starter files already pass 12 of the bug fix's 27 tests and 3 of
 the feature's 8. The Gemma 12B coder never changed a file, so its 28% is that floor.

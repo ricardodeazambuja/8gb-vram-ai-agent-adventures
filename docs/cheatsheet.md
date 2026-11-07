@@ -54,7 +54,7 @@ an MoE model without the expert cache.
 | [Dory1.0-4B looped](models/dory1.0-4b.md) | agent | `scripts/llm dory` | Spark's score at 4B (14/18) |
 | [LFM3-1.7B](models/lfm3-1.7b.md) | agent | `scripts/llm lfm3` | tiny, 106 tok/s, good at chores (12/18) |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | agent | `scripts/llm e4b` | voice-assistant model (7/18) |
-| [TwIL-8B](models/twil-8b.md) | agent | `scripts/llm twil` (server only) | math and code reasoner, not measured yet (serve only until pibench) |
+| [TwIL-8B](models/twil-8b.md) | agent | `scripts/llm twil` | math and code reasoner, a weak agent (8/18) |
 | [VibeThinker 3B](models/vibethinker.md) | agent | `scripts/llm vibe3b` | one-shot code and math (pi through a tool-call shim) |
 | [VibeThinker 1.5B](models/vibethinker.md) | agent | `scripts/llm vibe15` | one-shot math and code (pi through a tool-call shim) |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | vision | `scripts/llm qwen3vl` | reads an image in 5 s |

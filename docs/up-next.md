@@ -274,7 +274,7 @@ temperatures we use.
 | Groot and LFM2.5 get the expert cache by default (2026-11-07): +20% and +29% decode, and more room for the desktop than their static splits | [`bench/moe-cache`](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07) |
 | The vision probe through `scripts/llm` (2026-11-07): same scores within one answer's noise, 5–27% less time per image | [vision probe](vision-probe.md#the-results) |
 | Every model through `scripts/llm` (2026-11-07): loads, pi one-shot, status/stop, the "stop the server too?" question (n / y / Enter, and not asked for a server it didn't start), contexts, Spark/Bonsai thinking flags; the recheck at launcher defaults (cached models 28–62% faster); TwIL's first speed and code check | [`bench/recheck/`](../bench/recheck/README.md#through-scriptsllm-2026-11-07) |
-| TwIL-8B's first pibench (2026-11-07): 8/18 at 24K, code chores 7 of 9, web chores 1 of 9; the context ran out in 14 of 18 attempts | [its page](models/twil-8b.md#our-numbers), [pibench](pibench.md#the-results) |
+| TwIL-8B's first pibench (2026-11-07): 8/18 at 24K, code chores 7 of 9, web chores 1 of 9; the context ran out in 14 of 18 attempts, and 32K solved no more (3/6, twice as slow); `scripts/llm twil` now opens pi | [its page](models/twil-8b.md#our-numbers), [pibench](pibench.md#the-results) |
 | VibeThinker's audit (2026-11-07): clean, templates identical to the source | [security](security.md#audits-so-far) |
 | Relaxed draft acceptance | [graveyard](graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles) |
 | The first image models, style and person training | [Making pictures](image-generation.md) |
