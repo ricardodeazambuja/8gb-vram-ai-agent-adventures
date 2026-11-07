@@ -1,0 +1,23 @@
+launch: scripts/llm qwen36
+--- pi one-shot: scripts/llm qwen36 -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> MoE cache: 539 MiB of VRAM already in use (the measured 2900 MiB leaves room for 380): using 2741 MiB
+>> starting qwen36 (17GB, context 131072) in scope llm-qwen36
+>> qwen36 ready at http://127.0.0.1:8080/v1  (context 131072)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: qwen3.6-35b-a3b on http://127.0.0.1:8080/v1  (context 131072)
+started by llm: llm-qwen36.scope 
+GPU memory in use: 7286 MiB;  memory pressure (some avg10): 0
+VRAM: 7286 MiB
+pressure: some avg10=0.00 avg60=0.02 avg300=0.00 total=383768132
+== speed: gen 32.0 t/s, 1500 tokens in 47s (wall 48s)
+   reasoning chars: 5062 | content chars: 0 | finish: length
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (5s)
+== prefill: 16068 tokens at 237 t/s (67.9s); wall 70.1s
+   answer: start.sh is a wrapper script that optionally guides users through an interactive setup menu to configure the Gemma 4 model server, automatically handles auto-tuning for optimal GPU performance, launch
+--- code check
+own doctests: ***Test Failed*** 1 failures. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=4858 gen=31.7 t/s time=153s
+saved: bench/recheck/results/2026-11-07-llm/.merge-qwen36.py

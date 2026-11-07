@@ -1,0 +1,22 @@
+launch: scripts/llm bonsai2
+--- pi one-shot: scripts/llm bonsai2 -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> starting bonsai2 (5.6GB, context 32768) in scope llm-bonsai2
+>> bonsai2 ready at http://127.0.0.1:8080/v1  (context 32768)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: bonsai2-27b on http://127.0.0.1:8080/v1  (context 32768)
+started by llm: llm-bonsai2.scope 
+GPU memory in use: 7407 MiB;  memory pressure (some avg10): 0
+VRAM: 7407 MiB
+pressure: some avg10=0.00 avg60=0.00 avg300=0.08 total=387923052
+== speed: gen 36.6 t/s, 1500 tokens in 41s (wall 42s)
+   reasoning chars: 4596 | content chars: 0 | finish: length
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (3s)
+== prefill: 16068 tokens at 269 t/s (59.8s); wall 61.9s
+   answer: It launches the Gemma 4 model server in the background (starting it if it isn't already running), waits for it to load, then starts the `pi` CLI in the foreground and optionally shuts the server down 
+--- code check
+own doctests: Test passed. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=5004 gen=34.8 t/s time=144s
+saved: bench/recheck/results/2026-11-07-llm/.merge-bonsai2.py

@@ -1,0 +1,22 @@
+launch: scripts/llm spark
+--- pi one-shot: scripts/llm spark -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> starting spark (4.1GB, context 110592) in scope llm-spark
+>> spark ready at http://127.0.0.1:8080/v1  (context 110592)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: spark-x2.6-4b on http://127.0.0.1:8080/v1  (context 110592)
+started by llm: llm-spark.scope 
+GPU memory in use: 7049 MiB;  memory pressure (some avg10): 0
+VRAM: 7049 MiB
+pressure: some avg10=0.00 avg60=0.00 avg300=0.01 total=387928484
+== speed: gen 49.9 t/s, 1500 tokens in 30s (wall 30s)
+   reasoning chars: 5397 | content chars: 0 | finish: length
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (1s)
+== prefill: 17372 tokens at 1328 t/s (13.1s); wall 13.9s
+   answer: It starts a model server if none is running, waits for the server to finish loading, then launches pi in the foreground while managing its shutdown.
+--- code check
+own doctests: Test passed. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=7844 gen=46.8 t/s time=168s
+saved: bench/recheck/results/2026-11-07-llm/.merge-spark.py

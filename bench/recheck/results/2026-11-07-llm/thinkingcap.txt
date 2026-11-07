@@ -1,0 +1,22 @@
+launch: scripts/llm thinkingcap
+--- pi one-shot: scripts/llm thinkingcap -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> starting thinkingcap (13GB, context 65536) in scope llm-thinkingcap
+>> thinkingcap ready at http://127.0.0.1:8080/v1  (context 65536)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: thinkingcap-gemma-4-26b-a4b on http://127.0.0.1:8080/v1  (context 65536)
+started by llm: llm-thinkingcap.scope 
+GPU memory in use: 7309 MiB;  memory pressure (some avg10): 0
+VRAM: 7309 MiB
+pressure: some avg10=0.02 avg60=0.19 avg300=0.34 total=387765815
+== speed: gen 16.8 t/s, 1500 tokens in 89s (wall 91s)
+   reasoning chars: 4108 | content chars: 395 | finish: length
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (3s)
+== prefill: 16963 tokens at 333 t/s (51.0s); wall 53.2s
+   answer: `start.sh` provides an interactive or automated wrapper to launch the model server (with optional auto-tuning for optimal performance) and then starts the `pi` interface for interacting with the model
+--- code check
+own doctests: Test passed. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=2761 gen=16.5 t/s time=167s
+saved: bench/recheck/results/2026-11-07-llm/.merge-thinkingcap.py

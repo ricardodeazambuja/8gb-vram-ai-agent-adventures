@@ -1,0 +1,22 @@
+launch: scripts/llm gemma
+--- pi one-shot: scripts/llm gemma -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> starting gemma (14GB, context 32768) in scope llm-gemma
+>> gemma ready at http://127.0.0.1:8080/v1  (context 32768)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: gemma-4-26b-a4b-qat on http://127.0.0.1:8080/v1  (context 32768)
+started by llm: llm-gemma.scope 
+GPU memory in use: 6503 MiB;  memory pressure (some avg10): 0
+VRAM: 6503 MiB
+pressure: some avg10=0.06 avg60=1.20 avg300=0.61 total=387439414
+== speed: gen 34.8 t/s, 1195 tokens in 34s (wall 35s)
+   reasoning chars: 2474 | content chars: 1490 | finish: stop
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (3s)
+== prefill: 16963 tokens at 290 t/s (58.5s); wall 60.3s
+   answer: `start.sh` is a wrapper script that optionally launches an interactive configuration menu, starts a Gemma 4 model server in the background (with automated hardware optimization/tuning), and then drops
+--- code check
+own doctests: Test passed. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=1703 gen=34.4 t/s time=49s
+saved: bench/recheck/results/2026-11-07-llm/.merge-gemma.py

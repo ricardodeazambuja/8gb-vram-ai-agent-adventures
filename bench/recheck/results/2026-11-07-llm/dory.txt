@@ -1,0 +1,22 @@
+launch: scripts/llm dory
+--- pi one-shot: scripts/llm dory -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> starting dory (3.5GB, context 65536) in scope llm-dory
+>> dory ready at http://127.0.0.1:8080/v1  (context 65536)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: dory1-4b on http://127.0.0.1:8080/v1  (context 65536)
+started by llm: llm-dory.scope 
+GPU memory in use: 5679 MiB;  memory pressure (some avg10): 0
+VRAM: 5679 MiB
+pressure: some avg10=0.00 avg60=0.00 avg300=0.00 total=388874395
+== speed: gen 28.4 t/s, 1500 tokens in 53s (wall 53s)
+   reasoning chars: 5284 | content chars: 0 | finish: length
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (4s)
+== prefill: 16375 tokens at 704 t/s (23.3s); wall 24.9s
+   answer: It starts the model server in the background if it isn’t already running, waits for it to finish loading, and then launches `pi` (the chat client) in the foreground.
+--- code check
+own doctests: Test passed. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=10540 gen=26.2 t/s time=402s
+saved: bench/recheck/results/2026-11-07-llm/.merge-dory.py

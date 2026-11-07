@@ -1,0 +1,30 @@
+launch: scripts/llm lfm3vl
+>> starting lfm3vl (1.8GB, context 32768) in scope llm-lfm3vl
+>> lfm3vl ready at http://127.0.0.1:8080/v1  (context 32768)
+--- scripts/llm status
+serving: lfm3-vl-2b on http://127.0.0.1:8080/v1  (context 32768)
+started by llm: llm-lfm3vl.scope 
+GPU memory in use: 3341 MiB;  memory pressure (some avg10): 0
+VRAM: 3341 MiB
+pressure: some avg10=0.00 avg60=0.00 avg300=0.00 total=388918855
+== speed: gen 106.8 t/s, 1500 tokens in 14s (wall 14s)
+   reasoning chars: 5503 | content chars: 0 | finish: length
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (0s)
+== prefill: 16454 tokens at 4156 t/s (4.0s); wall 4.3s
+   answer: start.sh starts the Llama 4 model server in the background and then launches the pi client in the foreground to interact with it.
+--- code check
+own doctests: ***Test Failed*** 4 failures. 
+Traceback (most recent call last):
+  File "/c/check.py", line 111, in <module>
+    main()
+  File "/c/check.py", line 86, in main
+    check(a.check)
+  File "/c/check.py", line 60, in check
+    got = ns["merge_intervals"]([x[:] for x in iv])
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/c/answer.py", line 29, in merge_intervals
+    merged[-1][1] = max(merged[-1][1], interval[1])
+                        ~~~~~~^^^^
+IndexError: list index out of range
+finish=stop tokens=4381 gen=103.6 t/s time=42s
+saved: bench/recheck/results/2026-11-07-llm/.merge-lfm3vl.py

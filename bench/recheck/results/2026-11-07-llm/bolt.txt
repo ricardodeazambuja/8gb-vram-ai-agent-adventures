@@ -1,0 +1,22 @@
+launch: scripts/llm bolt
+--- pi one-shot: scripts/llm bolt -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> starting bolt (21GB, context 131072) in scope llm-bolt
+>> bolt ready at http://127.0.0.1:8080/v1  (context 131072)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: nemotron-bolt-74b on http://127.0.0.1:8080/v1  (context 131072)
+started by llm: llm-bolt.scope 
+GPU memory in use: 6819 MiB;  memory pressure (some avg10): 0
+VRAM: 6819 MiB
+pressure: some avg10=0.02 avg60=0.07 avg300=0.02 total=388826972
+== speed: gen 15.1 t/s, 1500 tokens in 99s (wall 101s)
+   reasoning chars: 5223 | content chars: 0 | finish: length
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (8s)
+== prefill: 16375 tokens at 322 t/s (50.8s); wall 55.2s
+   answer: `start.sh` launches a Gemma 4 26B-A4B model server if one is not already running (optionally auto-tuning GPU memory splits and waiting for it to load), then runs `pi` in the foreground and offers to s
+--- code check
+own doctests: Test passed. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=2043 gen=14.6 t/s time=140s
+saved: bench/recheck/results/2026-11-07-llm/.merge-bolt.py

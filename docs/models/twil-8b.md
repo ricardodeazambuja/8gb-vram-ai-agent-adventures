@@ -7,7 +7,7 @@
 > | On disk | 5.35 GB (`Q4_K_M`, the verbose variant) |
 > | Where it lives | entirely on the GPU (5.0 GiB of weights + the KV cache) |
 > | Context | 24K with a q4_0 KV cache (the card wants 40K for hard problems) |
-> | Speed | not measured yet |
+> | Speed | 38.0 tok/s; a 17K-token prompt at 644 tok/s; 6.6 GB of VRAM in use with the desktop ([recheck](../../bench/recheck/results/2026-11-07-llm/twil.txt)) |
 > | [Security audit](../security.md) | clean |
 > | Licence | webAI Non-Commercial 1.0: non-commercial research and education only |
 > | Launch | `scripts/llm twil serve` (server only until it has run in pibench's sandbox) |
@@ -44,10 +44,20 @@ in pibench's sandbox.)
 **Memory.** The KV cache costs 160 KiB a token in f16, 85 in q8_0 and 45 in q4_0 (40 layers x 8 KV heads x
 128). Next to 5.0 GiB of weights, 24K at q4_0 (~1.1 GB) leaves room for a ~0.7 GB desktop by estimate;
 32K would need the desktop under ~350 MiB, and q8_0 at 32K (2.7 GB) doesn't fit. These are estimates until the
-first run measures the compute buffer. With a daytime desktop (~1.8 GB with Chrome open) it does not fit on the
+first run measures the compute buffer. The first run (2026-11-07, night): 6645 MiB in use at load with a
+432 MiB desktop, so the estimate holds. With a daytime desktop (~1.8 GB with Chrome open) it does not fit on the
 GPU at all.
 
 ## Our numbers
 
-Not run yet. Next: the tool-less speed test (`scripts/qwen-bench.py`), then code checks in the sandbox
-(`scripts/qwen-codecheck.py`).
+First run 2026-11-07, in the [recheck](../../bench/recheck/README.md#through-scriptsllm-2026-11-07) (one sample,
+`scripts/llm twil serve`, 24K, q4_0 KV):
+
+| Test | Result |
+|---|---|
+| Generation | 38.0 tok/s (1,500 tokens, all of it thinking: it hadn't finished at the cap) |
+| A 17K-token prompt | 644 tok/s |
+| A tool call (`read`), though it has no tool-use training | ✓ |
+| Code check (`merge_intervals`, 16,000-token budget, in the no-network container) | ✓ 0/500 wrong, its own doctests passed; 7,114 tokens, 3.6 min at 32.7 tok/s |
+
+pibench is next: its first shell access belongs in the sandbox.

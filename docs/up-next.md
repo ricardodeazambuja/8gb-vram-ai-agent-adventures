@@ -23,15 +23,10 @@ says where it went.
 `scripts/llm` and `scripts/imagine` (2026-11-06) were tested live on the small models, the helpers and Klein, but
 the desktop held 2.5 GB of VRAM, so these still need a run:
 
-- [ ] **The big models through `scripts/llm`:** `qwen36`, `distill`, `flint` and `ornith` with the expert cache,
-      `gemma` (cache + template fix) and `thinkingcap`. With a busy desktop they correctly refused; check that each
-      loads, answers a `-p` one-shot, and that `status`/`stop` work. Watch memory pressure on the first load.
-- [ ] **`bonsai2` and `spark`:** that the context really is 32K / 108K now (`scripts/llm status`) and that pi gets
-      `--thinking medium` / `high` without an HTTP 400.
 - [ ] **The interactive "stop the server too?" question** after a normal pi session.
-- [ ] **Rerun `bench/recheck` and the vision probe through `scripts/llm <name> serve`**, so their numbers are the
-      launcher defaults (cache, Gemma's q8_0 KV and template fix). Today both use the backend scripts with the
-      static split, and their pages say so.
+- [ ] **Rerun the vision probe through `scripts/llm`** (`run_vision.py gemma-llm qwen36-llm distill-llm
+      ornith-llm`), so its numbers are the launcher defaults (cache, Gemma's q8_0 KV). Today it uses the backend
+      scripts with the static split, and the pages say so.
 - [ ] **Groot and LFM2.5-24B with the cache:** measured faster (+16% and +42%, [Groot](models/groot-19b-a3b.md),
       [LFM2.5](models/lfm2.5-24b-a2b.md)) but not the launcher default, because `MOE_CACHE=auto` has no measured size
       for them that leaves room for a desktop. Measure each one's peak next to a ~0.5 and a ~1.7 GB desktop, give
@@ -293,6 +288,7 @@ temperatures we use.
 | EmbeddingGemma 2, Clef-Flash, LocateAnything-3B, VibeThinker | their model pages; [`examples/`](../examples/README.md) |
 | Our llama.cpp fork (2026-10-30), PrismML's merge (2026-11-02), the recheck | [getting started](getting-started.md#3-build-llamacpp-once), [`bench/recheck/`](../bench/recheck/README.md) |
 | The MoE expert cache, now the default in `scripts/llm` | [how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) |
+| Every model through `scripts/llm` (2026-11-07): loads, pi one-shot, status/stop, contexts, Spark/Bonsai thinking flags; the recheck at launcher defaults (cached models 28–62% faster); TwIL's first speed and code check | [`bench/recheck/`](../bench/recheck/README.md#through-scriptsllm-2026-11-07) |
 | VibeThinker's audit (2026-11-07): clean, templates identical to the source | [security](security.md#audits-so-far) |
 | Relaxed draft acceptance | [graveyard](graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles) |
 | The first image models, style and person training | [Making pictures](image-generation.md) |

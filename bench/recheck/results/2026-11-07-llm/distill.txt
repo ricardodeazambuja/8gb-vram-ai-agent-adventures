@@ -1,0 +1,22 @@
+launch: scripts/llm distill
+--- pi one-shot: scripts/llm distill -p "Reply with the single word READY and nothing else. Do not use any tools."
+exit 0; pi said: READY 
+>> starting distill (19GB, context 131072) in scope llm-distill
+>> distill ready at http://127.0.0.1:8080/v1  (context 131072)
+>> server already running at http://127.0.0.1:8080 — reusing it (left running on exit)
+--- scripts/llm status
+serving: qwen3.8-35b-a3b-distill on http://127.0.0.1:8080/v1  (context 131072)
+started by llm: llm-distill.scope 
+GPU memory in use: 6995 MiB;  memory pressure (some avg10): 0
+VRAM: 6995 MiB
+pressure: some avg10=0.13 avg60=0.13 avg300=0.03 total=384129051
+== speed: gen 44.5 t/s, 665 tokens in 15s (wall 15s)
+   reasoning chars: 507 | content chars: 1746 | finish: stop
+== tool call: finish=tool_calls calls=[{"name": "read", "arguments": "{\"path\":\"scripts/run-qwen.sh\"}"}] (4s)
+== prefill: 16068 tokens at 543 t/s (29.6s); wall 30.9s
+   answer: start.sh is a convenience script that optionally starts the Gemma 4 model server in the background (with optional interactive setup and auto-tuning) and then launches the `pi` client in the foreground
+--- code check
+own doctests: Test passed. 
+random tests vs reference: 0/500 wrong
+finish=stop tokens=1332 gen=43.4 t/s time=31s
+saved: bench/recheck/results/2026-11-07-llm/.merge-distill.py

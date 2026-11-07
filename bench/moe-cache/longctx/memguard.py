@@ -6,7 +6,8 @@
 systemd-oomd (`oomctl`: 50% on user@UID.service, 20 s, swap 90%) kills the descendant cgroup with the most
 reclaim, which can be a terminal rather than the cause. This stops our own bench scopes (`moe*.scope`, as
 started by srv.sh, hits.sh and step3-models.sh) much earlier: when memory PSI avg10 (max of some and full)
-is over LIMIT for N consecutive 1 s polls. Its own unit name must not start with `moe`. Logs every stop and
+is over LIMIT for N consecutive 1 s polls. MEMGUARD_PREFIXES (default `moe`, comma-separated) widens it, e.g.
+`moe,llm-` for servers started by scripts/llm. Its own unit name must not start with any of them. Logs every stop and
 the 5-minute peak.
 """
 import os
@@ -16,6 +17,7 @@ import time
 
 LIMIT = float(sys.argv[1]) if len(sys.argv) > 1 else 20.0
 N = int(sys.argv[2]) if len(sys.argv) > 2 else 3
+PREFIXES = tuple(os.environ.get("MEMGUARD_PREFIXES", "moe").split(","))
 P = f"/sys/fs/cgroup/user.slice/user-{os.getuid()}.slice/user@{os.getuid()}.service/memory.pressure"
 
 
@@ -31,7 +33,7 @@ def psi():
 def scopes():
     out = subprocess.run(["systemctl", "--user", "list-units", "--type=scope", "--state=running", "--no-legend", "--plain"],
                          capture_output=True, text=True, check=False).stdout
-    return [line.split()[0] for line in out.splitlines() if line.startswith("moe")]
+    return [line.split()[0] for line in out.splitlines() if line.startswith(PREFIXES)]
 
 
 def log(msg):
@@ -39,7 +41,7 @@ def log(msg):
 
 
 def main():
-    log(f"memguard: stop moe*.scope when PSI avg10 > {LIMIT}% for {N} s ({P})")
+    log(f"memguard: stop {PREFIXES} scopes when PSI avg10 > {LIMIT}% for {N} s ({P})")
     over, peak, last = 0, 0.0, 0.0
     while True:
         p = psi()
