@@ -9,7 +9,7 @@
 > | Generation | 3B **65 tok/s**, 1.5B **108 tok/s** (on our fork, 2026-11-01) |
 > | Best at | One-shot code (3B) and math (1.5B) |
 > | [pibench](../pibench.md) | 3B: **0/18** through the shim (2026-11-02) |
-> | [Security audit](../security.md) | clean |
+> | [Security audit](../security.md) | clean, both files, template identical to the source ([2026-11-07](../../bench/audits/2026-11-07/)) |
 > | Launch | `scripts/llm vibe3b` · `scripts/llm vibe15` (add `serve` for the server alone) |
 
 ## What is it?

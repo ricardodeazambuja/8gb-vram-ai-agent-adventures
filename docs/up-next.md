@@ -39,8 +39,6 @@ the desktop held 2.5 GB of VRAM, so these still need a run:
 
 ### Loose ends from the docs review (2026-11-06)
 
-- **VibeThinker's audit:** its page says "clean", but there is no saved output or record of it
-  ([security](security.md)). Run `utils/audit-gguf.py` on both files with `--ref` and record the result.
 - **Gemma's MTP gain:** the graveyard says +15–31% at greedy, its model page +19–31%. The log is in the old
   Gemma4 project (GitHub only); find it and keep one figure.
 - **`bench/visual-control/results/summary.md`** labels rows by model key only, so the clean, new-scenes and
@@ -302,6 +300,7 @@ temperatures we use.
 | EmbeddingGemma 2, Clef-Flash, LocateAnything-3B, VibeThinker | their model pages; [`examples/`](../examples/README.md) |
 | Our llama.cpp fork (2026-10-30), PrismML's merge (2026-11-02), the recheck | [getting started](getting-started.md#3-build-llamacpp-once), [`bench/recheck/`](../bench/recheck/README.md) |
 | The MoE expert cache, now the default in `scripts/llm` | [how-it-fits §12](how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes) |
+| VibeThinker's audit (2026-11-07): clean, templates identical to the source | [security](security.md#audits-so-far) |
 | Relaxed draft acceptance | [graveyard](graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles) |
 | The first image models, style and person training | [Making pictures](image-generation.md) |
 | Cactus's Mirage (dropped) | [`bench/cactus/`](../bench/cactus/README.md) |

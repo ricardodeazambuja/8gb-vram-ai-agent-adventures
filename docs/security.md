@@ -92,16 +92,14 @@ The first thirteen rows were audited on 2026-11-01, after these models had alrea
 column is what the audit flagged, not a match against the source repo.
 
 Saved audit output exists only for those thirteen, for Bonsai 2's layout re-check
-([`2026-11-02/`](../bench/audits/2026-11-02/)) and for TwIL-8B ([`2026-11-06/`](../bench/audits/2026-11-06/)).
+([`2026-11-02/`](../bench/audits/2026-11-02/)), for TwIL-8B ([`2026-11-06/`](../bench/audits/2026-11-06/)) and for
+VibeThinker ([`2026-11-07/`](../bench/audits/2026-11-07/)).
 The other rows record what the audit reported at the time; the output itself wasn't kept.
 
 Gemma 4 26B's download was unpinned until 2026-11-06 (`scripts/setup.sh` fetched `main`). It is now pinned in
 `scripts/download-models.sh` (`gemma`, and `gemmavis` for the projector), at revision `c1f25db7` (projector: `unsloth/gemma-4-26B-A4B-it-GGUF`
 at `c099eb48`). The pinned sha256s match the files on this laptop that we audited and measured (all three
 re-hashed on 2026-11-06).
-
-**Not in the table:** [VibeThinker](models/vibethinker.md) (3B and 1.5B). Its page says "clean", but we found
-no saved output and no record of when it was audited: maybe before this table existed, unknown.
 
 | Model | File | sha256 | Header | Template | Verdict |
 |---|---|---|---|---|---|
@@ -135,4 +133,5 @@ no saved output and no record of when it was audited: maybe before this table ex
 | [Iris-3B's text encoder](models/iris-3b.md) | `Qwen3VL-4B-Instruct-Q4_K_M.gguf` | ✓ pinned | ✓ | nothing flagged by the audit | **clean** |
 | [Iris-3B](models/iris-3b.md) | `turbo/model.safetensors` (not GGUF) | ✓ pinned | n/a | n/a: plain `.safetensors` weights, no chat template; not run through `audit-gguf.py` | **pinned only** |
 | [TwIL-8B](models/twil-8b.md) | `TwIL-8B-Q4_K_M-verbose.gguf` | ✓ pinned | ✓ | identical to the source repo's (`verbose/chat_template.jinja`); its one info line is the stock Qwen "do not tell the user about function calls" wording ([audit](../bench/audits/2026-11-06/twil-8b.txt)) | **clean** |
+| [VibeThinker](models/vibethinker.md) 3B and 1.5B | `VibeThinker-3B.Q8_0.gguf`, `VibeThinker-1.5B.Q8_0.gguf` | ✓ pinned (re-hashed 2026-11-07) | ✓ | identical to the source repos' (`WeiboAI/VibeThinker-3B`'s `tokenizer_config.json`, `-1.5B`'s `chat_template.jinja`). Audited only on 2026-11-07, months after they first ran; no earlier record ([3B](../bench/audits/2026-11-07/vibethinker-3b.txt), [1.5B](../bench/audits/2026-11-07/vibethinker-1.5b.txt)) | **clean** |
 | [Cactus Mirage](../bench/cactus/README.md) | `mirage.cact` + `libcactus.so` (not GGUF) | ✓ pinned (the package's own pins, re-checked by [`fetch.py`](../bench/cactus/fetch.py)) | n/a | n/a: no chat template. The engine imports no networking functions; the Python sends usage counts by default (turned off). Runs only in the no-network sandbox | **sandboxed** |
