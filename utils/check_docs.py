@@ -113,6 +113,19 @@ def check_commands(path, text, llm, imagine, qmodel, dl):
             fail(path, f"`examples/chat.py -m {m.group(1)}`: no such model")
 
 
+TRACKED = None
+
+
+def tracked(dest):
+    """True if git tracks this file (or a file under this folder): what a GitHub reader actually gets."""
+    global TRACKED
+    if TRACKED is None:
+        out = subprocess.run(["git", "ls-files", "-z"], capture_output=True, text=True, check=True, cwd=REPO).stdout
+        TRACKED = {REPO / f for f in out.split("\0") if f}
+        TRACKED |= {d for f in TRACKED for d in f.parents}
+    return dest.resolve() in TRACKED
+
+
 def check_links(path, text):
     text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
     for m in re.finditer(r"\]\(([^)\s]+)\)", text):
@@ -123,6 +136,8 @@ def check_links(path, text):
         dest = (path.parent / file) if file else path
         if not dest.exists():
             fail(path, f"broken link {target}")
+        elif not tracked(dest):
+            fail(path, f"link to a file git doesn't track (ignored or uncommitted): {target}")
         elif frag and dest.suffix == ".md" and frag not in anchors(dest.resolve()):
             fail(path, f"broken anchor {target}")
 
