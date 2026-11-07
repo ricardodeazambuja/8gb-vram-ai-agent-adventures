@@ -69,12 +69,12 @@ Notice what's missing: no coding benchmarks at all. That's a hint about what it'
 | | |
 |---|---|
 | VRAM at 64K | 4.3 GB loaded, 4.4 GB after a 15K-token prompt |
-| Generation | 52.0 tok/s (the fastest when measured; LFM3 later reached 106) |
+| Generation | 52.0 tok/s (the fastest when measured; LFM3 later reached 106; [recheck 2026-11-07](../../bench/recheck/results/2026-11-07-llm/e4b.txt): 52.3) |
 | Prompt speed | 1,531 tok/s (15.8K tokens in 10 s) |
 | Tool calls | work |
 | Code check | answered without a code block, so there was nothing to run |
 
-**[pibench](../pibench.md): 7/18,** ahead of only Qwen3-VL, LFM3-VL and VibeThinker 3B. Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
+**[pibench](../pibench.md): 7/18** ([every attempt](../../bench/results/summary.md)), ahead of only Qwen3-VL, LFM3-VL and VibeThinker 3B. Bug fix 1/3, CLI 0/3, feature 3/3, login 1/3,
 books 0/3, JS page 2/3. Median 2.0 minutes per attempt (the quickest), one timeout.
 
 ## How it compares

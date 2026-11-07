@@ -44,7 +44,7 @@ scripts/llm lfm3vl pi       # or chat with it in pi
 
 RTX 2070 Max-Q (8 GB), q8_0 KV, 32K context, projector on the GPU, the card's sampling (temp 0.1,
 top-k 50, repeat-penalty 1.1). `scripts/qwen-bench.py`: **106.2 tok/s**, a 15K-token prompt at
-**4,875 tok/s**, tool call ✓, 2.6 GB of VRAM.
+**4,875 tok/s**, tool call ✓, 2.6 GB of VRAM ([recheck 2026-11-07](../../bench/recheck/results/2026-11-07-llm/lfm3vl.txt): 106.8 tok/s).
 
 **[Vision probe](../vision-probe.md): 91%**, at a median of 8 s per image (only
 [Qwen3-VL-8B](qwen3-vl-8b.md) is quicker, at 5 s, and it scores 89%).
@@ -61,7 +61,7 @@ top-k 50, repeat-penalty 1.1). `scripts/qwen-bench.py`: **106.2 tok/s**, a 15K-t
 
 For 2.6 GB, it's a good little eye: a pi session on a big model could hand it screenshots.
 
-**[pibench](../pibench.md): 0/18**, 47% of hidden tests, at 64K context. Don't let it drive.
+**[pibench](../pibench.md): 0/18** ([every attempt](../../bench/results/summary.md)), 47% of hidden tests, at 64K context. Don't let it drive.
 It has the same architecture as [LFM3-1.7B](lfm3-1.7b.md) (12/18), plus a vision encoder, but its
 weights differ, and that's the cause (see [the replay](../fine-tuning.md#can-lfm3-vl-do-more-than-look-2026-11-01)). The chat template is
 byte-for-byte the same, yet 14 of 18 attempts ran into the 20-minute timeout, each stuck

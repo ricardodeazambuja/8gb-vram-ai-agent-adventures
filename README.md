@@ -16,17 +16,17 @@ a coding agent that reads files, runs commands and edits code, entirely offline.
 
 | | Model | Size | Context | Speed | [pibench](docs/pibench.md) | [Vision](docs/vision-probe.md) | One-liner |
 |---|---|---|---:|---:|---:|---:|---|
-| 🪨 | [**Flint**](docs/models/flint.md)<br>`flint` | 40B MoE, 2.5B active | 128K | 24 tok/s | **18/18** | text only | The careful coder. Looks before it leaps. |
-| 💎 | [**Gemma 4 26B-A4B**](docs/models/gemma4-26b-a4b.md)<br>`gemma` | 26B MoE, 4B active | 32K–128K | 23.5 tok/s | **18/18** | **100%** | Where it all started. Quietly aced everything. |
+| 🪨 | [**Flint**](docs/models/flint.md)<br>`flint` | 40B MoE, 2.5B active | 128K | 32 tok/s (24) | **18/18** | text only | The careful coder. Looks before it leaps. |
+| 💎 | [**Gemma 4 26B-A4B**](docs/models/gemma4-26b-a4b.md)<br>`gemma` | 26B MoE, 4B active | 32K–128K | 30 tok/s (23.5) | **18/18** | **100%** | Where it all started. Quietly aced everything. |
 | 🧢 | [**ThinkingCap Gemma 4 26B**](docs/models/thinkingcap-gemma4-26b-a4b.md)<br>`thinkingcap` | 26B MoE, 4B active | 64K | 17.4 tok/s | 17/18 | not run | Gemma told to think less: half the thinking, one fewer solve. |
 | ⚡ | [**Nemotron 3.5 Bolt 74B**](docs/models/nemotron-bolt-74b.md)<br>`bolt` | 74B hybrid MoE, 9B active | 128K | 14 tok/s | 15/18 | 91% | The biggest one here. 74B in 2 bits, slow and thoughtful. |
-| 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md)<br>`qwen36` | 35B MoE, 3B active | 128K | 23 tok/s | 16/18 | **100%** | The yardstick everyone else is measured against. |
-| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md)<br>`distill` | 35B MoE, 3B active | 128K | 26 tok/s | 16/18 | 88% | Quick jobs (2.5 min). Thinks in haiku. |
-| 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md)<br>`groot` | 19B MoE, 3B active | 128K | **39.5 tok/s** | **18/18** | 74% | Qwen3.6 with half the experts. Fastest big model here. |
-| 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md)<br>`lfm25` | 24B conv/attention MoE, 2B active | 128K | 31.5 tok/s | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
-| 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md)<br>`ornith` | 35B MoE, 3B active | 128K | 31 tok/s | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
+| 🐉 | [**Qwen3.6-35B-A3B**](docs/models/qwen3.6-35b-a3b.md)<br>`qwen36` | 35B MoE, 3B active | 128K | 39 tok/s (23) | 16/18 | **100%** | The yardstick everyone else is measured against. |
+| 🏎️ | [**Qwen3.8 distill**](docs/models/qwen3.8-35b-a3b-distill.md)<br>`distill` | 35B MoE, 3B active | 128K | **49 tok/s** (26) | 16/18 | 88% | Quick jobs (2.5 min). Thinks in haiku. |
+| 🌱 | [**Groot-19B-A3B**](docs/models/groot-19b-a3b.md)<br>`groot` | 19B MoE, 3B active | 128K | 47 tok/s (39.5) | **18/18** | 74% | Qwen3.6 with half the experts. Among the fastest big models here. |
+| 💧 | [**LFM2.5-24B-A2B**](docs/models/lfm2.5-24b-a2b.md)<br>`lfm25` | 24B conv/attention MoE, 2B active | 128K | 43.5 tok/s (31.5) | 10/18 | text only | Not a Qwen. Trained inside agent harnesses, pi among them. |
+| 🐦 | [**Ornith-1.5-35B-A3B**](docs/models/ornith-1.5-35b-a3b.md)<br>`ornith` | 35B MoE, 3B active | 128K | 40 tok/s (31) | 14/18 | 97% | Qwen3.6 that trained on its own tasks. The quickest jobs of the big models, and it guesses. |
 | 🌳 | [**Bonsai 2 27B**](docs/models/bonsai2-27b.md)<br>`bonsai2` | 27B, ternary weights | 32K | 38 tok/s | 16/18 | 98% | A 27B model in 6 GB. Big brain, small desk. |
-| ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md)<br>`spark` | 4B dense | 108K | 48–50 tok/s | 14/18 | text only | Twice as fast as the big ones. Overthinks, then rushes. |
+| ✨ | [**Spark-X2.6-4B**](docs/models/spark-x2.6-4b.md)<br>`spark` | 4B dense | 108K | 48–50 tok/s | 14/18 | text only | As fast as the quickest big ones, all on the GPU. Overthinks, then rushes. |
 | 🚀 | [**LFM3-1.7B**](docs/models/lfm3-1.7b.md)<br>`lfm3` | 1.7B tri-hybrid | 128K | **106 tok/s** | 12/18 | text only | Tiny, as fast as its VL sibling and twice as fast as the rest, and better at chores than models 14× its size. |
 | 👀 | [**LFM3-VL-2B**](docs/models/lfm3-vl-2b.md)<br>`lfm3vl` | 2B + vision | 32K | 106 tok/s | 0/18 | 91% | 2.6 GB, 8 s an image, and the tightest boxes of any model here. Good for one picture, one tool call ([60/60](docs/visual-control.md)); in long agent sessions it loops. |
 | 🐇 | [**Nemotron 3.5 Bolt E4B**](docs/models/nemotron-bolt-e4b.md)<br>`e4b` | 8B (4B effective) | 64K | 52 tok/s | 7/18 | text only | Fast, all on the GPU. A voice-assistant model; coding isn't its day job. |
@@ -39,11 +39,10 @@ images with known answers: OCR, bounding boxes, charts, counting, engineering dr
 we haven't run it (yet). The full numbers, and what the vendors claim, are on the
 [**scoreboard**](docs/scoreboard.md). The name under each model starts it: `scripts/llm <name>`
 ([below](#using-the-models)). MoE = mixture of experts: only a few billion of the weights work on each token, and
-the rest (the experts) can wait in RAM. Speeds are with the experts split by layer (`NCMOE` = how many layers'
-experts sit in RAM); for Qwen3.6, the
-Qwen3.8 distill, Flint, Ornith, Groot, LFM2.5 and Gemma, `scripts/llm` uses our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
-instead: 19–58% faster decode at the same VRAM or less next to a quiet desktop (Qwen3.6 24.9 → 39.4 tok/s; the
-distill +34%), about 10% less than that next to a busy one.
+the rest (the experts) can wait in RAM. **Speed** is what `scripts/llm` gives next to a quiet desktop. For Qwen3.6,
+the Qwen3.8 distill, Flint, Ornith, Groot, LFM2.5 and Gemma that's our [MoE expert cache](docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes),
+which keeps the busiest experts on the GPU; in brackets, the older static split (`NCMOE` = how many layers'
+experts sit in RAM; `scripts/llm <name> --static`). Next to a busy desktop the cache gives about 10% less.
 
 ## The helpers
 

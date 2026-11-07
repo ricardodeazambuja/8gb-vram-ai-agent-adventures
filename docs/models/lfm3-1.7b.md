@@ -53,7 +53,7 @@ Server only, for any OpenAI-compatible client: `scripts/llm lfm3 serve`. (The bu
 ## Our numbers
 
 RTX 2070 Max-Q (8 GB), q8_0 KV, flash attention on, 128K context, the card's sampling (temp 0.1,
-top-k 50, repeat-penalty 1.1). `scripts/qwen-bench.py`, single run.
+top-k 50, repeat-penalty 1.1). `scripts/qwen-bench.py`, single run; [recheck 2026-11-07](../../bench/recheck/results/2026-11-07-llm/lfm3.txt): 105.1 tok/s.
 
 | Config | VRAM | Generation | Prompt (15K tokens) | Tool call |
 |---|---:|---:|---:|---|
@@ -68,7 +68,7 @@ prompt is read in about 3 seconds.
 6,913 tokens**, among the most here (TwIL 7.1K, Qwen3.6 3.6K, Ornith 1.4–1.8K). At 105 tok/s that is
 still about a minute.
 
-**[pibench](../pibench.md): 12/18 solved**, 88% of hidden tests, median **2.2 min** per run. That
+**[pibench](../pibench.md): 12/18 solved** ([every attempt](../../bench/results/summary.md)), 88% of hidden tests, median **2.2 min** per run. That
 is more than its 24B sibling LFM2.5 (10/18) and the 8B Nemotron E4B (7/18), from a model a tenth
 of the size. The CLI, the feature and the login were 3/3, the bug fix 2/3 (once it fixed only the
 reported bugs and still accepted `5x` and `abc`). Where it fell down was the data it scraped.

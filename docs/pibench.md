@@ -15,9 +15,9 @@ tests it never saw.
 | 🐛 **bug fix** | Two bug reports for a duration parser (`"2h5m"` → seconds). There are more bugs than reported. | 27 hidden tests, including the unreported bugs |
 | 🧩 **feature** | Add error handling, a restock report and a CSV round trip to a small `Inventory` class | 8 tests, with commas, quotes and accents in the CSV |
 | 🛠️ **CLI** | Write a word-frequency command-line tool from a spec (options, stdin, JSON out, exit codes) | 6 tests against a reference implementation |
+| 🔐 **login** | Log in through a form with a CSRF token, then grab links that only logged-in users see | 3 tests: 15 authors and their exact links |
 | 📚 **books** | Scrape one category of [books.toscrape.com](https://books.toscrape.com), visiting every book's page for stock and UPC | 5 tests: titles, prices, ratings, stock, UPCs |
 | 🪄 **JS page** | Scrape three pages of a site whose quotes are drawn by JavaScript | 5 tests: 30 quotes, authors, texts, tags, order |
-| 🔐 **login** | Log in through a form with a CSRF token, then grab links that only logged-in users see | 3 tests: 15 authors and their exact links |
 
 The web chores use [toscrape.com](https://toscrape.com), sandbox sites built for scraping
 practice, so the answers don't change from one day to the next. Every task was checked both

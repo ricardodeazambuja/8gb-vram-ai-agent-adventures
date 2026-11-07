@@ -7,7 +7,7 @@
 > | On disk | 5.03 GB (`Q4_K_M`) + 0.75 GB vision projector (`Q8_0`) |
 > | Where it lives | everything on the GPU, projector included (~7.4 GB used) |
 > | Context | 16K |
-> | Generation | ~38 tok/s (26 tok/s with the context full) |
+> | Generation | ~38 tok/s (26 tok/s with the context full; [recheck 2026-11-07](../../bench/recheck/results/2026-11-07-llm/qwen3vl.txt): 41.6) |
 > | Prompt processing | ~830–900 tok/s |
 > | [pibench](../pibench.md) | 1/18 (2026-11-02) |
 > | [Vision probe](../vision-probe.md) | **89%**, perfect OCR, ~5 s per image |
@@ -109,7 +109,7 @@ big thinking models, which encode on the CPU and reason first):
 |---:|---:|---:|---:|---:|
 | 100% | 100% | 7% | 61% | 96% |
 
-**[pibench](../pibench.md): 1/18** (2026-11-02, our fork, 16K). Qwen3-VL is here for its eyes, and it shows. Its one
+**[pibench](../pibench.md): 1/18** ([stats](../../bench/results/stats-2026-11-02.txt), [every attempt](../../bench/results/summary.md); 2026-11-02, our fork, 16K). Qwen3-VL is here for its eyes, and it shows. Its one
 solve was the login job: one script, run once, 18 seconds. Elsewhere it kept sending the same `edit` again:
 181 of its 254 edits changed nothing ("the replacement produced identical content"), so it went in circles.
 It got close on the feature (7/8 in all three attempts) and never wrote a working CLI.

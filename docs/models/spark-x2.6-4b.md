@@ -95,14 +95,14 @@ table, so the comparison on the [scoreboard](../scoreboard.md) is cross-source.
 
 | Test | Result |
 |---|---|
-| Generation, short coding prompt | **50.4 tok/s** (re-checked a day later: 48.1) |
+| Generation, short coding prompt | **50.4 tok/s** (re-checked a day later: 48.1; [recheck 2026-11-07](../../bench/recheck/results/2026-11-07-llm/spark.txt): 49.9) |
 | Prompt processing, 16.8K tokens | 1,619 tok/s (re-check: 1,454) |
 | Tool call | ✓ |
 | Needle at 25% depth in a 104,905-token prompt | **found**, at 791 tok/s prompt / 19.1 tok/s generation |
 | Code check (`merge_intervals`, 500 random tests) | correct, 0/500 wrong, but 4,693 tokens of reasoning |
 | VRAM | 7.55 GB loaded, 7.66 GB after the tests |
 
-**[pibench](../pibench.md): 14/18 solved, 96% of hidden tests passed, median 3.3 min per run.**
+**[pibench](../pibench.md): 14/18 solved, 96% of hidden tests passed, median 3.3 min per run** ([every attempt](../../bench/results/summary.md)).
 Bug fix 3/3 and login 3/3; the CLI, the feature, the book scraper and the JavaScript page 2/3
 each.
 

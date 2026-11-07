@@ -130,7 +130,7 @@ You can quantize the **KV cache itself** to shrink it in VRAM, freeing room for 
 on-GPU experts. `KVQUANT=q8_0` (near-lossless) roughly halves it; `q5_1`/`q4_0` go further but cost
 quality. It's a **long-context lever** — at 32K the KV cache is already ~0.6 GB so it barely matters,
 but past ~64K the freed VRAM fits a faster expert split, so the win is both **bigger usable context**
-and **higher tok/s** (e.g. +38% at 128K here).
+and **higher tok/s** (e.g. +38% at 128K here; [how it fits §4](../docs/how-it-fits.md#4-quantize-the-kv-cache-too-usually)).
 
 ```bash
 CTX=131072 KVQUANT=q8_0 bash scripts/start.sh   # 128K context with a quantized KV cache
@@ -206,7 +206,7 @@ MTP=1 TEMP=0.7 bash scripts/start.sh           # MTP on (n-max 2), at a coding t
 bash scripts/run-server-mtp.sh                 # interactive: pick every MTP knob with safe defaults
 ```
 
-**It only pays off at low temperature** — **+15–30 % at greedy/coding temperature**, but **no
+**It only pays off at low temperature** — **+19–31% at greedy and 32K** (22.9 → 27.1 tok/s at draft length 2; +13% at 64K; [the benchmark](https://github.com/ricardodeazambuja/gemma4-26B-only-8B-VRAM/blob/ff2c219c99cca2b908258550b129db054cf6e737/docs/mtp-benchmark.md)), but **no
 measurable gain at the default `TEMP=1.0`** (the gain falls within this rig's ±13 % run-to-run
 noise). So enable it for coding work and keep the temperature low; for chat at `TEMP=1.0` it's not
 worth it. The full study, the measurement-noise analysis, and why EAGLE3 doesn't work here are in

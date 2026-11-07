@@ -104,7 +104,7 @@ Terminal-Bench is worth keeping in mind: see the [scoreboard](../scoreboard.md).
 
 | Loops | Generation | Prompt (15.8K tokens) | Peak VRAM | Tool call |
 |---|---:|---:|---:|---|
-| **2** (per-loop KV, 64K) | **29.3 tok/s** | 852 tok/s | 5.7 GB | ✓ |
+| **2** (per-loop KV, 64K) | **29.3 tok/s** ([recheck](../../bench/recheck/results/2026-11-07-llm/dory.txt): 28.4) | 852 tok/s | 5.7 GB | ✓ |
 | 4 (last-loop KV, 64K) | 17.7 tok/s | 492 tok/s | 5.1 GB | ✓ |
 
 Short-story speed by loop count: 43 / 31 / 22 / 19 tok/s for 1–4 loops. 128K at 2 loops with
@@ -125,13 +125,10 @@ against the card's own settings:
 Flash attention and q8_0 change its predictions about 13× less than dropping one loop. One text,
 6K tokens: enough to rule out a broken setting, not a benchmark.
 
-**[pibench](../pibench.md): 14/18** (2026-11-02, our fork, `start_dory.sh` defaults: 2 loops, 64K). The same
-score as [Spark](spark-x2.6-4b.md), the other 4B, and as Bonsai 2 27B at 16K (16/18 at its default 32K) and Ornith 35B. It solved every bug fix,
-feature and login job, all three JavaScript scrapes and two of the three CLIs; it never solved the books
-scrape. There it fell for the site's traps: five stars for every book (twice), the undeclared character set
-(`Noahâ\x80\x99s`) and a curly apostrophe turned straight. It thinks a lot (31K characters a job), runs its
-tests (1.5 pytest runs a job), never ran out of context (35K at most of 64K), and takes 7.2 min a job,
-about twice Spark's time. The vision probe doesn't apply (text only).
+**[pibench](../pibench.md): 14/18** ([stats](../../bench/results/stats-2026-11-02.txt), [every attempt](../../bench/results/summary.md); 2026-11-02, our fork, `start_dory.sh` defaults: 2 loops, 64K). The same
+score as [Spark](spark-x2.6-4b.md), the other 4B, and as Bonsai 2 27B at 16K (16/18 at its default 32K) and Ornith 35B:
+bug fix, feature, login and JS page 3/3, CLI 2/3, books 0/3. Median 7.2 min a job. How it got there is below.
+The vision probe doesn't apply (text only).
 
 ## How it behaves
 

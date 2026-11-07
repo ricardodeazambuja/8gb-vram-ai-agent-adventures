@@ -279,7 +279,7 @@ of lookups hit.
 
 On a miss, the merged code copies the expert to the GPU. Here that is the slow part: this laptop's PCIe
 3.0 link runs at x8, measured at 6.45 GB/s, and copying one expert takes ~0.23 ms. The CPU can compute the
-same expert from RAM in ~0.1 ms. The open upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966)
+same expert from RAM in ~0.1 ms ([measurements](../bench/moe-cache/RESULTS.md), [`bw.cu`](../bench/moe-cache/bw/bw.cu)). The open upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966)
 (Aman Gupta) adds `--moe-cache-cpu-share F`, which hands that share of the misses to the CPU. Copying
 every miss, the cache gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of misses on the CPU:
 
