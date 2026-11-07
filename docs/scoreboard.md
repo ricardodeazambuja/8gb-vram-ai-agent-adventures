@@ -31,6 +31,7 @@ Two health warnings before the numbers:
 | [LFM3-1.7B](models/lfm3-1.7b.md) | dense 1.7B, conv + attention | Q8_0, 1.85 GB | 128K | **106 tok/s** | **4,802 tok/s** | 12/18 | text only | `scripts/llm lfm3` |
 | [LFM3-VL-2B](models/lfm3-vl-2b.md) | dense 2B + vision | Q8_0, 1.85 GB + projector | 32K | 106 tok/s | 4,875 tok/s | 0/18 | 91% | `scripts/llm lfm3vl` |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) | dense 8B (4B eff.) | Q4_K_M, 6.2 GB | 64K | 52 tok/s | 1,531 tok/s | 7/18 | text only | `scripts/llm e4b` |
+| [TwIL-8B](models/twil-8b.md) | dense 8B | Q4_K_M (verbose), 5.35 GB | 24K | 38.0 tok/s | 644 tok/s | 8/18 | text only | `scripts/llm twil` |
 
 ¹ Processing a ~14–17K-token prompt, which is what a coding agent's first turn costs. "—" = not
 measured the same way. Speeds are with the experts split by layer (`NCMOE`); `scripts/llm` runs Qwen3.6, the
@@ -151,6 +152,7 @@ The last column says how much we watched each one, so you know how far to trust 
 | [Nemotron Bolt E4B](models/nemotron-bolt-e4b.md) | **hasty** | Fast (52 tok/s, second only to LFM3); good for short assistant turns | Declares victory on empty output (`{}`, a header-only CSV); skims specs; 5.5 tool errors per attempt | pibench |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) | **snappy** | Flawless OCR, 5 seconds per image; boxes right in its own format | Doesn't think, so counting slips (12 dots for 11). 16K context. As an agent, 1/18: re-sends the same edit that changes nothing | vision, pibench |
 | [Dory1.0-4B](models/dory1.0-4b.md) | **steady** | 14/18 on pibench from 4B, 95% of hidden tests; thinks a lot and runs its tests. More loops for more depth | Slow per job (7.2 min); never solved the books chore (star ratings, character set); its llama.cpp support is an unmerged PR | pibench |
+| [TwIL-8B](models/twil-8b.md) | **cramped** | Short code jobs: 7 of 9 code chores, 0/500 wrong on the code check | Thinks so long that its 24K context ran out in 14 of 18 attempts, and 32K didn't help (3/6, twice as slow); 1 of 9 web chores; only fits with a quiet desktop | pibench (one night) |
 
 What separates the top from the middle isn't how much a model thinks or how often it looks: it's
 whether it *reads* what it looked at. The full story, with examples, is in

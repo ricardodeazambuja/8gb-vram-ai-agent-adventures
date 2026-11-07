@@ -47,7 +47,8 @@ pibench's sandbox. There it only reached the task sites.)
 128). Next to 5.0 GiB of weights, 24K at q4_0 (~1.1 GB) leaves room for a ~0.7 GB desktop by estimate;
 32K would need the desktop under ~350 MiB, and q8_0 at 32K (2.7 GB) doesn't fit. These are estimates until the
 first run measures the compute buffer. The first run (2026-11-07, night): 6645 MiB in use at load with a
-432 MiB desktop, so the estimate holds. With a daytime desktop (~1.8 GB with Chrome open) it does not fit on the
+432 MiB desktop, so the estimate holds. 32K also ran that night with the same desktop, 7.0 GB in use (one reading
+mid-run, not a measured peak), so the ~350 MiB above was too cautious; it still needs a near-empty desktop. With a daytime desktop (~1.8 GB with Chrome open) it does not fit on the
 GPU at all.
 
 ## Our numbers
@@ -66,7 +67,7 @@ First run 2026-11-07, in the [recheck](../../bench/recheck/README.md#through-scr
 8.4 min per attempt**, no timeouts ([stats](../../bench/results/stats-twil.txt)). Per task: bug fix 1/3, word count 3/3,
 feature 3/3, login 0/3, books 0/3, JS quotes 1/3.
 
-- **The context is what stopped it.** 14 of 18 attempts ended because the conversation filled the 24K window
+- **It keeps running out of room.** 14 of 18 attempts ended because the conversation filled the 24K window
   (22.6K tokens at most); six of those had already passed every test. It thinks a lot, 26K characters a job,
   and the web pages it fetched with `curl` (50–100K characters a job on the two failing web chores) share the
   same room. It never wrote the books scraper at all.
@@ -74,8 +75,8 @@ feature 3/3, login 0/3, books 0/3, JS quotes 1/3.
   commands' own errors (shell quoting, Python tracebacks), `edit`s whose old text didn't match, and four cut off
   when the context ran out. Twice it wrote a call inside its thinking, where pi can't see it, and that attempt
   ended there.
-- **The bug fix:** it fixed the reported bugs and declared itself done twice with the hidden case still
-  failing (22/27).
+- **The bug fix:** twice it fixed the reported bugs but not the hidden case (22/27): once it declared itself done,
+  once the context ran out first.
 - In the sandbox it only reached the task sites (`quotes.toscrape.com`, `books.toscrape.com`, `goodreads.com`).
 
 **More context doesn't help.** One repeat at 32K the same night (`CTX=32768`, 7.0 GB of VRAM in use with the
@@ -84,4 +85,4 @@ the same rate as at 24K, and twice as slow per job (median 16.7 min). With the e
 characters a job instead of 26K, peak context 28.7K tokens) and still ran out in two attempts
 ([stats](../../bench/results/stats-twil-32k.txt)). The launcher stays at 24K.
 
-So it's a code writer, not an agent: give it a short, self-contained job, not a web page to explore.
+So the context is a symptom, not the cause: it fills whatever room it gets. It's a code writer, not an agent: give it a short, self-contained job, not a web page to explore.

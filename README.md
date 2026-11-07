@@ -57,6 +57,7 @@ boxes out, speech in and out. The picture makers run through `scripts/imagine`.
 | ⚡ | [**d1-2B**](docs/models/d1-2b.md)<br>`d1` | The same, much smaller | 2.6 GB | 27 ms a decision |
 | 📍 | [**LocateAnything-3B**](docs/models/locateanything-3b.md)<br>`locate` | Finds things in pictures | 5 GB | 15/15 shapes, mean IoU 0.94 |
 | 🧠 | [**VibeThinker 3B and 1.5B**](docs/models/vibethinker.md)<br>`vibe3b`, `vibe15` | One-shot code and math | 5.0 GB, 3.1 GB | 0/500 wrong on the code check, 65 and 108 tok/s; 0/18 on pibench (3B), not an agent |
+| 🧮 | [**TwIL-8B**](docs/models/twil-8b.md)<br>`twil` | Math and code reasoner | 5.35 GB | 0/500 wrong on the code check, 38 tok/s; 8/18 on pibench, where its long thinking fills the 24K context. Needs a quiet desktop |
 | 🐭 | [**LFM2.5-VL-450M**](docs/models/lfm2.5-vl-450m.md)<br>`lfm25vl` | Tiny vision model for fine-tuning | 1.5 GB | 0.1 s a decision once tuned |
 | 🖌️ | [**FLUX.2 Klein 4B**](docs/models/flux2-klein-4b.md)<br>`imagine -m klein` | Pictures, the everyday pick | 3.5 GB | 23 s an image |
 | 🔤 | [**Iris-3B Turbo**](docs/models/iris-3b.md)<br>`imagine -m iris` | Pictures with text | 7.3 GB | Cleanest sign text, 33 s |
