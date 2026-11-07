@@ -211,6 +211,36 @@ that size. The cost is evaluations: 32 copies × 16 maze runs × 20 decisions at
 A first test: ES on LFM3-1.7B's norm weights for multi-step maze driving (step 13 above), against the
 gradient-trained norm-only adapter.
 
+### 🪢 Harness adapters: a LoRA per model and agent harness ([blog post](https://huggingface.co/blog/harness-hub/harness-adapters), 2026-11-06)
+
+Hugging Face trains one small LoRA per model and harness with reinforcement learning (GRPO), inside the
+unmodified harness: pi, hermes, claude-code. Their models are three of ours: LFM2.5-24B-A2B, LFM3-1.7B and TwIL-8B.
+The reward is the task's verifier plus a small bonus for fewer tool calls, and a proxy,
+[safeagents](https://github.com/huggingface/safeagents), blocks reward-hacking calls (an undeclared tool, a host that
+appears nowhere in the conversation). The post is a preview: only LFM2.5's adapters are out
+([collection](https://huggingface.co/collections/harness-hub/lfm25-24b-harness-adapters)). The pi one's card
+([harness-hub/LFM2.5-24B-A2B-pi](https://huggingface.co/harness-hub/LFM2.5-24B-A2B-pi)) reports, on 100 of their
+data-analysis tasks: pass@1 −4.2 points (within their ±5 noise) and **39% fewer tool calls** on the tasks both solve.
+It also comes as a 37 MB GGUF for llama.cpp's `--lora`
+([harness-hub/LFM2.5-24B-A2B-pi-GGUF](https://huggingface.co/harness-hub/LFM2.5-24B-A2B-pi-GGUF)).
+
+What to take from it, in order:
+
+1. **The pi adapter on LFM2.5 in pibench.** An independent check of their claim on our chores. Baseline: 10/18, a median of
+   15 tool calls a job (13.3 on average on the solved ones; [results](../bench/results/results.csv)). Open question: it was trained on the BF16 weights and we run Liquid's QAD `Q4_0`; the card
+   says lower-precision bases drift from what it learned, and its suggested `Q8_0` (~25 GB) is too big for 32 GB of
+   RAM next to a desktop. Its two clean zeros (a bug fix stopped early, the books site read as Latin-1) are habits, not
+   wasted calls, so expect fewer calls rather than more solves. Before it runs: pin and audit the GGUF, and diff the
+   `chat_template.jinja` the adapter repo ships against Liquid's. Then a `scripts/llm lfm25` option for the LoRA, and
+   a night run (~2.5 h) into its own `RAW=` folder.
+2. **Tool calls compared their way:** on the attempts both versions solved, side by side, in `bench/batch_stats.py`.
+3. **safeagents' host rule as a pibench check:** list the hosts every attempt reached and flag any that aren't the
+   task's sites. Done by hand for TwIL on 2026-11-07 (only the task sites); `batch_stats.py` could do it for every run.
+4. **Later:** their TwIL-8B and LFM3-1.7B adapters, if published (our baselines: [8/18](models/twil-8b.md#our-numbers),
+   [12/18](models/lfm3-1.7b.md)); their held-out data-analysis tasks
+   ([SmolDataEnvs](https://huggingface.co/datasets/FineEnvs/SmolDataEnvs-harbor-train) is the training set) as a
+   seventh pibench chore, after a review, since each task is a third-party Docker image.
+
 <a id="strata"></a>
 
 ### 🪨 Strata, an engine built for big MoE models on gaming PCs ([Niko1221/Strata](https://github.com/Niko1221/Strata), MIT, read 2026-11-06)
