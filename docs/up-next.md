@@ -12,10 +12,7 @@ says where it went.
    one model do both. Gemma 4 26B already does (18/18, glance 30/30), and LFM3-1.7B driving with VL as eyes gets
    57/60 in 5 GB. No test yet needs both skills at once, so: a pibench task with pictures, on those two. Then the
    larger glance sample for Gemma.
-2. **TwIL-8B's first pibench run**, in the sandbox. It's downloaded, audited and served
-   ([page](models/twil-8b.md)); `scripts/llm twil` stays server-only until this run, because pi gives a model a
-   shell. Then the speed test and the code check, with a quiet desktop (it needs ~0.7 GB of VRAM free beyond its own).
-3. **LFM3-Audio's open parts:** tool calls over `/v1/realtime`, and recorded human speech instead of its own
+2. **LFM3-Audio's open parts:** tool calls over `/v1/realtime`, and recorded human speech instead of its own
    voice ([voice agents](#️-voice-agents-agents-that-talk-to-people) below).
 
 ## In progress
@@ -277,6 +274,7 @@ temperatures we use.
 | Groot and LFM2.5 get the expert cache by default (2026-11-07): +20% and +29% decode, and more room for the desktop than their static splits | [`bench/moe-cache`](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07) |
 | The vision probe through `scripts/llm` (2026-11-07): same scores within one answer's noise, 5–27% less time per image | [vision probe](vision-probe.md#the-results) |
 | Every model through `scripts/llm` (2026-11-07): loads, pi one-shot, status/stop, the "stop the server too?" question (n / y / Enter, and not asked for a server it didn't start), contexts, Spark/Bonsai thinking flags; the recheck at launcher defaults (cached models 28–62% faster); TwIL's first speed and code check | [`bench/recheck/`](../bench/recheck/README.md#through-scriptsllm-2026-11-07) |
+| TwIL-8B's first pibench (2026-11-07): 8/18 at 24K, code chores 7 of 9, web chores 1 of 9; the context ran out in 14 of 18 attempts | [its page](models/twil-8b.md#our-numbers), [pibench](pibench.md#the-results) |
 | VibeThinker's audit (2026-11-07): clean, templates identical to the source | [security](security.md#audits-so-far) |
 | Relaxed draft acceptance | [graveyard](graveyard.md#relaxed-draft-acceptance-faster-but-it-rambles) |
 | The first image models, style and person training | [Making pictures](image-generation.md) |

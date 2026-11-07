@@ -8,6 +8,7 @@
 > | Where it lives | entirely on the GPU (5.0 GiB of weights + the KV cache) |
 > | Context | 24K with a q4_0 KV cache (the card wants 40K for hard problems) |
 > | Speed | 38.0 tok/s; a 17K-token prompt at 644 tok/s; 6.6 GB of VRAM in use with the desktop ([recheck](../../bench/recheck/results/2026-11-07-llm/twil.txt)) |
+> | [pibench](../pibench.md) | 8/18 at 24K: code chores 7 of 9, web chores 1 of 9; the context ran out in 14 of 18 attempts |
 > | [Security audit](../security.md) | clean |
 > | Licence | webAI Non-Commercial 1.0: non-commercial research and education only |
 > | Launch | `scripts/llm twil serve` (server only until it has run in pibench's sandbox) |
@@ -60,4 +61,20 @@ First run 2026-11-07, in the [recheck](../../bench/recheck/README.md#through-scr
 | A tool call (`read`), though it has no tool-use training | ✓ |
 | Code check (`merge_intervals`, 16,000-token budget, in the no-network container) | ✓ 0/500 wrong, its own doctests passed; 7,114 tokens, 3.6 min at 32.7 tok/s |
 
-pibench is next: its first shell access belongs in the sandbox.
+**[pibench](../pibench.md), 2026-11-07, 24K with a q4_0 KV cache: 8/18 solved, 73% of hidden tests passed, median
+8.4 min per attempt**, no timeouts ([stats](../../bench/results/stats-twil.txt)). Per task: bug fix 1/3, word count 3/3,
+feature 3/3, login 0/3, books 0/3, JS quotes 1/3.
+
+- **The context is what stopped it.** 14 of 18 attempts ended because the conversation filled the 24K window
+  (22.6K tokens at most); six of those had already passed every test. It thinks a lot, 26K characters a job,
+  and the web pages it fetched with `curl` (50–100K characters a job on the two failing web chores) share the
+  same room. It never wrote the books scraper at all.
+- **Tools work without tool-use training.** 237 calls (194 of them `bash`). The 35 that failed were the
+  commands' own errors (shell quoting, Python tracebacks), `edit`s whose old text didn't match, and four cut off
+  when the context ran out. Twice it wrote a call inside its thinking, where pi can't see it, and that attempt
+  ended there.
+- **The bug fix:** it fixed the reported bugs and declared itself done twice with the hidden case still
+  failing (22/27).
+- In the sandbox it only reached the task sites (`quotes.toscrape.com`, `books.toscrape.com`, `goodreads.com`).
+
+So it's a code writer, not an agent: give it a short, self-contained job, not a web page to explore.

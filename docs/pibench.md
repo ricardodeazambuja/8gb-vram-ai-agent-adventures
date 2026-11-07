@@ -65,6 +65,7 @@ container with no network at all. The nuts and bolts (and how to run it yourself
 | [Dory1.0-4B](models/dory1.0-4b.md) ⁵ | 14/18 | 95% | 3/3 | 3/3 | 2/3 | 3/3 | 0/3 | 3/3 | 7.2 min | 0 |
 | [LFM3-1.7B](models/lfm3-1.7b.md) ² | 12/18 | 88% | 2/3 | 3/3 | 3/3 | 3/3 | 0/3 | 1/3 | 2.2 min | 0 |
 | [LFM2.5-24B-A2B](models/lfm2.5-24b-a2b.md) ² | 10/18 | 86% | 0/3 | 3/3 | 2/3 | 2/3 | 0/3 | 3/3 | 4.2 min | 0 |
+| [TwIL-8B](models/twil-8b.md) ⁸ | 8/18 | 73% | 1/3 | 3/3 | 3/3 | 0/3 | 0/3 | 1/3 | 8.4 min | 14 of 18 ⁹ |
 | [Nemotron 3.5 Bolt E4B](models/nemotron-bolt-e4b.md) ¹ | 7/18 | 78% | 1/3 | 3/3 | 0/3 | 1/3 | 0/3 | 2/3 | **2.0 min** | 0 |
 | [Qwen3-VL-8B](models/qwen3-vl-8b.md) ⁵ | 1/18 | 52% | 0/3 | 0/3 | 0/3 | 1/3 | 0/3 | 0/3 | 3.9 min | 0 |
 | [Gemma 4 12B agentic](models/gemma4-12b-agentic.md) ⁵ (retired) | 0/18 | 48% | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 20.0 min | 1 |
@@ -80,7 +81,8 @@ forever. ⁴ 14 of 18 attempts hit the 20-minute timeout, every one in a loop of
 both Gemma 12B fine-tunes and VibeThinker 3B ran on 2026-11-02, on our fork after the PrismML merge (`7ff495f`), same
 harness, 90 more attempts. VibeThinker went through its [tool-call proxy](models/vibethinker.md). ⁶ The same day,
 same fork: Bonsai with the q8_0 KV cache that lets it [fit 32K](../bench/bonsai-ctx/README.md); the 16K row ran on
-PrismML's own build. ⁷ Both had already passed every test.
+PrismML's own build. ⁷ Both had already passed every test. ⁸ 2026-11-07, same fork (`69ca796`), same harness, 18 more
+attempts, at its launcher's 24K with a q4_0 KV cache. ⁹ Six of them had already passed every test.
 
 "Hidden tests passed" has a floor: the untouched starter files already pass 12 of the bug fix's 27 tests and 3 of
 the feature's 8. The Gemma 12B coder never changed a file, so its 28% is that floor.
@@ -136,6 +138,11 @@ on small, self-contained jobs. It doesn't tell you who will refactor your monore
 - **Gemma 4 12B agentic** — all effort, no finish. Busy, slow on this card at 32K, and sloppy with
   tool arguments.
 - **Gemma 4 12B coder** — a chat coder. Writes the answer, doesn't use the tools.
+- **TwIL-8B** — a mathematician in a cupboard. It thinks at length (26K characters a job) and ran out of its 24K
+  context in 14 of 18 attempts, six of them after the work was done. The code chores mostly went fine (7 of 9); the
+  web chores didn't (1 of 9): it fetched raw pages and thought about each at length until the room ran out, and
+  never even wrote the books scraper. No tool-use training, yet 237 tool calls went through; twice it wrote one inside
+  its thinking, where pi can't see it, and the attempt ended.
 - **VibeThinker 3B** — a one-shot solver, as advertised. Not an agent, even through the proxy.
 
 The run-by-run notes, with transcript paths and quotes, are in

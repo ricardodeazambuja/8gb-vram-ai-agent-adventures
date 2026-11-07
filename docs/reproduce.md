@@ -180,6 +180,7 @@ Write `--tag=-3k` with the `=`: on its own, argparse reads `-3k` as a flag.
 | pibench, Bonsai 2 at 32K | `RAW=$PWD/bench/results/raw-bonsai2-32k MODELS=bonsai2 bash bench/run-bench.sh`, about 2.3 hours. Numbers: `RAW=… python3 bench/batch_stats.py bonsai2`, committed as [`stats-bonsai2-32k.txt`](../bench/results/stats-bonsai2-32k.txt) |
 | pibench, 2026-11-02 batch (Dory, Qwen3-VL, both Gemma 12Bs, VibeThinker 3B) | `MODELS="coder12 agentic12 dory qwen3vl vibe3b" bash bench/run-bench.sh`, about 10 hours, then `python3 bench/summarize.py` (the two Gemma 12B launchers were removed when the models were retired; they're
 in git history at `2764962`). The per-model numbers in the write-up: `python3 bench/batch_stats.py dory qwen3vl agentic12 coder12 vibe3b`, committed as [`stats-2026-11-02.txt`](../bench/results/stats-2026-11-02.txt) (it reads the raw transcripts, which stay on this disk) |
+| pibench, TwIL-8B (2026-11-07) | `MODELS=twil bash bench/run-bench.sh` (needs a desktop under ~0.9 GB of VRAM), about 2.5 hours, then `python3 bench/batch_stats.py twil`, committed as [`stats-twil.txt`](../bench/results/stats-twil.txt) |
 | Vision probe | [`bench/vision/README.md`](../bench/vision/README.md) |
 | Visual control | [Run it yourself](visual-control.md#run-it-yourself) |
 | Decision models and the command guard | Weights: `download-models.sh d1 clefflash`. `bench/grading/run_guard.py` runs from its own prompts; `run_judge.py` also needs the raw pibench transcripts. Each script's header has its usage, and [`bench/grading/results/`](../bench/grading/results/) the scores |
@@ -221,7 +222,6 @@ covers only the beyond-vision, glance and steering numbers, and (since 2026-11-0
 | Detect-all counts, web-page clicks | No saved output; the page captures aren't committed |
 | Training time and VRAM, image verdicts | The evidence is in ignored `models/` and `loop/logs/` |
 | Results from `vendor/llama.cpp-lfm3` and `vendor/locate-llama.cpp` | Those builds are gone. Voice and the quick checks have been rerun on the fork |
-| TwIL-8B pibench | Not run yet; its speed and code check are in the recheck (2026-11-07) |
 
 [`loop/`](../loop/README.md) keeps the night-by-night commands and journal. It's a record of what
 happened, so use this page to repeat anything.
