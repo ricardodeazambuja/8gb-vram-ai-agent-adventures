@@ -1,0 +1,36 @@
+# Quick checks: does every model still work on a new build?
+
+Not a benchmark. [`check.sh`](check.sh) starts each model through `scripts/llm` with its normal settings (the
+expert cache where the launcher uses it), on port 8091, and asks:
+
+- **agent models:** "What is 17 * 23?" (greedy; passes if the answer has 391) and one tool-call request (passes
+  if it calls `get_weather` with Paris; the call is printed, never run). VibeThinker gets only the first: it
+  has no native tool calls;
+- **Qwen3-VL and LFM2.5-VL:** the dot-counting picture from [bench/vision](../vision/README.md) (passes if the
+  answer is a count; the truth is 7 red, 11 blue);
+- **LFM3-VL, LocateAnything, EmbeddingGemma 2, d1, Clef-Flash, LFM3-Audio:** their [example scripts](../../examples/README.md)
+  with built-in or fixed inputs. The helpers' own scored checks are in [bench/smoke](../smoke/README.md).
+
+Run it on both builds and compare the logs: `CUDA_BIN=/path/to/llama-server bash bench/buildcheck/check.sh LABEL [NAME...]`.
+
+## 2026-11-08: the merged expert cache (`3f2b2d60a`) against the build before it (`84137489b`)
+
+The default build moved to the fork's `moe-cache-max-batch-merged` branch, the expert cache as merged upstream
+([why](../moe-cache/README.md#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)).
+All 25 models in `scripts/llm list` ran on both, each with the launcher's settings:
+
+- **Everything passes on both builds**, with the same answers: every arithmetic answer and tool call, the same
+  picture counts (Qwen3-VL 7/13, LFM2.5-VL 9/10 against a truth of 7/11; small vision models miscount on both),
+  the same decisions and probabilities from d1 and Clef-Flash, the same search hit, transcript and box.
+- **VibeThinker 1.5B** used all 4,096 tokens thinking without answering, on both builds.
+- **Answer lengths differ a little on the expert-cache models** (Groot, Qwen3.6, Ornith; the same answer either
+  way): the new eviction policy sends different experts to the CPU, so the arithmetic differs slightly.
+- **Decode speeds** are within a few tok/s of each other on these short answers; they are single runs, not a
+  benchmark ([the A/B](../moe-cache/README.md#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)
+  measures it).
+
+Logs: [`new-small.txt`](logs/new-small.txt) and [`old-small.txt`](logs/old-small.txt) (Chrome open, ~1.7 GB
+desktop: Spark, TwIL, Bonsai 2, Qwen3-VL and Clef-Flash ran out of VRAM at load on the new build, and Spark on
+the old one too, where Chrome was closed partway through; the `*-serve.txt` files have the errors), then
+[`new-big.txt`](logs/new-big.txt) and [`old-big.txt`](logs/old-big.txt) with Chrome closed (~0.5 GB desktop):
+the MoEs plus those five, which all loaded.
