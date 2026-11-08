@@ -29,7 +29,7 @@
 #              auto = a size measured to fit, with KVQUANT=q8_0: 3267 at 32K, 3500 at 64K (2026-11-04: 4084,
 #              the expert bytes of NCMOE=20, ran out of memory at load; so did NCMOE=20 itself that day).
 #              With auto, a desktop using more than ~700 MiB of VRAM shrinks the cache by the difference
-#              (MOE_CACHE_ADAPT=0: keep the measured size). Needs our fork's moe-cache-max-batch-merged build (the default).
+#              (MOE_CACHE_ADAPT=0: keep the measured size). Needs our fork's adventures-sync-2026-11-08 build (the default).
 #   MOE_CACHE_SHARE  share of cache misses computed on the CPU, not copied over PCIe  (default: 0.95)
 #   PRINT_CONFIG  1 = print the resolved model, alias, context and projector, then exit
 #   HOST/PORT  bind address                   (default: 127.0.0.1 / 8080)

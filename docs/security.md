@@ -49,7 +49,7 @@ read-only, CPU).
 4. **Audit the vision projector too** (`mmproj-*.gguf`). It has no template, but it goes
    through the same parser.
 5. **Use a recent llama.cpp build.** The GGUF parser has had memory-safety fixes. New models run
-   on the default build, our fork's `moe-cache-max-batch-merged` branch
+   on the default build, our fork's `adventures-sync-2026-11-08` branch
    ([getting started §3](getting-started.md#3-build-llamacpp-once)), unless they need another fork.
 6. **Keep its first runs tool-less or sandboxed.** Speed tests (`scripts/qwen-bench.py`,
    `llama-bench`, a plain chat request) give the model no tools; `qwen-bench.py` only checks

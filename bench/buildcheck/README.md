@@ -44,3 +44,9 @@ decisions.** What moved: answer lengths on Groot, Gemma, Qwen3.6, Ornith, Dory, 
 answers in a different number of tokens), Flint's tool call took 68 tokens instead of 49, and Clef-Flash's
 "unsafe" probability went from 0.920 to 0.915. Upstream changed attention and the 4- and 5-bit matrix kernels'
 rounding, so small numeric shifts are expected.
+
+After the sync became the default build (main `../llama.cpp` rebuilt at `1f6e660c4`), a short run through the
+launcher, [`default-sync.txt`](logs/default-sync.txt) (LFM3, Bonsai 2, Qwen3.6, Qwen3.8, Gemma, d1): all pass, the
+same token counts as `sync.txt`. Not chased: Qwen3.8's speed on these 63-token answers right after loading is
+34–38 tok/s on the sync build against 40–42 on the two builds before it; over 400-token answers there is no gap
+([step 19c](../moe-cache/README.md#the-full-upstream-sync-experimentalstep19-2026-11-08)).

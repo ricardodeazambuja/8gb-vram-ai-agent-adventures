@@ -54,7 +54,7 @@
 #              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 27, ornith 34, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
 #   MOE_CACHE  MoE only, off unless set (scripts/llm sets auto for qwen36, distill, flint, ornith, groot, lfm25): N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
-#              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-cache-max-batch-merged branch (the default
+#              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's adventures-sync-2026-11-08 branch (the default
 #              build; upstream PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
 #              auto = qwen36 2900, flint 2168, ornith 2983 (each the VRAM its NCMOE default uses); distill 2770 with
 #              batch 2048 (+34% decode, long prompts 2.3x faster; room for a ~700 MiB desktop, see
@@ -89,7 +89,7 @@
 #   EXTRA_ARGS any extra llama-server flags
 #   PRINT_CONFIG  1 = print the resolved model, alias, context and projector, then exit
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
-#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: our fork's moe-cache-max-batch-merged branch
+#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: our fork's adventures-sync-2026-11-08 branch
 #              in ../llama.cpp (ADV_LLAMA), for every model, and env llamacpp-cuda)
 #
 # Flags (CLI args, not env vars):
@@ -108,7 +108,7 @@ for _arg in "$@"; do case "$_arg" in
 esac; done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Our llama.cpp: our fork, branch `moe-cache-max-batch-merged` = `adventures` (upstream 2026-10-28 + LocateAnything
+# Our llama.cpp: our fork, branch `adventures-sync-2026-11-08` = `adventures` (upstream master 2026-11-08 + LocateAnything
 # PR #24749 + Dory PR #30306 + PrismML's fork for Bonsai's PTQ1_0) + the MoE expert cache, next to this repo.
 # Override with ADV_LLAMA=/path/to/clone.
 ADV_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"

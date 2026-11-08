@@ -439,7 +439,7 @@ context plus N new ones:
 
 Every number and size above stays as measured. On 2026-11-08 the merged branch became the default build, and
 `scripts/run-qwen.sh` now sets `GGML_OP_OFFLOAD_MIN_BATCH` to the limit + 1 whenever it passes
-`--moe-cache-max-batch`.
+`--moe-cache-max-batch`. Later that day the full upstream sync (below) replaced it as the default.
 
 ### The full upstream sync (`experimental/step19*`, 2026-11-08)
 
