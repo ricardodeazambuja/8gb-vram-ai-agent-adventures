@@ -161,6 +161,20 @@ for q, want in [("q38", (48.4, 53.2, 10, 89)), ("q36", (39.0, 41.5, 6, 89))]:
     b = decode(f"s18b-{q}-new-omb", EX)
     same(f"{q} merged + offload threshold: decode old / merged / change %, CPU share over 8",
          (round(a, 1), round(b, 1), round((b / a - 1) * 100), cpu_share_over8(f"s18b-{q}-new-omb")), want)
+# step 18/18b turns (client side, turnbench rows in step18*.log): tok/s of the 48/100/200/600-token turns per label
+
+
+def turns(label):
+    txt = open(f"{EX}/step18.log").read() + open(f"{EX}/step18b.log").read()
+    block = txt.split(f"### {label} |")[1].split("###")[0]
+    return [float(m[1]) for m in re.finditer(r"^\s+\d+\s+\d+\s+\d+\s+([\d.]+)$", block, re.M)]
+
+
+for q, want in [("q38", ([98.5, 146.4, 172.1, 243.8], [57.3, 78.7, 106.0, 243.9], [108.7, 165.1, 177.6, 243.7])),
+                ("q36", ([76.7, 109.8, 139.5, 218.0], [63.0, 88.5, 141.7, 200.3], [83.1, 117.7, 140.9, 219.6]))]:
+    old = [round(statistics.mean(v), 1) for v in zip(turns(f"s18-{q}-old"), turns(f"s18-{q}-old-b"), turns(f"s18b-{q}-old"))]
+    same(f"{q} turns 48/100/200/600: old mean / merged / merged + threshold",
+         (old, turns(f"s18-{q}-new"), turns(f"s18b-{q}-new-omb")), want)
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))

@@ -8,7 +8,7 @@ and the Gemma 4 template fix on [its model page](../../docs/models/gemma4-26b-a4
 2. computing cache misses on the CPU instead of copying them over PCIe;
 3. keeping the prompt cache valid across an agent's turns.
 
-Ideas 1 and 2 already existed in llama.cpp: upstream PR [#29887](https://github.com/ggml-org/llama.cpp/pull/29887) (merged) and PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (its first 9 commits; merged upstream on 2026-11-07 with 14, [measured below](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)), cherry-picked onto
+Ideas 1 and 2 already existed in llama.cpp: upstream PR [#29887](https://github.com/ggml-org/llama.cpp/pull/29887) (merged) and PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (its first 8 code commits; merged upstream on 2026-11-07 with 14, [measured below](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)), cherry-picked onto
 our fork's [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch at `3a72c57be`.
 Our default build is now the [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch)
 branch (`69ca796dd`): `moe-offload` plus the `--moe-cache-max-batch` flag ([below](#two-experiments-in-the-fork-experimental)).
@@ -388,7 +388,7 @@ has the table.
 
 ### Upstream's merged version: faster, once one threshold is raised (`experimental/step18*`, 2026-11-07 night)
 
-PR #30966 was merged upstream on 2026-11-07 (`e95426f16`) with 14 commits; everything above ran its first 9. By
+PR #30966 was merged upstream on 2026-11-07 (`e95426f16`) with 14 commits; everything above ran its first 8 with code. By
 then the cache's eviction policy had also changed upstream: a frequency-based "ClassLRU" (#31233, decayed use
 counts, the CRF) replaced the 50/50 split policy we measured, and #31853 picks which misses go to the CPU by
 lowest CRF instead of at random. To test only that, the fork got a branch, `moe-cache-max-batch-merged`
@@ -398,15 +398,17 @@ Not a full upstream sync: that is 252 commits, with conflicts in the PrismML ker
 
 **Step 18** (`step18-merged.sh`, [`step18.log`](experimental/logs/step18.log)): old build / merged / old build
 again, at the launcher's `MOE_CACHE=auto` settings, desktop ~0.4 GB. Decode got faster, but turns that go through
-the cache with 32 or more tokens got much slower: in batches over 8 tokens the merged code sent 9% of the misses
-to the CPU instead of 88–89%, and copied ~9× more over PCIe (Qwen3.8 7.9 → 69.1 GB, Qwen3.6 5.0 → 48.5 GB).
+the cache in batches of 32 or more tokens got much slower: in batches over 8 tokens the merged code sent 9% of the misses
+to the CPU instead of 88–89%, and copied ~9× more over PCIe (Qwen3.8 7.7 → 67.5 GiB, Qwen3.6 4.9 → 47.3 GiB). The
+6K-token prompt and Qwen3.6's 600-token turn lost a little too: they end in a 99- and an 88-token batch, which
+uses the cache.
 
 **Why** (found from the code in the fork session, checked against the source): since `1f17b9c97` the cache
 gives no CPU part to a batch the GPU would take whole, and CUDA takes a host-weight expert multiply whole from
 `GGML_OP_OFFLOAD_MIN_BATCH` tokens (an environment variable, default 32). With our cache batch limits of 128 and
-256, every batch of 32 tokens up to the limit copied all its misses. Upstream's own default limit is 32, so there
-only batches of exactly 32 tokens lose it: this is our flag meeting the new design. The new miss order isn't it: a
-CPU-only replay of the slot assignment gave the same CPU share with random, CRF and id order.
+256, every batch of 32 tokens up to the limit copied all its misses. Upstream's own limit is a fixed 32, so on CUDA
+with the default threshold only batches of exactly 32 tokens lose it: this is our flag meeting the new design. The
+new miss order (lowest CRF first) isn't it: it is still on in step 18b, where the CPU share comes back.
 
 **Step 18b** (`step18b-offload-min.sh`, [`step18b.log`](experimental/logs/step18b.log)): the merged build with
 `GGML_OP_OFFLOAD_MIN_BATCH` = limit + 1 (257 and 129; bigger batches still go to the GPU whole, as before), then
@@ -424,12 +426,13 @@ context plus N new ones:
 | Decode hit rate (batches ≤ 8 tokens) | 59.4% / 65.0% / 66.6% | 62.7% / 67.7% / 67.1% |
 | Misses sent to the CPU, batches over 8 tokens | 88% / 9% / **89%** | 89% / 9% / **89%** |
 
-- **With the threshold raised, the merged version wins everywhere it differs:** decode +6–10% (+4–7% in step 18;
-  decode is single tokens, which the threshold doesn't touch, so that spread is run-to-run), short turns +7–13%,
+- **With the threshold raised, the merged version wins everywhere it differs:** decode +6–10% (+4–7% in step 18,
+  without the threshold; each is a single merged run, and the threshold also changes what the cache holds when
+  decode starts, through the 35-token prompt and the prompt's last batch before it), short turns +7–13%,
   long prompts and 600-token turns unchanged. The decode hit rate is 4–7 points higher; which of the two upstream
   changes does that isn't separated here.
 - **One merged run per setting**, against three old ones (decode 46.4–49.7 on Qwen3.8, 38.5–39.5 on Qwen3.6). The old
-  build is deterministic: its runs have identical cache counters.
+  build is deterministic: its runs have identical cache counters. Whether the merged build is wasn't checked.
 
 So the default build stays where it was (`69ca796dd`) for now, and so do every number and size above. Moving to
 the merged version needs the launcher to set `GGML_OP_OFFLOAD_MIN_BATCH` to the limit + 1 whenever it passes

@@ -290,13 +290,13 @@ BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto \
 `--moe-cache-cpu-share` reached upstream llama.cpp on 2026-11-07, together with a new eviction policy;
 `--moe-cache-max-batch` is ours only. Everything here ran the PR before that merge, in our default build
 ([getting started §3](getting-started.md#3-build-llamacpp-once)). The merged version is faster still (decode
-+4–10%, short turns +7–13%) once one CUDA threshold is raised to match our cache batch limit; the launcher doesn't
++6–10%, short turns +7–13%) once one CUDA threshold is raised to match our cache batch limit; the launcher doesn't
 set it yet
 ([the comparison](../bench/moe-cache/README.md#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)).
 
 ### Why the misses go to the CPU
 
-On a miss, the merged code copies the expert to the GPU. Here that is the slow part: this laptop's PCIe
+On a miss, the cache from #29887 copies the expert to the GPU. Here that is the slow part: this laptop's PCIe
 3.0 link runs at x8, measured at 6.45 GB/s, and copying one expert takes ~0.23 ms. The CPU can compute the
 same expert from RAM in ~0.1 ms ([measurements](../bench/moe-cache/RESULTS.md), [`bw.cu`](../bench/moe-cache/bw/bw.cu)).
 Upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (Aman Gupta, merged 2026-11-07) adds
