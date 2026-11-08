@@ -185,6 +185,23 @@ same("q38 decode, step 19c: default, sync, no-31888, sync no graphs, default no 
      [47.6, 48.5, 49.5, 49.6, 49.5, 51.2, 50.7])
 same("q38 decode at 2000 MiB, step 19c: MTP default / MTP sync / no MTP default / no MTP sync",
      [round(decode(f"s19c-{x}", EX), 1) for x in ("mtp-merged", "mtp-sync", "c2000-merged", "c2000-sync")], [43.4, 43.5, 47.0, 48.5])
+# step 19 agent loop (prompt tokens reprocessed per turn) and step 19c MTP acceptance
+
+
+def reproc19(label):
+    block = open(f"{EX}/step19.log").read().split(f"### {label} |")[1].split("###")[0]
+    rows = block.split("-- agent loop")[1].split("vram end")[0]
+    return [int(m[1]) for m in re.finditer(r"^\s+\d+\s+\d+\s+\d+\s+(\d+)\s", rows, re.M)]
+
+
+for q, want in [("q38", ([443, 25, 78, 78, 78, 25], [443, 25, 78, 78, 25, 25])), ("q36", ([443, 25, 212, 25, 25, 25],) * 2)]:
+    same(f"{q} agent loop reprocessed per turn, step 19: default (both runs) / sync",
+         (reproc19(f"s19-{q}-merged"), reproc19(f"s19-{q}-sync")), want)
+    same(f"{q} agent loop, step 19: the two default runs agree", reproc19(f"s19-{q}-merged"), reproc19(f"s19-{q}-merged-b"))
+for b in ("merged", "sync"):
+    with open(f"{EX}/srv-s19c-mtp-{b}.log") as f:
+        m = re.findall(r"#mean acc len = ([\d.]+), #acc rate/pos = \(([\d.]+)", f.read())[-1]  # cumulative over the run: the last line
+    same(f"q38 MTP, step 19c {b}: mean accepted length, first-position acceptance", (m[0], m[1]), ("2.11", "0.839"))
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))

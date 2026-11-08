@@ -318,7 +318,7 @@ How it was measured, and what else changed:
   the other four). Each model ran baseline, cache, then baseline again, two 400-token runs each. The table
   shows the first baseline; for Ornith, measured later, the mean of both.
 - **Builds.** The first four ran on our fork's `moe-offload` branch (`3a72c57be`,
-  [`RESULTS.md`](../bench/moe-cache/RESULTS.md)); Groot and LFM2.5 on the current default,
+  [`RESULTS.md`](../bench/moe-cache/RESULTS.md)); Groot and LFM2.5 on the then-default,
   `moe-cache-max-batch` (`69ca796dd`), at its default cache batch limit, which leaves the cache's behaviour
   unchanged ([step 17](../bench/moe-cache/README.md#groot-and-lfm25-sizes-for-the-launcher-modelsstep17-groot-lfm25-sizesh-2026-11-07)).
 - **VRAM.** 86–186 MiB lower than the split for Qwen3.6, within 10 MiB for Gemma and Flint. Groot and LFM2.5

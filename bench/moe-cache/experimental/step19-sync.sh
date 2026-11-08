@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Step 19 (2026-11-08): the full upstream sync (fork branch adventures-sync-2026-11-08, 1f6e660c4: upstream master
-# cf34d3113 merged into the default build 3f2b2d60a) against the default build, at the launcher's MOE_CACHE=auto
+# cf34d3113 merged into 3f2b2d60a) against the then-default build 3f2b2d60a (tag known-good-2026-11-08-merged), at the launcher's MOE_CACHE=auto
 # settings with GGML_OP_OFFLOAD_MIN_BATCH = limit + 1 on both. A/B/A on each model: srvbench x2 (decode),
 # turnbench (48-600-token turns), then a 6-turn pi-like agent loop (fake tool results, nothing runs) that prints
 # the prompt tokens reprocessed per turn: the sync replaced the fork's server checkpoint reuse with upstream's,
@@ -8,7 +8,8 @@
 Q="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ADV="$(cd "$Q/../../.." && pwd)"; LD="$Q/../longctx"; T="$Q/../models"; MD=$ADV/models
 pgrep -f "[m]emguard.py" >/dev/null || { echo "memguard not running, refusing"; exit 1; }
 : "${NEW_LLAMA:?set NEW_LLAMA (llama.cpp dir of the sync build)}" "${NEW_BIN:?set NEW_BIN (server path relative to NEW_LLAMA)}"
-OLD_LLAMA=${OLD_LLAMA:-$ADV/../llama.cpp} OLD_BIN=${OLD_BIN:-build/bin/llama-server}
+: "${OLD_LLAMA:?set OLD_LLAMA: a llama.cpp checkout at tag known-good-2026-11-08-merged, built (srv.sh labels runs with its commit)}"
+OLD_BIN=${OLD_BIN:-build/bin/llama-server}
 PY="${PY:-python3} -I"
 export LOGDIR=${LOGDIR:-$Q/logs} RUNS=2 SIZES="48 100 200 600"
 export AFTER="$PY $T/turnbench.py; echo '-- agent loop'; $PY $Q/../agentloop.py http://127.0.0.1:8090 6"

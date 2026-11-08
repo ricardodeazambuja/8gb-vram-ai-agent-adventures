@@ -10,7 +10,8 @@
 Q="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; ADV="$(cd "$Q/../../.." && pwd)"; LD="$Q/../longctx"; T="$Q/../models"; MD=$ADV/models
 pgrep -f "[m]emguard.py" >/dev/null || { echo "memguard not running, refusing"; exit 1; }
 : "${NEW_LLAMA:?set NEW_LLAMA (llama.cpp dir of the merged build)}" "${NEW_BIN:?set NEW_BIN (server path relative to NEW_LLAMA)}"
-OLD_LLAMA=${OLD_LLAMA:-$ADV/../llama.cpp} OLD_BIN=${OLD_BIN:-build/bin/llama-server}
+: "${OLD_LLAMA:?set OLD_LLAMA: a llama.cpp checkout at tag known-good-2026-11-08-premerge, built (srv.sh labels runs with its commit)}"
+OLD_BIN=${OLD_BIN:-build/bin/llama-server}
 export LOGDIR=${LOGDIR:-$Q/logs} RUNS=2 SIZES="48 100 200 600" AFTER="${PY:-python3} -I $T/turnbench.py"
 abba() { # label model batch cache maxbatch
   local l=$1 m=$2 b=$3 a=(-cmoe --moe-cache-mib "$4" --moe-cache-cpu-share 0.95 --moe-cache-max-batch "$5")

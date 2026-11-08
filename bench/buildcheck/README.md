@@ -21,19 +21,21 @@ All 25 models in `scripts/llm list` ran on both, each with the launcher's settin
 
 - **Everything passes on both builds**, with the same answers: every arithmetic answer and tool call, the same
   picture counts (Qwen3-VL 7/13, LFM2.5-VL 9/10 against a truth of 7/11; small vision models miscount on both),
-  the same decisions and probabilities from d1 and Clef-Flash, the same search hit, transcript and box.
+  the same decisions and probabilities from d1 and Clef-Flash, the same search hit and transcript, and the same
+  correct "nothing found" from LocateAnything (there is no circle in that picture).
 - **VibeThinker 1.5B** used all 4,096 tokens thinking without answering, on both builds.
-- **Answer lengths differ a little on the expert-cache models** (Groot, Qwen3.6, Ornith; the same answer either
-  way): the new eviction policy sends different experts to the CPU, so the arithmetic differs slightly.
-- **Decode speeds** are within a few tok/s of each other on these short answers; they are single runs, not a
-  benchmark ([the A/B](../moe-cache/README.md#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)
+- **Answer lengths differ on the expert-cache models** (Groot, Gemma, Qwen3.6, Ornith; Qwen3.6's arithmetic
+  answer went from 255 to 378 tokens; the same answer either way): the new eviction policy sends different experts to the CPU, so the arithmetic differs slightly.
+- **Decode speeds** differ by up to ~25% on these short answers (Dory 24.4 → 18.5 tok/s with Chrome open, LFM3
+  91.7 → 101.7); they are single runs, not a benchmark ([the A/B](../moe-cache/README.md#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)
   measures it).
 
 Logs: [`new-small.txt`](logs/new-small.txt) and [`old-small.txt`](logs/old-small.txt) (Chrome open, ~1.7 GB
 desktop: Spark, TwIL, Bonsai 2, Qwen3-VL and Clef-Flash ran out of VRAM at load on the new build, and Spark on
-the old one too, where Chrome was closed partway through; the `*-serve.txt` files have the errors), then
+the old one too, where Chrome was closed partway through; the `*-serve.txt` files have the errors, Clef-Flash's are inline), then
 [`new-big.txt`](logs/new-big.txt) and [`old-big.txt`](logs/old-big.txt) with Chrome closed (~0.5 GB desktop):
-the MoEs plus those five, which all loaded.
+the MoEs plus those five, which all loaded. These four logs came from an earlier version of `check.sh` (header
+`### smoke`, no `>> starting` lines); the answers it records are the same.
 
 ## 2026-11-08: the full upstream sync (`1f6e660c4`)
 

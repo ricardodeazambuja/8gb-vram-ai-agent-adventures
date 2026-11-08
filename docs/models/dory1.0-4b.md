@@ -49,8 +49,8 @@ Both are the defaults here. More on the general tricks in [How it fits](../how-i
 No llama.cpp release supports Dory yet. NVIDIA's pull request
 [ggml-org/llama.cpp#30306](https://github.com/ggml-org/llama.cpp/pull/30306) does. Our llama.cpp
 fork carries it in our default build: branch [`adventures`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures)
-is upstream of 2026-10-28 with that PR (at `43e865ec`, the version measured here) merged in, and the default
-`moe-cache-max-batch` branch is built on it, serving the other new models too ([getting-started](../getting-started.md#3-build-llamacpp-once)).
+is upstream of 2026-10-28 with that PR (at `43e865ec`, the version measured here) merged in, and the default build
+(`adventures-sync-2026-11-08`, upstream of 2026-11-08 merged into that work) contains it, serving the other new models too ([getting-started](../getting-started.md#3-build-llamacpp-once)).
 The numbers on this page were first measured on the PR's own base (upstream of 2026-10-15, kept
 as `patches/llama.cpp-dory-pr30306.patch`); the fork build gives the same, 29.7 tok/s and
 867 tok/s prompt (2026-10-30). Build our llama.cpp once: [getting-started.md](../getting-started.md).

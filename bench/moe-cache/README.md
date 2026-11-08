@@ -11,10 +11,12 @@ and the Gemma 4 template fix on [its model page](../../docs/models/gemma4-26b-a4
 Ideas 1 and 2 already existed in llama.cpp: upstream PR [#29887](https://github.com/ggml-org/llama.cpp/pull/29887) (merged) and PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (its first 8 code commits; merged upstream on 2026-11-07 with 14, [measured below](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)), cherry-picked onto
 our fork's [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch at `3a72c57be`.
 Everything up to step 17 ran the [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch)
-branch (`69ca796dd`, tag `known-good-2026-11-08-premerge`): `moe-offload` plus the `--moe-cache-max-batch` flag
-([below](#two-experiments-in-the-fork-experimental)). The default build is now
+branch (`69ca796dd`; tag `known-good-2026-11-08-premerge` is `84137489b`, that plus a test fix): `moe-offload` plus
+the `--moe-cache-max-batch` flag ([below](#two-experiments-in-the-fork-experimental)). Then, on 2026-11-08,
 [`moe-cache-max-batch-merged`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch-merged) (`3f2b2d60a`): the PR as merged, plus that flag
-([step 18](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)).
+([step 18](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)). The default build is
+now [`adventures-sync-2026-11-08`](https://github.com/ricardodeazambuja/llama.cpp/tree/adventures-sync-2026-11-08) (`1f6e660c4`): upstream master of that day merged in
+([step 19](#the-full-upstream-sync-experimentalstep19-2026-11-08)).
 Idea 3 isn't needed. Qwen3.6 reprocesses about 25 tokens per turn. Gemma 4 wasted 743 and 1,147 tokens on long
 `write` turns because its chat template adds a `\n` the model never writes;
 [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja) removes it, which brings both turns to 14
@@ -292,7 +294,7 @@ MiB for Qwen3.8 to leave ~700.
 
 The other session has since made this a proper option, `--moe-cache-max-batch N`, on the fork's branch
 `moe-cache-max-batch` at `69ca796dd` (`moe-offload` plus one commit; default 32, so nothing changes without the
-flag). Pushed on 2026-11-05 as `origin/moe-cache-max-batch`, and the fork's main `build/` now runs it.
+flag). Pushed on 2026-11-05 as `origin/moe-cache-max-batch`, and the fork's main `build/` ran it from then.
 `QMODEL=distill MOE_CACHE=auto` passes `--moe-cache-max-batch 256`; the other models keep 32 until 128 is
 measured (since done: `run-qwen.sh` now passes 128 for Qwen3.6 and Flint, steps 14–15 below).
 

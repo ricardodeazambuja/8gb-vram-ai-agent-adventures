@@ -147,7 +147,8 @@ daytime desktop). Numbers: [the daytime runs](../bench/moe-cache/README.md).
 ### `error: invalid argument: --moe-cache-mib` (or `--moe-cache-cpu-share`, `--moe-cache-max-batch`)
 
 **What's going on:** the llama.cpp build is older than the MoE expert cache: the `adventures` branch, or
-upstream. Builds made with `build-llama-cuda.sh` before 2026-11-06 defaulted to `adventures`.
+upstream from before 2026-11-07 (upstream has `--moe-cache-mib` and `--moe-cache-cpu-share` since then;
+`--moe-cache-max-batch` is ours only). Builds made with `build-llama-cuda.sh` before 2026-11-06 defaulted to `adventures`.
 
 **Fix:** rebuild with the current default, `bash scripts/build-llama-cuda.sh` (our fork's
 `adventures-sync-2026-11-08` branch), or run without the cache: `scripts/llm <name> --static`.

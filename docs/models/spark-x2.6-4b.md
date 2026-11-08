@@ -41,7 +41,7 @@ the measured fit, with ~0.3 GB to spare. See [How it fits](../how-it-fits.md).
 ## Install & run
 
 Spark's architecture is in upstream llama.cpp (since PR #27868, 2026-09-06). The repo runs it on
-our default build (the fork's `moe-cache-max-batch` branch, which contains the `adventures` branch the numbers below
+our default build (the fork's `adventures-sync-2026-11-08` branch, which contains the `adventures` work the numbers below
 were measured on: upstream of 2026-10-28 plus two PRs; see
 [getting-started](../getting-started.md#3-build-llamacpp-once)), the same build as
 [Dory](dory1.0-4b.md). Build our llama.cpp once: [getting-started.md](../getting-started.md). (First measured on upstream of
