@@ -150,7 +150,7 @@ daytime desktop). Numbers: [the daytime runs](../bench/moe-cache/README.md).
 upstream. Builds made with `build-llama-cuda.sh` before 2026-11-06 defaulted to `adventures`.
 
 **Fix:** rebuild with the current default, `bash scripts/build-llama-cuda.sh` (our fork's
-`moe-cache-max-batch` branch), or run without the cache: `scripts/llm <name> --static`.
+`moe-cache-max-batch-merged` branch), or run without the cache: `scripts/llm <name> --static`.
 
 ### 128K "should fit" by the math, but runs out of memory
 

@@ -54,7 +54,7 @@
 #              (default: measured fit at 128K — qwen36 32, distill 34, flint 42, groot 27, ornith 34, lfm25 27; the distill's
 #              experts are bigger and OOM at 32. See docs/models/qwen3.6-35b-a3b.md)
 #   MOE_CACHE  MoE only, off unless set (scripts/llm sets auto for qwen36, distill, flint, ornith, groot, lfm25): N MiB (or auto = the per-model size below) of VRAM for an LRU cache of the experts (--moe-cache-mib), every
-#              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-cache-max-batch branch (the default
+#              expert in RAM (--cpu-moe), and NCMOE ignored. Needs our fork's moe-cache-max-batch-merged branch (the default
 #              build; upstream PR #30966). Measured +58% decode on qwen36 at the same VRAM as NCMOE=32 (MOE_CACHE=2900);
 #              auto = qwen36 2900, flint 2168, ornith 2983 (each the VRAM its NCMOE default uses); distill 2770 with
 #              batch 2048 (+34% decode, long prompts 2.3x faster; room for a ~700 MiB desktop, see
@@ -62,7 +62,7 @@
 #              default's VRAM (bench/moe-cache/models/step17-groot-lfm25-size.sh). See docs/how-it-fits.md §12.
 #              (default: empty = off)
 #   MOE_CACHE_MAX_BATCH  batches up to N tokens go through the cache, bigger ones copy every expert they use
-#              (--moe-cache-max-batch)
+#              (--moe-cache-max-batch; also sets GGML_OP_OFFLOAD_MIN_BATCH to N+1 unless already set)
 #              (default: empty = the binary's 32; with MOE_CACHE=auto, distill 256, qwen36 and flint 128)
 #   MOE_CACHE_ADAPT  1 = MOE_CACHE=auto shrinks the cache by however much more VRAM is in use at launch than its
 #              size leaves room for (qwen36 380, distill 700, flint 500, ornith 430, groot 730, lfm25 600 MiB); 0 = the measured size
@@ -89,7 +89,7 @@
 #   EXTRA_ARGS any extra llama-server flags
 #   PRINT_CONFIG  1 = print the resolved model, alias, context and projector, then exit
 #   HOST/PORT  bind address                            (default: 127.0.0.1 / 8080)
-#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: our fork's moe-cache-max-batch branch
+#   CUDA_BIN / CUDA_ENV  CUDA build + its env          (default: our fork's moe-cache-max-batch-merged branch
 #              in ../llama.cpp (ADV_LLAMA), for every model, and env llamacpp-cuda)
 #
 # Flags (CLI args, not env vars):
@@ -108,7 +108,7 @@ for _arg in "$@"; do case "$_arg" in
 esac; done
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-# Our llama.cpp: our fork, branch `moe-cache-max-batch` = `adventures` (upstream 2026-10-28 + LocateAnything
+# Our llama.cpp: our fork, branch `moe-cache-max-batch-merged` = `adventures` (upstream 2026-10-28 + LocateAnything
 # PR #24749 + Dory PR #30306 + PrismML's fork for Bonsai's PTQ1_0) + the MoE expert cache, next to this repo.
 # Override with ADV_LLAMA=/path/to/clone.
 ADV_BIN="${ADV_LLAMA:-$REPO_ROOT/../llama.cpp}/build/bin/llama-server"
@@ -569,7 +569,10 @@ if [ "$KIND" = moe ]; then
     echo ">> MoE: all experts in RAM, $MOE_CACHE MiB GPU expert cache, CPU computes $MOE_CACHE_SHARE of misses"
     if [ -n "$MOE_CACHE_MAX_BATCH" ]; then
       OFFLOAD_ARGS+=(--moe-cache-max-batch "$MOE_CACHE_MAX_BATCH")
-      echo ">> MoE cache: batches up to $MOE_CACHE_MAX_BATCH tokens use the cache"
+      # Upstream's merged cache gives no CPU share to a batch CUDA would take whole, which it does from
+      # GGML_OP_OFFLOAD_MIN_BATCH (32) tokens: keep that above the cache's limit (bench/moe-cache step 18b).
+      export GGML_OP_OFFLOAD_MIN_BATCH="${GGML_OP_OFFLOAD_MIN_BATCH:-$((MOE_CACHE_MAX_BATCH + 1))}"
+      echo ">> MoE cache: batches up to $MOE_CACHE_MAX_BATCH tokens use the cache (GGML_OP_OFFLOAD_MIN_BATCH=$GGML_OP_OFFLOAD_MIN_BATCH)"
     fi
   elif [ -n "$NCMOE" ]; then
     OFFLOAD_ARGS+=(--n-cpu-moe "$NCMOE")

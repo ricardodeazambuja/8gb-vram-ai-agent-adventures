@@ -52,9 +52,10 @@ CUDA_VER="${CUDA_VER:-$DRIVER_CUDA}"
 CUDA_ARCH="${CUDA_ARCH:-$DET_ARCH}"
 ENV_NAME="${ENV_NAME:-llamacpp-cuda}"
 # Default: our fork at the commit everything here was tested on, next to this repo: branch
-# moe-cache-max-batch (the adventures branch + the MoE expert cache, --moe-cache-mib / --moe-cache-max-batch).
+# moe-cache-max-batch-merged (the adventures branch + the MoE expert cache as merged upstream, --moe-cache-mib /
+# --moe-cache-max-batch). The build before it: LLAMA_REF=known-good-2026-11-08-premerge.
 ADV_REPO=https://github.com/ricardodeazambuja/llama.cpp
-ADV_REF=69ca796ddb1a9b62c342f047d50880bc43b3c023
+ADV_REF=3f2b2d60ab76f7b0d07564ed5f06cb75e2cab9c2
 [ -z "${LLAMA_REPO:-}" ] && LLAMA_REF="${LLAMA_REF:-$ADV_REF}"
 SRC_DIR="${SRC_DIR:-$REPO_ROOT/../llama.cpp}"
 LLAMA_REPO="${LLAMA_REPO:-$ADV_REPO}"

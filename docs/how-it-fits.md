@@ -288,10 +288,10 @@ BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto \
 ```
 
 `--moe-cache-cpu-share` reached upstream llama.cpp on 2026-11-07, together with a new eviction policy;
-`--moe-cache-max-batch` is ours only. Everything here ran the PR before that merge, in our default build
-([getting started §3](getting-started.md#3-build-llamacpp-once)). The merged version is faster still (decode
-+6–10%, short turns +7–13%) once one CUDA threshold is raised to match our cache batch limit; the launcher doesn't
-set it yet
+`--moe-cache-max-batch` is ours only. The numbers in this section ran the PR before that merge; the default build
+is now the merged version plus our flag ([getting started §3](getting-started.md#3-build-llamacpp-once)), faster
+still (decode +6–10%, short turns +7–13% on Qwen3.8 and Qwen3.6) with one CUDA threshold raised to match our cache
+batch limit, which the launcher does
 ([the comparison](../bench/moe-cache/README.md#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)).
 
 ### Why the misses go to the CPU

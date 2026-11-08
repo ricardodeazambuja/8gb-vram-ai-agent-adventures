@@ -10,8 +10,11 @@ and the Gemma 4 template fix on [its model page](../../docs/models/gemma4-26b-a4
 
 Ideas 1 and 2 already existed in llama.cpp: upstream PR [#29887](https://github.com/ggml-org/llama.cpp/pull/29887) (merged) and PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (its first 8 code commits; merged upstream on 2026-11-07 with 14, [measured below](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)), cherry-picked onto
 our fork's [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch at `3a72c57be`.
-Our default build is now the [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch)
-branch (`69ca796dd`): `moe-offload` plus the `--moe-cache-max-batch` flag ([below](#two-experiments-in-the-fork-experimental)).
+Everything up to step 17 ran the [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch)
+branch (`69ca796dd`, tag `known-good-2026-11-08-premerge`): `moe-offload` plus the `--moe-cache-max-batch` flag
+([below](#two-experiments-in-the-fork-experimental)). The default build is now
+[`moe-cache-max-batch-merged`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch-merged) (`3f2b2d60a`): the PR as merged, plus that flag
+([step 18](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)).
 Idea 3 isn't needed. Qwen3.6 reprocesses about 25 tokens per turn. Gemma 4 wasted 743 and 1,147 tokens on long
 `write` turns because its chat template adds a `\n` the model never writes;
 [`config/gemma4-26b-nonl.jinja`](../../config/gemma4-26b-nonl.jinja) removes it, which brings both turns to 14
@@ -392,7 +395,7 @@ PR #30966 was merged upstream on 2026-11-07 (`e95426f16`) with 14 commits; every
 then the cache's eviction policy had also changed upstream: a frequency-based "ClassLRU" (#31233, decayed use
 counts, the CRF) replaced the 50/50 split policy we measured, and #31853 picks which misses go to the CPU by
 lowest CRF instead of at random. To test only that, the fork got a branch, `moe-cache-max-batch-merged`
-(`b11f5e64d`, local, not pushed): our build (`84137489b` = `69ca796dd` plus a test fix) with ClassLRU and the
+(`b11f5e64d`; pushed with a docs commit on top, `3f2b2d60a`): our build (`84137489b` = `69ca796dd` plus a test fix) with ClassLRU and the
 PR's last five commits cherry-picked, so the cache files match the merged PR except for `--moe-cache-max-batch`.
 Not a full upstream sync: that is 252 commits, with conflicts in the PrismML kernels.
 
@@ -434,8 +437,8 @@ context plus N new ones:
 - **One merged run per setting**, against three old ones (decode 46.4–49.7 on Qwen3.8, 38.5–39.5 on Qwen3.6). The old
   build is deterministic: its runs have identical cache counters. Whether the merged build is wasn't checked.
 
-So the default build stays where it was (`69ca796dd`) for now, and so do every number and size above. Moving to
-the merged version needs the launcher to set `GGML_OP_OFFLOAD_MIN_BATCH` to the limit + 1 whenever it passes
+Every number and size above stays as measured. On 2026-11-08 the merged branch became the default build, and
+`scripts/run-qwen.sh` now sets `GGML_OP_OFFLOAD_MIN_BATCH` to the limit + 1 whenever it passes
 `--moe-cache-max-batch`.
 
 ## How concentrated is expert use? (`expert_usage.py`, 2026-11-05)
