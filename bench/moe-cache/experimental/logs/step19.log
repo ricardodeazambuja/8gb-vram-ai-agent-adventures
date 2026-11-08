@@ -1,0 +1,156 @@
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.2 GiB -> ok
+### s19-q38-merged | 3f2b2d60a docs : moe-cache, set GGML_OP_OFFLOAD_MIN_BATCH ab | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2770 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 256 | env NO_WARM=
+    vram before: 469 MiB
+    vram loaded: 6958 MiB
+s19-q38-merged               vram  6958 MiB  prefill  6334 tok   527.2 t/s   decode 400 tok  50.76 t/s
+s19-q38-merged               vram  6958 MiB  prefill  6334 tok   550.4 t/s   decode 400 tok  52.91 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      461   104.2
+  100      100      630   158.8
+  200      200     1131   176.9
+  600      600     2467   243.2
+-- agent loop
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0        443       0     443    49          80  bash
+   1        516     491      25    41          59  read
+   2        634     556      78    47          82  read
+   3        758     680      78    48          81  read
+   4        883     805      78    69         102  bash
+   5        976     951      25    64          76  bash
+    vram end: 7110 MiB
+    vram peak: 7110 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2769.94 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 241903, misses = 142623 (134454 on the CPU), hit rate = 62.91%, uploaded = 13019.34 MiB
+    llama_moe_cache: ubatch  > 8: hits = 19117, misses = 61866 (54544 on the CPU), hit rate = 23.61%, uploaded = 11669.44 MiB
+    llama_moe_cache: large batches: 49866 experts copied from the cache, 26491.31 MiB
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.2 GiB -> ok
+### s19-q38-sync | 1f6e660c4 Merge upstream/master (cf34d3113) into adventures | build-sync/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2770 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 256 | env NO_WARM=
+    vram before: 469 MiB
+    vram loaded: 6964 MiB
+s19-q38-sync                 vram  6964 MiB  prefill  6334 tok   543.1 t/s   decode 400 tok  45.92 t/s
+s19-q38-sync                 vram  6964 MiB  prefill  6334 tok   570.4 t/s   decode 400 tok  48.28 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      488    98.4
+  100      100      621   161.0
+  200      200     1113   179.7
+  600      600     2326   257.9
+-- agent loop
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0        443       0     443    49          79  bash
+   1        516     491      25    41          58  read
+   2        634     556      78    43          62  read
+   3        754     676      78    57          51  bash
+   4        835     810      25    69         125  bash
+   5        928     903      25    65          98  bash
+    vram end: 7114 MiB
+    vram peak: 7114 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2769.94 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 241391, misses = 145136 (136837 on the CPU), hit rate = 62.45%, uploaded = 13226.53 MiB
+    llama_moe_cache: ubatch  > 8: hits = 19541, misses = 58595 (51894 on the CPU), hit rate = 25.01%, uploaded = 10679.72 MiB
+    llama_moe_cache: large batches: 50262 experts copied from the cache, 26701.69 MiB
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 28.0 GiB -> ok
+### s19-q38-merged-b | 3f2b2d60a docs : moe-cache, set GGML_OP_OFFLOAD_MIN_BATCH ab | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2770 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 256 | env NO_WARM=
+    vram before: 469 MiB
+    vram loaded: 6958 MiB
+s19-q38-merged-b             vram  6958 MiB  prefill  6334 tok   523.0 t/s   decode 400 tok  50.21 t/s
+s19-q38-merged-b             vram  6958 MiB  prefill  6334 tok   546.2 t/s   decode 400 tok  52.17 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      490    97.9
+  100      100      667   150.0
+  200      200     1170   170.9
+  600      600     2484   241.5
+-- agent loop
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0        443       0     443    49          80  bash
+   1        516     491      25    41          59  read
+   2        634     556      78    47          82  read
+   3        758     680      78    48          81  read
+   4        883     805      78    69         102  bash
+   5        976     951      25    64          76  bash
+    vram end: 7110 MiB
+    vram peak: 7110 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2769.94 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 241903, misses = 142623 (134454 on the CPU), hit rate = 62.91%, uploaded = 13019.34 MiB
+    llama_moe_cache: ubatch  > 8: hits = 19117, misses = 61866 (54544 on the CPU), hit rate = 23.61%, uploaded = 11669.44 MiB
+    llama_moe_cache: large batches: 49866 experts copied from the cache, 26491.31 MiB
+    memcheck: Qwen3.6-35B-A3B-UD-IQ4_XS.gguf 16.5 GiB + 4 margin, MemAvailable 28.3 GiB -> ok
+### s19-q36-merged | 3f2b2d60a docs : moe-cache, set GGML_OP_OFFLOAD_MIN_BATCH ab | build/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 128 | env NO_WARM=
+    vram before: 469 MiB
+    vram loaded: 7350 MiB
+s19-q36-merged               vram  7350 MiB  prefill  6334 tok   224.9 t/s   decode 400 tok  41.63 t/s
+s19-q36-merged               vram  7350 MiB  prefill  6334 tok   245.1 t/s   decode 400 tok  43.57 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      632    76.0
+  100      100      893   112.0
+  200      200     1429   140.0
+  600      600     2746   218.5
+-- agent loop
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0        443       0     443    66         150  bash
+   1        533     508      25   108         108  read
+   2        852     640     212    62          97  bash
+   3        938     913      25    63          82  bash
+   4       1025    1000      25    59          90  bash
+   5       1108    1083      25    85         182  bash
+    vram end: 7484 MiB
+    vram peak: 7484 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2899.47 MiB for 14462.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 287274, misses = 136638 (128202 on the CPU), hit rate = 67.77%, uploaded = 11951.29 MiB
+    llama_moe_cache: ubatch  > 8: hits = 19195, misses = 30927 (28731 on the CPU), hit rate = 38.30%, uploaded = 3053.81 MiB
+    llama_moe_cache: large batches: 171177 experts copied from the cache, 80109.06 MiB
+    memcheck: Qwen3.6-35B-A3B-UD-IQ4_XS.gguf 16.5 GiB + 4 margin, MemAvailable 28.1 GiB -> ok
+### s19-q36-sync | 1f6e660c4 Merge upstream/master (cf34d3113) into adventures | build-sync/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 128 | env NO_WARM=
+    vram before: 469 MiB
+    vram loaded: 7354 MiB
+s19-q36-sync                 vram  7354 MiB  prefill  6334 tok   231.9 t/s   decode 400 tok  40.69 t/s
+s19-q36-sync                 vram  7354 MiB  prefill  6334 tok   254.9 t/s   decode 400 tok  42.97 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      618    77.7
+  100      100      871   114.8
+  200      200     1370   146.0
+  600      600     2676   224.2
+-- agent loop
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0        443       0     443    68         163  bash
+   1        535     510      25    98          72  read
+   2        844     632     212    62          96  bash
+   3        930     905      25    65          90  bash
+   4       1019     994      25    76         148  bash
+   5       1119    1094      25    68         125  bash
+    vram end: 7483 MiB
+    vram peak: 7483 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2899.47 MiB for 14462.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 285004, misses = 136974 (128542 on the CPU), hit rate = 67.54%, uploaded = 11941.97 MiB
+    llama_moe_cache: ubatch  > 8: hits = 19062, misses = 31007 (28753 on the CPU), hit rate = 38.07%, uploaded = 3134.47 MiB
+    llama_moe_cache: large batches: 172077 experts copied from the cache, 80509.48 MiB
+    memcheck: Qwen3.6-35B-A3B-UD-IQ4_XS.gguf 16.5 GiB + 4 margin, MemAvailable 28.1 GiB -> ok
+### s19-q36-merged-b | 3f2b2d60a docs : moe-cache, set GGML_OP_OFFLOAD_MIN_BATCH ab | build/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 128 | env NO_WARM=
+    vram before: 468 MiB
+    vram loaded: 7349 MiB
+s19-q36-merged-b             vram  7349 MiB  prefill  6334 tok   224.5 t/s   decode 400 tok  40.01 t/s
+s19-q36-merged-b             vram  7349 MiB  prefill  6334 tok   243.7 t/s   decode 400 tok  42.32 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      649    73.9
+  100      100      924   108.3
+  200      200     1434   139.5
+  600      600     2776   216.1
+-- agent loop
+turn prompt_tok  cached  reproc   gen think_chars  tool
+   0        443       0     443    66         150  bash
+   1        533     508      25   108         108  read
+   2        852     640     212    62          97  bash
+   3        938     913      25    63          82  bash
+   4       1025    1000      25    59          90  bash
+   5       1108    1083      25    85         182  bash
+    vram end: 7495 MiB
+    vram peak: 7495 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2899.47 MiB for 14462.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 287274, misses = 136638 (128202 on the CPU), hit rate = 67.77%, uploaded = 11951.29 MiB
+    llama_moe_cache: ubatch  > 8: hits = 19195, misses = 30927 (28731 on the CPU), hit rate = 38.30%, uploaded = 3053.81 MiB
+    llama_moe_cache: large batches: 171177 experts copied from the cache, 80109.06 MiB

@@ -175,6 +175,16 @@ for q, want in [("q38", ([98.5, 146.4, 172.1, 243.8], [57.3, 78.7, 106.0, 243.9]
     old = [round(statistics.mean(v), 1) for v in zip(turns(f"s18-{q}-old"), turns(f"s18-{q}-old-b"), turns(f"s18b-{q}-old"))]
     same(f"{q} turns 48/100/200/600: old mean / merged / merged + threshold",
          (old, turns(f"s18-{q}-new"), turns(f"s18b-{q}-new-omb")), want)
+# step 19/19c (bench/moe-cache/README.md, the full upstream sync): Qwen3.8 decode per run, server side
+same("q38 decode, step 19: default / sync / default", [round(decode(f"s19-q38-{x}", EX), 1) for x in ("merged", "sync", "merged-b")],
+     [51.8, 47.1, 51.2])
+same("q36 decode, step 19: default / sync / default", [round(decode(f"s19-q36-{x}", EX), 1) for x in ("merged", "sync", "merged-b")],
+     [42.6, 41.8, 41.2])
+same("q38 decode, step 19c: default, sync, no-31888, sync no graphs, default no graphs, sync, default",
+     [round(decode(f"s19c-{x}", EX), 1) for x in ("merged", "sync", "sync-no31888", "sync-nographs", "merged-nographs", "sync-b", "merged-b")],
+     [47.6, 48.5, 49.5, 49.6, 49.5, 51.2, 50.7])
+same("q38 decode at 2000 MiB, step 19c: MTP default / MTP sync / no MTP default / no MTP sync",
+     [round(decode(f"s19c-{x}", EX), 1) for x in ("mtp-merged", "mtp-sync", "c2000-merged", "c2000-sync")], [43.4, 43.5, 47.0, 48.5])
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))

@@ -34,3 +34,13 @@ desktop: Spark, TwIL, Bonsai 2, Qwen3-VL and Clef-Flash ran out of VRAM at load 
 the old one too, where Chrome was closed partway through; the `*-serve.txt` files have the errors), then
 [`new-big.txt`](logs/new-big.txt) and [`old-big.txt`](logs/old-big.txt) with Chrome closed (~0.5 GB desktop):
 the MoEs plus those five, which all loaded.
+
+## 2026-11-08: the full upstream sync (`1f6e660c4`)
+
+The fork's `adventures-sync-2026-11-08` branch, upstream master merged into the default build
+([speed and agent-loop checks](../moe-cache/README.md#the-full-upstream-sync-experimentalstep19-2026-11-08)).
+[`sync.txt`](logs/sync.txt), Chrome closed: **all 25 pass, with the same answers, tool calls, picture counts and
+decisions.** What moved: answer lengths on Groot, Gemma, Qwen3.6, Ornith, Dory, TwIL and LFM2.5-VL (the same
+answers in a different number of tokens), Flint's tool call took 68 tokens instead of 49, and Clef-Flash's
+"unsafe" probability went from 0.920 to 0.915. Upstream changed attention and the 4- and 5-bit matrix kernels'
+rounding, so small numeric shifts are expected.

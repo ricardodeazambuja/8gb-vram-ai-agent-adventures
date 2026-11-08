@@ -53,7 +53,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
 | `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), reruns at matched VRAM `step5-qwen38.sh` and `step12-ornith.sh`, the launcher sizes for Groot and LFM2.5 `step17-groot-lfm25-size.sh`, logs and tuner output |
-| `experimental/` | the fork's `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); upstream's merged version against ours (`step18-merged.sh`, `step18b-offload-min.sh`); logs |
+| `experimental/` | the fork's `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); upstream's merged version against ours (`step18-merged.sh`, `step18b-offload-min.sh`); the full upstream sync (`step19-sync.sh`, `step19b-mtp.sh`, `step19c-q38-decode.sh`); logs |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -440,6 +440,38 @@ context plus N new ones:
 Every number and size above stays as measured. On 2026-11-08 the merged branch became the default build, and
 `scripts/run-qwen.sh` now sets `GGML_OP_OFFLOAD_MIN_BATCH` to the limit + 1 whenever it passes
 `--moe-cache-max-batch`.
+
+### The full upstream sync (`experimental/step19*`, 2026-11-08)
+
+The fork's `adventures-sync-2026-11-08` branch (`1f6e660c4`) merges upstream master (`cf34d3113`, 260 commits)
+into the default build (`3f2b2d60a`). Same launcher settings on both, threshold at limit + 1, desktop ~0.47 GB.
+
+**Step 19** (`step19-sync.sh`, [`step19.log`](experimental/logs/step19.log)): default / sync / default on each
+model; decode, turns (2,000 tokens of context plus N new), and a six-turn agent loop (fake tool results) that
+counts the prompt tokens reprocessed each turn, the check on the sync's new server checkpoints:
+
+| | Qwen3.8: default / sync / default | Qwen3.6: default / sync / default |
+|---|---|---|
+| 6K-token prompt, tok/s | 527–550 / 543–570 / 523–546 | 225–245 / 232–255 / 224–244 |
+| Turn, 48 tokens | 104.2 / 98.4 / 97.9 | 76.0 / 77.7 / 73.9 |
+| Turn, 100 tokens | 158.8 / 161.0 / 150.0 | 112.0 / 114.8 / 108.3 |
+| Turn, 200 tokens | 176.9 / 179.7 / 170.9 | 140.0 / 146.0 / 139.5 |
+| Turn, 600 tokens | 243.2 / 257.9 / 241.5 | 218.5 / 224.2 / 216.1 |
+| Agent loop, tokens reprocessed per turn after the first | 25–78 on all three | 25–212 on all three, the same per turn |
+
+Qwen3.6's decode matched (sync 41.8 tok/s, default 42.6 and 41.2), Qwen3.8's came in at 47.1 against 51.8 and
+51.2. **Step 19c** (`step19c-q38-decode.sh`, [`step19c.log`](experimental/logs/step19c.log)) repeated Qwen3.8 with
+the candidates side by side, interleaved: default 47.6 and 50.7, sync 48.5 and 51.2, sync without upstream's
+expert-cache prefetch (#31888) 49.5, both with CUDA graphs off 49.5–49.6. No gap: both builds drifted up over the
+set, so step 19's −9% was one sync run against that drift. (kv_rows, upstream's new attention, is off here:
+`kv_unified = false`.)
+
+**MTP** (Qwen3.8 is our only model with an MTP head): step 19b (`step19b-mtp.sh`) ran out of VRAM at the
+launcher's 2770 MiB cache (the draft adds a 672 MiB compute buffer), so step 19c reran it at 2000 MiB. Same on both
+builds: 84% of first drafted tokens accepted, 2.11 tokens a step, no rollback warnings, 43.4–43.5 tok/s, which
+is slower than the same cache without MTP (47.0 default, 48.5 sync), as before.
+
+All 25 models also pass the [quick checks](../buildcheck/README.md) on the sync build.
 
 ## How concentrated is expert use? (`expert_usage.py`, 2026-11-05)
 
