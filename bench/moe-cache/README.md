@@ -8,7 +8,7 @@ and the Gemma 4 template fix on [its model page](../../docs/models/gemma4-26b-a4
 2. computing cache misses on the CPU instead of copying them over PCIe;
 3. keeping the prompt cache valid across an agent's turns.
 
-Ideas 1 and 2 already existed in llama.cpp: upstream PR [#29887](https://github.com/ggml-org/llama.cpp/pull/29887) (merged) and PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (its first 9 commits; merged upstream on 2026-11-07 with 14, [measured below](#upstreams-merged-version-faster-decode-slower-short-turns-experimentalstep18-mergedsh-2026-11-07-night)), cherry-picked onto
+Ideas 1 and 2 already existed in llama.cpp: upstream PR [#29887](https://github.com/ggml-org/llama.cpp/pull/29887) (merged) and PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (its first 9 commits; merged upstream on 2026-11-07 with 14, [measured below](#upstreams-merged-version-faster-once-one-threshold-is-raised-experimentalstep18-2026-11-07-night)), cherry-picked onto
 our fork's [`moe-offload`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-offload) branch at `3a72c57be`.
 Our default build is now the [`moe-cache-max-batch`](https://github.com/ricardodeazambuja/llama.cpp/tree/moe-cache-max-batch)
 branch (`69ca796dd`): `moe-offload` plus the `--moe-cache-max-batch` flag ([below](#two-experiments-in-the-fork-experimental)).
@@ -50,7 +50,7 @@ and the agent-loop helpers import the same tools and messages they used to `exec
 | `longctx/` | the long-prompt test and the warm-up check: `step1-longctx.sh` (via `srv.sh` and `longctx.py`), `step1b-warmcheck.sh`, `hits.sh`; the prompts and every log in `longctx/logs/` |
 | `longctx/memguard.py`, `longctx/memcheck.py` | the out-of-memory guards (below, after the five-model table) |
 | `models/` | the same A/B on Groot, LFM2.5, the Qwen3.8 distill, Ornith and Bolt: `step3-models.sh` (uses `longctx/srv.sh`), reruns at matched VRAM `step5-qwen38.sh` and `step12-ornith.sh`, the launcher sizes for Groot and LFM2.5 `step17-groot-lfm25-size.sh`, logs and tuner output |
-| `experimental/` | the fork's `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); upstream's merged version against ours (`step18-merged.sh`); logs |
+| `experimental/` | the fork's `moe-cache-warm` build: softer warm-up, `LLAMA_MOE_CACHE_MAX_BATCH`, and a perplexity check (`step8-exp.sh`, `step9-ppl.sh`); the batch-limit runs (`step10`, `step11`, `step14`, `step15`) and the daytime cache sizes (`step16-daytime-size.sh`, `step16b-daytime-static.sh`); upstream's merged version against ours (`step18-merged.sh`, `step18b-offload-min.sh`); logs |
 | `tune/` | upstream's `scripts/moe-cache-tune.py` (from PR #30966) on Qwen3.6, Gemma 26B (32K, f16 KV) and Flint: tables, recommendations, per-run JSON, logs and routing traces (`.xz`). Single runs, so ±13% noise |
 | `logs/` | llama-server stderr for every run (`srv-LABEL.log`), `cache_run.log` (the 77% hit rate), `offline-sizes.txt` |
 
@@ -386,7 +386,7 @@ also runs the server with `-lv 4` now, so each log ends with the cache's hit rat
 [How it fits §12](../../docs/how-it-fits.md#12-let-a-cache-pick-the-experts-the-default-for-the-big-moes)
 has the table.
 
-### Upstream's merged version: faster decode, slower short turns (`experimental/step18-merged.sh`, 2026-11-07 night)
+### Upstream's merged version: faster, once one threshold is raised (`experimental/step18*`, 2026-11-07 night)
 
 PR #30966 was merged upstream on 2026-11-07 (`e95426f16`) with 14 commits; everything above ran its first 9. By
 then the cache's eviction policy had also changed upstream: a frequency-based "ClassLRU" (#31233, decayed use
@@ -396,35 +396,44 @@ lowest CRF instead of at random. To test only that, the fork got a branch, `moe-
 PR's last five commits cherry-picked, so the cache files match the merged PR except for `--moe-cache-max-batch`.
 Not a full upstream sync: that is 252 commits, with conflicts in the PrismML kernels.
 
-Old build / merged / old build again, each at the launcher's `MOE_CACHE=auto` settings, desktop ~0.4 GB
-([`step18.log`](experimental/logs/step18.log)). Decode is two 400-token runs; turns are 2,000 tokens of context
-plus N new ones, prompt speed in tok/s:
+**Step 18** (`step18-merged.sh`, [`step18.log`](experimental/logs/step18.log)): old build / merged / old build
+again, at the launcher's `MOE_CACHE=auto` settings, desktop ~0.4 GB. Decode got faster, but turns that go through
+the cache with 32 or more tokens got much slower: in batches over 8 tokens the merged code sent 9% of the misses
+to the CPU instead of 88–89%, and copied ~9× more over PCIe (Qwen3.8 7.9 → 69.1 GB, Qwen3.6 5.0 → 48.5 GB).
 
-| | Qwen3.8 (2770 MiB, batch 2048, limit 256) | Qwen3.6 (2900 MiB, batch 512, limit 128) |
+**Why** (found from the code in the fork session, checked against the source): since `1f17b9c97` the cache
+gives no CPU part to a batch the GPU would take whole, and CUDA takes a host-weight expert multiply whole from
+`GGML_OP_OFFLOAD_MIN_BATCH` tokens (an environment variable, default 32). With our cache batch limits of 128 and
+256, every batch of 32 tokens up to the limit copied all its misses. Upstream's own default limit is 32, so there
+only batches of exactly 32 tokens lose it: this is our flag meeting the new design. The new miss order isn't it: a
+CPU-only replay of the slot assignment gave the same CPU share with random, CRF and id order.
+
+**Step 18b** (`step18b-offload-min.sh`, [`step18b.log`](experimental/logs/step18b.log)): the merged build with
+`GGML_OP_OFFLOAD_MIN_BATCH` = limit + 1 (257 and 129; bigger batches still go to the GPU whole, as before), then
+the old build once more. "Old" is the mean of its three runs; prompt speed in tok/s, turns are 2,000 tokens of
+context plus N new ones:
+
+| | Qwen3.8 (2770 MiB, batch 2048, limit 256): old / merged / merged + threshold | Qwen3.6 (2900 MiB, batch 512, limit 128): same |
 |---|---|---|
-| Decode, tok/s (old mean → merged) | 48.0 → **51.2** (+7%) | 39.0 → **40.4** (+4%) |
-| 6K-token prompt | 544 → 513 (−6%) | 237 → 236 |
-| Turn, 48 tokens | 98.6 → 57.3 (**−42%**) | 76.8 → 63.0 (−18%) |
-| Turn, 100 tokens | 145.7 → 78.7 (**−46%**) | 110.0 → 88.5 (−20%) |
-| Turn, 200 tokens | 171.3 → 106.0 (**−38%**) | 139.6 → 141.7 (over the limit: doesn't use the cache) |
-| Turn, 600 tokens | 243.4 → 243.9 | 217.9 → 200.3 (−8%) |
-| Decode hit rate (batches ≤ 8 tokens) | 59.4% → 65.0% | 62.7% → 67.7% |
-| Misses sent to the CPU, batches over 8 tokens | 88% → **9%** | 89% → **9%** |
-| Copied over PCIe, batches over 8 tokens | 7.9 → 69.1 GB | 5.0 → 48.5 GB |
+| Decode, tok/s | 48.4 / 51.2 / **53.2** | 39.0 / 40.4 / **41.5** |
+| 6K-token prompt | 543 / 513 / 550 | 237 / 236 / 238 |
+| Turn, 48 tokens | 98.5 / 57.3 / **108.7** | 76.7 / 63.0 / **83.1** |
+| Turn, 100 tokens | 146.4 / 78.7 / **165.1** | 109.8 / 88.5 / **117.7** |
+| Turn, 200 tokens | 172.1 / 106.0 / 177.6 | 139.5 / 141.7 / 140.9 (over the limit) |
+| Turn, 600 tokens | 243.8 / 243.9 / 243.7 | 218.0 / 200.3 / 219.6 |
+| Decode hit rate (batches ≤ 8 tokens) | 59.4% / 65.0% / 66.6% | 62.7% / 67.7% / 67.1% |
+| Misses sent to the CPU, batches over 8 tokens | 88% / 9% / **89%** | 89% / 9% / **89%** |
 
-- **Decode gains a little,** with a decode hit rate 5 points higher. Which of the two changes does that isn't
-  separated here.
-- **Short turns lose a lot.** The loss is in batches of 9 tokens up to the cache batch limit, the ones that still
-  go through the cache: there the merged code sends only 9% of the misses to the CPU and copies the rest, ~9×
-  more bytes over PCIe. A 200-token turn on Qwen3.6 is over its limit of 128, takes the copy-everything path in
-  both builds, and doesn't change. Upstream's default limit is 32, so its batches of 9–32 tokens may be hit too.
-- **The cause isn't known yet.** Both builds share the rule that a miss needs a free "zero slot" (as many as the
-  model's active experts, 8 here, each used at most once per token) to go to the CPU, or it is copied. One suspect
-  is the new order in which misses try for a slot (lowest CRF first); the other is the two refactors or our graft.
-  Being looked at in the fork.
-- **The old build is deterministic:** its two runs have identical cache counters on both models.
+- **With the threshold raised, the merged version wins everywhere it differs:** decode +6–10% (+4–7% in step 18;
+  decode is single tokens, which the threshold doesn't touch, so that spread is run-to-run), short turns +7–13%,
+  long prompts and 600-token turns unchanged. The decode hit rate is 4–7 points higher; which of the two upstream
+  changes does that isn't separated here.
+- **One merged run per setting**, against three old ones (decode 46.4–49.7 on Qwen3.8, 38.5–39.5 on Qwen3.6). The old
+  build is deterministic: its runs have identical cache counters.
 
-So the default build stays where it was (`69ca796dd`), and so do every number and size above.
+So the default build stays where it was (`69ca796dd`) for now, and so do every number and size above. Moving to
+the merged version needs the launcher to set `GGML_OP_OFFLOAD_MIN_BATCH` to the limit + 1 whenever it passes
+`--moe-cache-max-batch`.
 
 ## How concentrated is expert use? (`expert_usage.py`, 2026-11-05)
 

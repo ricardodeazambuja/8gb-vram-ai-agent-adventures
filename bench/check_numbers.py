@@ -155,6 +155,12 @@ for q, want in [("q38", (48.0, 51.2, 7, 88, 9)), ("q36", (39.0, 40.4, 4, 89, 9))
     b = decode(f"s18-{q}-new", EX)
     same(f"{q} merged #30966: decode old / merged / change %, CPU share over 8 old / merged",
          (round(a, 1), round(b, 1), round((b / a - 1) * 100), cpu_share_over8(f"s18-{q}-old"), cpu_share_over8(f"s18-{q}-new")), want)
+# step 18b: the merged build with GGML_OP_OFFLOAD_MIN_BATCH = limit + 1; old = mean of its three runs (18 twice, 18b)
+for q, want in [("q38", (48.4, 53.2, 10, 89)), ("q36", (39.0, 41.5, 6, 89))]:
+    a = statistics.mean([decode(f"s18-{q}-old", EX), decode(f"s18-{q}-old-b", EX), decode(f"s18b-{q}-old", EX)])
+    b = decode(f"s18b-{q}-new-omb", EX)
+    same(f"{q} merged + offload threshold: decode old / merged / change %, CPU share over 8",
+         (round(a, 1), round(b, 1), round((b / a - 1) * 100), cpu_share_over8(f"s18b-{q}-new-omb")), want)
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))
