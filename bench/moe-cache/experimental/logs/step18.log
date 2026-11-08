@@ -1,0 +1,108 @@
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 27.4 GiB -> ok
+### s18-q38-old | 84137489b tests : port test-kv-mean-center to the llama-ext. | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2770 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 256 | env NO_WARM=
+    vram before: 414 MiB
+    vram loaded: 6902 MiB
+s18-q38-old                  vram  6902 MiB  prefill  6243 tok   527.0 t/s   decode 400 tok  49.08 t/s
+s18-q38-old                  vram  6902 MiB  prefill  6243 tok   558.6 t/s   decode 400 tok  50.26 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      481    99.7
+  100      100      682   146.6
+  200      200     1157   172.9
+  600      600     2458   244.1
+    vram end: 7054 MiB
+    vram peak: 7054 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2769.94 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 166464, misses = 113604 (106890 on the CPU), hit rate = 59.44%, uploaded = 10700.44 MiB
+    llama_moe_cache: ubatch  > 8: hits = 13172, misses = 42390 (37435 on the CPU), hit rate = 23.71%, uploaded = 7897.03 MiB
+    llama_moe_cache: large batches: 46278 experts copied from the cache, 24585.19 MiB
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 27.5 GiB -> ok
+### s18-q38-new | b11f5e64d llama-graph : return the MoE cache slots and CPU i | build-merged/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2770 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 256 | env NO_WARM=
+    vram before: 414 MiB
+    vram loaded: 6902 MiB
+s18-q38-new                  vram  6902 MiB  prefill  6243 tok   500.5 t/s   decode 400 tok  50.38 t/s
+s18-q38-new                  vram  6902 MiB  prefill  6243 tok   525.9 t/s   decode 400 tok  52.03 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      838    57.3
+  100      100     1271    78.7
+  200      200     1886   106.0
+  600      600     2460   243.9
+    vram end: 7027 MiB
+    vram peak: 7027 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2769.94 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 182092, misses = 97958 (92012 on the CPU), hit rate = 65.02%, uploaded = 9476.44 MiB
+    llama_moe_cache: ubatch  > 8: hits = 8210, misses = 47430 (4083 on the CPU), hit rate = 14.76%, uploaded = 69084.28 MiB
+    llama_moe_cache: large batches: 46407 experts copied from the cache, 24653.72 MiB
+    memcheck: Qwen3.8-35B-A3B-IQ4_XS.gguf 18.3 GiB + 4 margin, MemAvailable 27.6 GiB -> ok
+### s18-q38-old-b | 84137489b tests : port test-kv-mean-center to the llama-ext. | build/bin/llama-server | Qwen3.8-35B-A3B-IQ4_XS.gguf ctx=131072 batch=2048 kv=q8_0 | -cmoe --moe-cache-mib 2770 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 256 | env NO_WARM=
+    vram before: 416 MiB
+    vram loaded: 6905 MiB
+s18-q38-old-b                vram  6905 MiB  prefill  6243 tok   533.3 t/s   decode 400 tok  45.69 t/s
+s18-q38-old-b                vram  6905 MiB  prefill  6243 tok   555.0 t/s   decode 400 tok  47.08 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      493    97.4
+  100      100      691   144.8
+  200      200     1179   169.7
+  600      600     2471   242.8
+    vram end: 7057 MiB
+    vram peak: 7057 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2769.94 MiB for 16320.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 166464, misses = 113604 (106890 on the CPU), hit rate = 59.44%, uploaded = 10700.44 MiB
+    llama_moe_cache: ubatch  > 8: hits = 13172, misses = 42390 (37435 on the CPU), hit rate = 23.71%, uploaded = 7897.03 MiB
+    llama_moe_cache: large batches: 46278 experts copied from the cache, 24585.19 MiB
+    memcheck: Qwen3.6-35B-A3B-UD-IQ4_XS.gguf 16.5 GiB + 4 margin, MemAvailable 27.6 GiB -> ok
+### s18-q36-old | 84137489b tests : port test-kv-mean-center to the llama-ext. | build/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 128 | env NO_WARM=
+    vram before: 416 MiB
+    vram loaded: 7297 MiB
+s18-q36-old                  vram  7297 MiB  prefill  6243 tok   224.6 t/s   decode 400 tok  39.24 t/s
+s18-q36-old                  vram  7297 MiB  prefill  6243 tok   248.7 t/s   decode 400 tok  39.78 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      623    77.1
+  100      100      898   111.4
+  200      200     1429   139.9
+  600      600     2743   218.8
+    vram end: 7443 MiB
+    vram peak: 7443 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2899.47 MiB for 14462.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 175356, misses = 104184 (97869 on the CPU), hit rate = 62.73%, uploaded = 8948.88 MiB
+    llama_moe_cache: ubatch  > 8: hits = 15206, misses = 32463 (28879 on the CPU), hit rate = 31.90%, uploaded = 4984.00 MiB
+    llama_moe_cache: large batches: 162384 experts copied from the cache, 76136.91 MiB
+    memcheck: Qwen3.6-35B-A3B-UD-IQ4_XS.gguf 16.5 GiB + 4 margin, MemAvailable 27.5 GiB -> ok
+### s18-q36-new | b11f5e64d llama-graph : return the MoE cache slots and CPU i | build-merged/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 128 | env NO_WARM=
+    vram before: 416 MiB
+    vram loaded: 7297 MiB
+s18-q36-new                  vram  7297 MiB  prefill  6243 tok   226.8 t/s   decode 400 tok  40.35 t/s
+s18-q36-new                  vram  7297 MiB  prefill  6243 tok   245.4 t/s   decode 400 tok  40.53 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      762    63.0
+  100      100     1129    88.5
+  200      200     1411   141.7
+  600      600     2995   200.3
+    vram end: 7427 MiB
+    vram peak: 7427 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2899.47 MiB for 14462.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 189185, misses = 90392 (84756 on the CPU), hit rate = 67.67%, uploaded = 7986.14 MiB
+    llama_moe_cache: ubatch  > 8: hits = 9241, misses = 38348 (3499 on the CPU), hit rate = 19.42%, uploaded = 48461.89 MiB
+    llama_moe_cache: large batches: 161361 experts copied from the cache, 75667.34 MiB
+    memcheck: Qwen3.6-35B-A3B-UD-IQ4_XS.gguf 16.5 GiB + 4 margin, MemAvailable 27.6 GiB -> ok
+### s18-q36-old-b | 84137489b tests : port test-kv-mean-center to the llama-ext. | build/bin/llama-server | Qwen3.6-35B-A3B-UD-IQ4_XS.gguf ctx=131072 batch=512 kv=q8_0 | -cmoe --moe-cache-mib 2900 --moe-cache-cpu-share 0.95 --moe-cache-max-batch 128 | env NO_WARM=
+    vram before: 416 MiB
+    vram loaded: 7297 MiB
+s18-q36-old-b                vram  7297 MiB  prefill  6243 tok   227.7 t/s   decode 400 tok  38.13 t/s
+s18-q36-old-b                vram  7297 MiB  prefill  6243 tok   246.3 t/s   decode 400 tok  38.79 t/s
+base 2000 tokens; new-token sizes [48, 100, 200, 600], 3 reps
+  new prompt_n       ms     t/s
+   48       48      628    76.4
+  100      100      922   108.5
+  200      200     1436   139.3
+  600      600     2765   217.0
+    vram end: 7445 MiB
+    vram peak: 7445 MiB (1-s samples)
+    impl:      CUDA0 MoE cache size =  2899.47 MiB for 14462.00 MiB of host experts, 95% of the misses on the CPU
+    llama_moe_cache: ubatch <= 8: hits = 175356, misses = 104184 (97869 on the CPU), hit rate = 62.73%, uploaded = 8948.88 MiB
+    llama_moe_cache: ubatch  > 8: hits = 15206, misses = 32463 (28879 on the CPU), hit rate = 31.90%, uploaded = 4984.00 MiB
+    llama_moe_cache: large batches: 162384 experts copied from the cache, 76136.91 MiB

@@ -287,15 +287,18 @@ BACKEND=cuda CTX=32768 KVQUANT=q8_0 MOE_CACHE=auto \
   EXTRA_ARGS="--chat-template-file config/gemma4-26b-nonl.jinja" bash scripts/run-server.sh   # what `scripts/llm gemma` runs (3267 MiB)
 ```
 
-`--moe-cache-cpu-share` and `--moe-cache-max-batch` aren't in upstream llama.cpp yet; the default build has
-them, see [getting started §3](getting-started.md#3-build-llamacpp-once).
+`--moe-cache-cpu-share` reached upstream llama.cpp on 2026-11-07, together with a new eviction policy;
+`--moe-cache-max-batch` is ours only. Everything here ran the PR before that merge, in our default build
+([getting started §3](getting-started.md#3-build-llamacpp-once)). The merged version decodes 4–7% faster but reads
+48–200-token turns up to 46% slower, so we haven't moved to it yet
+([the comparison](../bench/moe-cache/README.md#upstreams-merged-version-faster-decode-slower-short-turns-experimentalstep18-mergedsh-2026-11-07-night)).
 
 ### Why the misses go to the CPU
 
 On a miss, the merged code copies the expert to the GPU. Here that is the slow part: this laptop's PCIe
 3.0 link runs at x8, measured at 6.45 GB/s, and copying one expert takes ~0.23 ms. The CPU can compute the
 same expert from RAM in ~0.1 ms ([measurements](../bench/moe-cache/RESULTS.md), [`bw.cu`](../bench/moe-cache/bw/bw.cu)).
-The open upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (Aman Gupta) adds
+Upstream PR [#30966](https://github.com/ggml-org/llama.cpp/pull/30966) (Aman Gupta, merged 2026-11-07) adds
 `--moe-cache-cpu-share F`, which hands that share of the misses to the CPU. Copying every miss, the cache
 gained ~23% on Qwen3.6 (30.2 vs 24.6 tok/s). With 95% of misses on the CPU:
 

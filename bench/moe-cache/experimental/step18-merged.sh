@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Step 18 (2026-11-07 night, desktop ~0.5 GB): does upstream's merged #30966 (14 commits, incl. c6717826c: CPU misses
+# Step 18 (2026-11-07 night, desktop ~0.4 GB): does upstream's merged #30966 (14 commits, incl. c6717826c: CPU misses
 # chosen by CRF instead of at random) keep our numbers? old/new/old on each model, launcher MOE_CACHE=auto configs:
 #   old = main build (moe-cache-max-batch, functionally 69ca796dd = pre-merge PR 3a72c57be + our max-batch patch)
 #   new = branch moe-cache-max-batch-merged (b11f5e64d, worktree ../llama.cpp-merged; NEW_LLAMA/NEW_BIN): our tested tip

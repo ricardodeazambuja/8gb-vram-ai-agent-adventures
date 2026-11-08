@@ -140,5 +140,21 @@ b = decode("day-q36-c1580-c", EX)
 same("Qwen3.6 daytime VRAM decode, n-cpu-moe 36 / cache 1580 / gain %", (round(a, 1), round(b, 1), round((b / a - 1) * 100)),
      (21.4, 34.8, 62))
 
+# upstream's merged #30966 vs our pre-merge build (bench/moe-cache/README.md, step 18): old (two runs) / merged decode,
+# change %, and the % of misses computed on the CPU in batches over 8 tokens, old / merged
+
+
+def cpu_share_over8(label):
+    with open(f"{EX}/srv-{label}.log") as f:
+        m = re.findall(r"ubatch  > 8: hits = \d+, misses = (\d+) \((\d+) on the CPU\)", f.read())[-1]
+    return round(100 * int(m[1]) / int(m[0]))
+
+
+for q, want in [("q38", (48.0, 51.2, 7, 88, 9)), ("q36", (39.0, 40.4, 4, 89, 9))]:
+    a = statistics.mean([decode(f"s18-{q}-old", EX), decode(f"s18-{q}-old-b", EX)])
+    b = decode(f"s18-{q}-new", EX)
+    same(f"{q} merged #30966: decode old / merged / change %, CPU share over 8 old / merged",
+         (round(a, 1), round(b, 1), round((b / a - 1) * 100), cpu_share_over8(f"s18-{q}-old"), cpu_share_over8(f"s18-{q}-new")), want)
+
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))
