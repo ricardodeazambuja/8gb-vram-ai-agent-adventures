@@ -148,6 +148,14 @@ on the CPU).
   has no code for Turing (sm_75), and the server aborts on the first request: `CUDA kernel
   flash_attn_ext_f16 has no device code compatible with CUDA arch 750`. On our fork q8_0 works,
   and it's the default.
+- **It needs a quiet desktop.** The default needs about 7.1 GB of the 8 GB. With Chrome open (Xorg, GNOME
+  and Chrome held ~1.85 GB on 2026-11-11) it doesn't load at all, not even at 8K: the weights alone are
+  5.95 GB, and unlike the MoE models there is no expert cache to shrink. A "did not start" with a CUDA
+  out-of-memory error means close the browser; check `nvidia-smi` before suspecting the build.
+- **Unsloth's newer Qwen3.8 template (2026-11-11) changes nothing for pi.** Their "tool calling and
+  developer role fixes" give byte-identical prompts on 18 real pi requests at every effort pi sends; the
+  only difference is that it maps `high` to `xhigh`, which the pi mapping below already does
+  ([bench/template-compare](../../bench/template-compare/README.md)). Our template is Qwen's own.
 - **pi's thinking levels need translating.** The template only accepts `reasoning_effort`
   `xhigh`, `medium` or `low` (and the card says `low` behaves like `xhigh`). pi's `high` gets
   an HTTP 500. The pi model entry in `config/pi-provider.json` maps minimal/low/medium →

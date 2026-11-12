@@ -53,6 +53,12 @@ are expensive to decode on a CPU. The pre-test estimate (6–8 tok/s from bandwi
 **Afterlife:** the same model lives on as [Bonsai 2 27B](models/bonsai2-27b.md): ternary weights,
 5.95 GB, all on the GPU, 38 tok/s.
 
+**Not retried:** Unsloth's Dynamic 3.1 GGUFs of the same model (2026-11-11). Their guide's "12–14 GB" for
+3-bit is RAM + VRAM together, so the model is split across the GPU and the CPU the same way. Their
+K-quants are cheaper on a CPU than these i-quants, but the files are bigger than this 10.4 GB one, which
+would reach only ~9 tok/s even with every layer on the GPU. Their
+chat template brings nothing for pi either ([bench/template-compare](../bench/template-compare/README.md)).
+
 ## ik_llama.cpp for that same 27B: slower
 
 **Tried:** the ik_llama.cpp fork, whose README promises better CPU performance and faster

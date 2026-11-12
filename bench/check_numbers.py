@@ -202,6 +202,13 @@ for b in ("merged", "sync"):
     with open(f"{EX}/srv-s19c-mtp-{b}.log") as f:
         m = re.findall(r"#mean acc len = ([\d.]+), #acc rate/pos = \(([\d.]+)", f.read())[-1]  # cumulative over the run: the last line
     same(f"q38 MTP, step 19c {b}: mean accepted length, first-position acceptance", (m[0], m[1]), ("2.11", "0.839"))
+# bench/template-compare (2026-11-11): Bonsai 2's template against Unsloth's on 18 captured pi requests x 4 efforts
+TC = load(f"{BENCH}/template-compare/results/prompts.json")
+tc_err = {a: sorted({k.split("#effort=")[-1] for k, r in TC.items() if r[a].startswith("ERROR")}) for a in ("bonsai2", "unsloth")}
+tc_both = [r for r in TC.values() if not r["bonsai2"].startswith("ERROR") and not r["unsloth"].startswith("ERROR")]
+same("template-compare: renders, errors (bonsai2), efforts that fail (bonsai2 / unsloth), identical where both render",
+     (len(TC), sum(r["bonsai2"].startswith("ERROR") for r in TC.values()), tc_err["bonsai2"], tc_err["unsloth"],
+      sum(r["bonsai2"] == r["unsloth"] for r in tc_both), len(tc_both)), (72, 18, ["high"], [], 54, 54))
 
 print("\nall agree" if not bad else f"\n{bad} disagree")
 raise SystemExit(bool(bad))
