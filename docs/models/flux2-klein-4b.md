@@ -32,7 +32,9 @@ scripts/imagine "a red fox in the snow" -m klein               # one picture
 
 Pictures land in `models/image-gen/out/`. `scripts/imagine --dry-run` shows the full `sd-cli` command. For a
 reference edit (Klein only), `scripts/imagine "..." -m klein -r in.png`; to start from a picture, `-i in.png`; and
-for one area, `-i in.png --mask mask.png`. (The building block: `python3 bench/imagegen/run_gen.py klein --quick`.)
+for one area, `-i in.png --mask mask.png`. All the edit modes, with a mask recipe, are in
+[Editing a picture](../image-generation.md#️-editing-a-picture-start-here). (The building block:
+`python3 bench/imagegen/run_gen.py klein --quick`.)
 
 ## Gotchas
 

@@ -113,6 +113,8 @@ The plan of 2026-10-31. The limit is less often training speed than wasted runs:
 7. **A style with no famous name:** the prompt beat 1000 steps of training on all three famous styles, though 3000
    steps caught it on Van Gogh. The stated prize is a tiny file per style, which needs a style the prompt can't
    reach. Next on the style LoRA: regularisation pictures, and why style words turn green (not the starting word).
+   Training ideas to try on it are in [kohya sd-scripts](#sd-scripts) below (Min-SNR, masked loss, validation loss,
+   several vectors per word).
 8. **LoRA on Klein base 4B:** whether it fits in 8 GB is unknown. Everything fast about SDXL so far doesn't
    transfer, so it needs its own fit test.
 9. **Captions from our own vision models,** only if style results stay weak.
@@ -164,7 +166,9 @@ ggml" standard. Still untested (sizes from Hugging Face; speed and VRAM figures 
 | [FLUX 3 Image Klein](https://huggingface.co/black-forest-labs/flux-3-image-klein) (Oct 2026) | FLUX Kommunity, free under $5M revenue, repo gated | 5.3-5.8 GB + 4.9 GB text encoder | Likely the best quality that fits. NVIDIA claims 8 GB with INT8, but not whether that includes the text encoder. No GGUF seen yet. |
 | [Qwen-Image 2.1](https://huggingface.co/Qwen/Qwen-Image-2.1) (Sep 2026) | Non-commercial | 7B parameters | One blog says about 6 GB at Q4; Alibaba gives no figure. Licence is the catch. |
 
-Also untried: ControlNet, IP-Adapter and PhotoMaker (`sd-cli` has flags for them). Training notes for new models:
+Not pursued: ControlNet, IP-Adapter and PhotoMaker (`sd-cli` has flags for them): Klein's reference edit, masks and img2img
+cover our edits, see [Editing a picture](image-generation.md#️-editing-a-picture-start-here); revisit if a task needs an
+exact pose or layout. Training notes for new models:
 norm-only may have little to train on FLUX-style models, which steer their norms from the prompt and timestep
 rather than stored gains, so check each model first; Iris-3B works in pixels, so precomputed latents don't save
 memory and it may need small crops. Pictures of a person are only of you or people who agreed, and they and their
@@ -278,6 +282,93 @@ does it already, and our [pruning study](../bench/moe-cache/README.md#pruned-qwe
 says Qwen3.6 is sensitive); the Claude Code gateway and HARP-Cache (pi reprocesses only ~25 tokens a turn).
 One aside it led to: in our own pibench transcripts, LFM2.5 starts every new session with nothing cached, while
 Qwen3.6, Flint and Groot usually reuse ~1.3–1.9K tokens of pi's prompt. Seconds per session; not urgent.
+
+<a id="sd-scripts"></a>
+
+### 🎚️ kohya sd-scripts: training ideas only, none of its code ([kohya-ss/sd-scripts](https://github.com/kohya-ss/sd-scripts), Apache 2.0, read 2026-11-15 at `cb70b9685`, v0.12.3)
+
+The best-known Python trainer for Stable Diffusion models (LoRA, fine-tuning, Textual Inversion). Read through
+its README and docs only; nothing was cloned or run. **We reuse ideas, never its code:** it is a big accelerate/torch
+stack that would need a new "repo code" exception in [Security](security.md), and it doesn't train FLUX.2 Klein
+(its models are SD1/2, SDXL, SD3, FLUX.1, Lumina, HunyuanImage, Anima and MOSS-Image). Its inference scripts, block
+swap, ConvRot INT8 and fp8 options are no use to us either (sd.cpp does our inference; they target DiT models).
+Docs to check for details: [`docs/train_network_advanced.md`](https://github.com/kohya-ss/sd-scripts/blob/main/docs/train_network_advanced.md)
+(loss options, LoRA+), [`docs/masked_loss_README.md`](https://github.com/kohya-ss/sd-scripts/blob/main/docs/masked_loss_README.md),
+[`docs/validation.md`](https://github.com/kohya-ss/sd-scripts/blob/main/docs/validation.md),
+[`docs/train_textual_inversion.md`](https://github.com/kohya-ss/sd-scripts/blob/main/docs/train_textual_inversion.md),
+[`docs/train_leco.md`](https://github.com/kohya-ss/sd-scripts/blob/main/docs/train_leco.md),
+[`docs/loha_lokr.md`](https://github.com/kohya-ss/sd-scripts/blob/main/docs/loha_lokr.md). Worth trying, each a few
+lines in our own [`train_style.py`](../bench/imagegen/train_style.py) / [`invert.py`](../bench/imagegen/invert.py),
+judged like our other image runs (two seeds, by eye, plus the no-trigger leak check):
+
+1. **Min-SNR loss weighting** (`--min_snr_gamma 5`). Our loss is plain MSE. The 3000-step Van Gogh LoRA needed 50 min
+   to match the prompt; faster convergence would shorten that. Also in the same section: `--debiased_estimation_loss`
+   and Huber loss.
+2. **Masked loss** (a mask image or the picture's alpha channel limits where the loss counts). The invented man's
+   LoRA picked up the blue shirt and glasses from the training pictures. Regularisation pictures already stop that
+   leak; training only on the masked subject might do the same without making 20 extra pictures. Needs masks for the
+   20 training pictures.
+3. **A validation loss** (a held-out set, same noise seed and timesteps every time). Fills the "no automatic score"
+   gap with a cheap number for choosing the step count and for spotting overfitting. Not a likeness score.
+4. **Multi-resolution noise and input perturbation** (`--multires_noise_iterations 6-10 --multires_noise_discount 0.3`,
+   `--ip_noise_gamma 0.1`). We already have `--noise-offset`. Might help detail and the style leak; no evidence either way.
+5. **More than one vector per learned word** (`--num_vectors_per_token`, up to 77 tokens shared with the prompt).
+   Our word has one vector. More might fix the green habit and Gris's missing structure, at a few KB more.
+   Needs the token-expansion code in `invert.py`.
+6. **LoRA+** (`loraplus_lr_ratio=16`: the up matrix learns faster than the down one). We already train with
+   parameter groups, so it's one more line. Mainly a speed-up: worth trying with item 1 if the 3000-step runs stay
+   necessary.
+7. **LECO** (`sdxl_train_leco.py`): a LoRA trained from prompts alone, no pictures, to erase, strengthen or slide a
+   concept. A candidate for removing the green bias or for a real style-strength knob (our `(word:0.7)` was no
+   control). Its docs give no VRAM figure, so it needs a fit test first.
+8. **LoKr / LoHa** (from LyCORIS). sd.cpp already maps `lokr_*` and `hada_*` tensors (`src/name_conversion.cpp`), so
+   they should load. Low priority: our [fine-tuning notes](fine-tuning.md) cite a 2026 study finding well-tuned plain
+   LoRA about as good.
+
+Its LoRA post-processing scripts (`networks/resize_lora.py`, `merge_lora`, `extract_lora_from_models`) now also live in
+a smaller companion repo, covered [next](#sd-lora-tools). Whatever we write must keep the check that every tensor loads
+in `sd-cli` (ours: 1120 of 1120).
+
+<a id="sd-lora-tools"></a>
+
+### 🧰 kohya sd-lora-tools: LoRA post-processing, ideas only ([kohya-ss/sd-lora-tools](https://github.com/kohya-ss/sd-lora-tools), Apache 2.0, read 2026-11-15 at `cb4e63256`)
+
+Small command-line tools that work on `.safetensors` LoRA files, by the maintainer of
+[sd-scripts](#sd-scripts). Young and quiet: v0.1.0, 9 stars, last push 2026-04-26, and its README says APIs may
+change without notice. Needs torch. **Ideas only, same rule as above;** each tool is a short script we'd rewrite
+against our own LoRAs (the files from [`train_style.py`](../bench/imagegen/train_style.py)). Docs, one page per tool:
+[`docs/`](https://github.com/kohya-ss/sd-lora-tools/tree/main/docs) (`resize.md`, `merging.md`, `extract_lora.md`,
+`convert_lora.md`, `utilities.md`); the source is in `src/sd_lora_tools/`.
+
+1. **Post-hoc EMA of checkpoints** (`lora_post_hoc_ema.py`): averages the LoRA files saved along one training run,
+   with an exponential decay or the power-function EMA from the paper its code cites
+   ([arXiv 2312.02696](https://arxiv.org/abs/2312.02696)). `train_style.py --ckpts` saves the checkpoints, but only
+   `subject-dora` and `subject-lora+norm` have any so far (250 and 500 steps), so a fair test needs one rerun with
+   more of them, such as `--ckpts 250,500,750`. Then: does the average leak less, or look steadier across seeds, than
+   the last checkpoint? (LoRA only. A learned word's 8 KB vectors could be averaged the same way, but `invert.py`
+   doesn't save intermediate words yet.)
+2. **Per-layer scaling when merging** (`svd_merge.py --regex_scales`, "LBW"): scales chosen layers by a regular expression
+   as the LoRA is written. The strength control we lacked: `(word:0.7)` on a learned word barely changed anything, and a
+   whole-file LoRA weight dims every layer at once. Weakening only some U-Net blocks might keep a style's paint and drop its green
+   or its darkening. Test on the Van Gogh 3000-step LoRA, which leaks most.
+3. **Rank reduction by singular values** (`resize.py --dynamic_method sv_ratio|sv_fro|sv_cumulative`). Two uses: shrink the
+   47 MB rank-8 LoRA, and, more useful, read off how much of rank 8 the training used. Every SDXL run so far was
+   rank 8, so we don't know yet whether a lower or higher rank would do.
+4. **Blending two LoRAs into one file** (`svd_merge.py --models a b --ratios …`, with optional rank reduction): a
+   style LoRA plus a person LoRA as a single file, to compare with our two-learned-word stack
+   ([`stack.py`](../bench/imagegen/stack.py)). `sd-cli` can already load LoRAs, so baking into a checkpoint
+   (`merge_to_model.py`) isn't needed.
+5. **LoRA from the difference of two checkpoints** (`extract_lora.py`: SVD of tuned minus original weights; works on plain
+   safetensors for SD, SDXL, FLUX and others). It would turn a published SDXL fine-tune into a small file for `--lora`,
+   only from safetensors we've pinned and audited, per the [security routine](security.md); it can't recover what a
+   low-rank file can't hold. Not for our norm-only runs: they change only 1-D norm gains and biases, not the weight
+   matrices it factors, and those are already a 2.5 MB file.
+
+Small utilities worth reimplementing as one check script: `check_weights.py` (tensor statistics) and
+`compare_weights.py` (two files equal within a tolerance), for "did the bake or the resize change anything".
+
+Low priority: `convert_lora.py` between sd-scripts and Diffusers key naming. Our diffusers-format LoRA already loads in
+`sd-cli` (1120 of 1120), so conversion only matters if we share files with a tool that wants the other layout.
 
 <a id="strata"></a>
 

@@ -26,7 +26,7 @@ and how to get the rest). One model on the GPU at a time: `scripts/llm stop` fre
 | **make a picture** | `scripts/imagine "a red fox in the snow"` | [FLUX.2 Klein](models/flux2-klein-4b.md), ~25 s; prints the file's path |
 | …with readable text in it | `scripts/imagine "a sign that says OPEN" -m iris` | [Iris-3B Turbo](models/iris-3b.md), ~33 s |
 | …in a style I trained | `scripts/imagine "…" -m sdxl --lora FILE.safetensors` | [SDXL](models/sdxl.md), ~47 s |
-| **change a picture** | `scripts/imagine "the same street at night" -i in.png` | `--mask m.png` redraws only the white part; `-r ref.png` edits from a reference (Klein) |
+| **change a picture** | `scripts/imagine "the same street at night" -i in.png` | `--mask m.png` redraws only the white part; `-r ref.png` edits from a reference (Klein); all of it: [Editing a picture](image-generation.md#️-editing-a-picture-start-here) |
 | **serve a model to my own program** | `scripts/llm <name> serve` | OpenAI API on `http://127.0.0.1:8080/v1`; [examples/](../examples/README.md) show the requests |
 | **see what's running, stop it** | `scripts/llm status`, `scripts/llm stop` | `stop` only stops what `scripts/llm` started; `--force` for anything on the port |
 

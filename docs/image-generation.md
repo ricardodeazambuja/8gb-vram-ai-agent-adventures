@@ -8,6 +8,8 @@ reached for a few years ago; it's now the slowest of the three models we tried.
 
 *Left to right: FLUX.2 Klein 4B, Iris-3B Turbo, SDXL. Seed 1, shrunk to fit; nothing retouched.*
 
+Editing a picture, not just making one? Jump to [Editing a picture](#️-editing-a-picture-start-here).
+
 ## The results
 
 Four prompts × two seeds at 1024×1024, measured 2026-10-31:
@@ -57,7 +59,42 @@ trains it in 35 minutes into `models/image-gen/style-runs/subject-word/zxqtok.sa
 [`stack.py`](../bench/imagegen/stack.py) gathers several words into `style-runs/stack-words/`, so one
 prompt can use two (`"vgword style, zxqtok man on a beach"`).
 
-## Giving it a picture as well
+## ✏️ Editing a picture (start here)
+
+All editing goes through [`scripts/imagine`](../scripts/imagine); Klein is the default, and the one to use. Stop any
+llama-server first (`scripts/llm stop`). Results land in `models/image-gen/out/`, each with a `.json` of the exact command.
+
+| I want to… | Command | Notes |
+|---|---|---|
+| **Change something and keep the rest** ("red cap instead of his hat") | `scripts/imagine "wearing a red cap instead of his hat" -r in.png` | **Klein only**, and the best edit we have. Keeps the scene; the face can shift a little. `imagine` refuses `-r` on Iris-3B and SDXL, which would otherwise ignore it without an error. |
+| **Redraw one area** | `scripts/imagine "a red door" -i in.png --mask mask.png` | White in the mask = redraw, black = keep. Klein blends best; Iris-3B pastes a hard square. Strength defaults to 0.9 here. |
+| **Restyle or rework the whole picture** | `scripts/imagine "the same street at night" -i in.png` | `--strength` 0-1, default 0.7: lower keeps more of the original. Strength 0.7 gave a painted-looking photo for "watercolour", not a true restyle; other values are untried. |
+| **Several variations to choose from** | add `-n 4` (seeds run on from `--seed`) | Works with every mode above. |
+
+A mask is a black-and-white picture the same size as `in.png`. Any image editor will make one; this makes a
+rectangle:
+
+```python
+from PIL import Image, ImageDraw
+im = Image.open("in.png")
+m = Image.new("L", im.size, 0)                           # black = keep
+ImageDraw.Draw(m).rectangle((300, 200, 700, 600), fill=255)   # white = redraw: left, top, right, bottom
+m.save("mask.png")
+```
+
+Tips:
+- Without `--size`, the output takes the picture's size, rounded down to a multiple of 64.
+- `--dry-run` prints the `sd-cli` command without running it; `-s SEED` repeats a result.
+- Outside a mask, nothing is guaranteed to be pixel-identical: Klein changes colours there by 2.5 out of 255 on average
+  and SDXL by 5.9; only Iris-3B leaves it untouched (0.0), but it pastes a hard square.
+- `-r` can be given more than once (the flag accepts several); we have only tried one reference.
+
+**What we don't use:** ControlNet (pose, edge or depth maps), IP-Adapter and PhotoMaker. `sd-cli` has flags for them, but
+Klein's reference edit, masks and img2img cover what we need, so no models for them are downloaded. If a task needs an
+exact pose or layout that `-r` can't hold, ControlNet is the tool to look at then. The measurements behind the table
+are in the next section.
+
+## What we measured when giving it a picture
 
 Prompts aren't the only input. One test of each on our own 1024×1024 fisherman, 2026-10-31:
 
@@ -78,7 +115,7 @@ per colour value (out of 255) well outside the mask was 0.0 on Iris-3B, 2.5 on K
 the two latent models go through a VAE, which we think explains that. At strength 0.7 the
 "watercolour" request came out as a painted-looking photo, not a real restyle; lower strengths
 keep more, and we only tried this one. ControlNet, IP-Adapter and PhotoMaker also have flags and
-are untested.
+are untested; [why we skip them](#️-editing-a-picture-start-here).
 
 ## Teaching SDXL a style or a person
 
