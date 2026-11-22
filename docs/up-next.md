@@ -27,7 +27,8 @@ says where it went.
 
 | Model | Fit here | Why test it |
 |---|---|---|
-| [Inkling 2 Mini](https://huggingface.co/thinkingmachines/Inkling-2-Mini) (Thinking Machines, Apache 2.0, released 2026-11-20; GGUFs by [ggml-org](https://huggingface.co/ggml-org/Inkling-2-Mini-GGUF), revision `db61c5b`; looked up 2026-11-21, nothing downloaded) | IQ4_NL 16.4 GiB + mmproj 0.32–0.60 GiB; 26.4B MoE, 3.4B active (8 of 128 experts), so experts in RAM like our other big MoEs. Estimated from the published dimensions: experts ~24.5B, everything else ~1.9B (~1.9 GiB at Q8). Not measured: speed, and the VRAM of the KV cache, which is kept once per pass | A new family and a new architecture: 24 layers, the middle 12 run three times per token (48 layer evaluations). Text and images, `reasoning_effort` from `none` to `max`. **Blocked on our build:** the fork (2026-11-08 sync) has no Inkling code; it needs upstream with [#32694](https://github.com/ggml-org/llama.cpp/pull/32694) and the fix [#32704](https://github.com/ggml-org/llama.cpp/pull/32704) (merged 2026-11-21; without it, perplexity ~130 instead of 7.65). Before syncing, check that the CUDA issues opened 2026-11-21 are closed: NaN perplexity ([#32710](https://github.com/ggml-org/llama.cpp/issues/32710)), slow prefill and a crash ([#32707](https://github.com/ggml-org/llama.cpp/issues/32707)). Use the ggml-org files or Unsloth's `Mainline_Support/` copies; [Unsloth's](https://huggingface.co/unsloth/Inkling-2-Mini-GGUF) root files need their own llama.cpp build. Whether the expert cache works with the looped layers is untested. |
+| [Inkling 2 Mini](https://huggingface.co/thinkingmachines/Inkling-2-Mini) (Thinking Machines, Apache 2.0, released 2026-11-20; GGUFs by [ggml-org](https://huggingface.co/ggml-org/Inkling-2-Mini-GGUF), revision `db61c5b`; looked up 2026-11-21, nothing downloaded) | IQ4_NL 16.4 GiB + mmproj 0.32–0.60 GiB; 26.4B MoE, 3.4B active (8 of 128 experts; the card adds ~1.0B per extra loop pass, so 5.4B effective per token, and compute per token is closer to a 5B-active model), so experts in RAM like our other big MoEs. Estimated from the published dimensions: experts ~24.5B, everything else ~1.9B (~1.9 GiB at Q8). Not measured: speed, and the VRAM of the KV cache, which is kept once per pass | A new family and a new architecture: 24 layers, the middle 12 run three times per token (48 layer evaluations). Text and images, `reasoning_effort` from `none` to `max`. **Blocked on our build:** the fork (2026-11-08 sync) has no Inkling code; it needs upstream with [#32694](https://github.com/ggml-org/llama.cpp/pull/32694) and the fix [#32704](https://github.com/ggml-org/llama.cpp/pull/32704) (merged 2026-11-21; without it, perplexity ~130 instead of 7.65). Before syncing, check that the CUDA issues opened 2026-11-21 are closed: NaN perplexity ([#32710](https://github.com/ggml-org/llama.cpp/issues/32710)), slow prefill and a crash ([#32707](https://github.com/ggml-org/llama.cpp/issues/32707)). Use the ggml-org files or Unsloth's `Mainline_Support/` copies; [Unsloth's](https://huggingface.co/unsloth/Inkling-2-Mini-GGUF) root files need their own llama.cpp build. Whether the expert cache works with the looped layers is untested. **Smaller file to try first:** [LookAtMyQuant](https://github.com/ShinMegamiBoson/lookatmyquant) (commit `c0a04a7a`, looked at 2026-11-21) scored Unsloth's GGUFs against the BF16 original (their own evals, not verified: GSM8K `test[:200]` greedy at `reasoning_effort="none"`, 164 HumanEval; original 147 / 66): `UD-IQ3_XXS` 11.66 GB got 148 / 68, `UD-Q2_K_XL` 9.14 GB 132 / 49, `UD-IQ1_S` 7.76 GB 127 / 46. So `UD-IQ3_XXS` may match the original at ~6 GB less than IQ4_NL (16.4 GiB = 17.6 GB); Unsloth revision `ae9327c` has mainline copies of all three as `Mainline_Support/Inkling-2-Mini-UD-*.gguf_file`. LookAtMyQuant's own 5.38 GB and 8.87 GB Inkling files (reported 134 / 60 and 148 / 58) are not GGUF: packed `.npz` for their MLX runtime with Metal kernels, Apple Silicon only, so not usable here. **On a 12 GB card, all on the GPU** ([Kintsugi-27B's head-to-head](https://github.com/professorpalmer/Kintsugi-27B/blob/9e60a64a640ddaa0b98677a2268c44598839f0e8/benchmarks/README.md#head-to-head-inkling-2-mini-on-the-same-12-gb-card), 2026-11-20, their numbers, not verified): Unsloth `UD-Q2_K_XL` on Unsloth's llama.cpp build b12588-mix-c0c3de8, the vendor's sampling (temperature 1.0): AppWorld test_normal 283 / 336, HumanEval 160 / 164 at medium thinking (LookAtMyQuant's 49 was greedy at effort `none`, so the two don't contradict), 24 / 24 needles + 20 / 20 code copies at 60K; f16 KV at 64K tested, out of memory at a 67,584-token window, loads to ~70K only with short answers, and q8_0 KV didn't fit even at 32K (an odd result, unexplained). See [Kintsugi](#kintsugi) below. |
+| [North Mini Code 1.0](https://huggingface.co/CohereLabs/North-Mini-Code-1.0) (Cohere, Apache 2.0, [blog post](https://cohere.com/blog/north-mini-code) dated 2026-06-09; original revision `d11e61a`; GGUFs by [Unsloth](https://huggingface.co/unsloth/North-Mini-Code-1.0-GGUF), revision `e306bb4`, and [bartowski](https://huggingface.co/bartowski/North-Mini-Code-1.0-GGUF), revision `6ff6563`; looked up 2026-11-21, nothing downloaded) | 30B MoE, 3B active (8 of 128 experts, no shared expert), so experts in RAM like our other big MoEs. Unsloth `UD-IQ4_XS` 15.23 GB, `UD-IQ3_XXS` 11.71 GB; bartowski `Q4_K_M` 18.74 GB. 49 layers, only 13 with full attention (the rest use a 4096-token sliding window), 4 KV heads: KV cache ~1.9 GiB at 64K in f16 (estimated from `config.json`, not measured) | Cohere's first coding/agent model, trained for OpenCode; 256K context, 64K max output. A new family at the same size as Qwen3.6-35B-A3B, which Cohere's chart compares against (the benchmark scores are only in an image; the text gives 33.4 on the Artificial Analysis Coding Index). **Our build already supports it:** the arch (`cohere2_moe`, [#24260](https://github.com/ggml-org/llama.cpp/pull/24260)) and its own chat parser ([#24615](https://github.com/ggml-org/llama.cpp/pull/24615), [#26018](https://github.com/ggml-org/llama.cpp/pull/26018)) are in the 2026-11-08 sync. Audit against the CohereLabs `chat_template.jinja`. Untested here: speed, tool calls with pi, and the expert cache. |
 | [TIPS / TIPSv2](https://github.com/google-deepmind/tips) (Google DeepMind, Apache 2.0, other materials CC-BY 4.0; [paper](https://arxiv.org/abs/2410.16512), [v2](https://arxiv.org/abs/2604.12012)) | small (S/14 or B/14 first) | Embeds images and text, one vector per image patch. Compare with EmbeddingGemma 2's vision side: an automatic style score for the image experiments, and text queries on outdoor scenes for WildSeed. Not for clicks: at 448×448 it works on a 32×32 grid. Needs Python and `.npz` weights, so the user's approval first, then only in `bench/finetune/sandbox.sh`. A copy of the weights is in `../tips/pytorch/checkpoints`; check that the v2 files can still be downloaded before deleting them. |
 | [Clef](https://huggingface.co/Cloudflare/clef) (Cloudflare, Apache 2.0) | 19.5 GB, dense | The big sibling of Clef-Flash; untested. |
 | [Nemotron-3.5-Lightning-30B-A3B](https://huggingface.co/ggml-org/NVIDIA-Nemotron-3.5-Lightning-30B-A3B-GGUF) (NVIDIA, its own license: the card says "other"; GGUFs by ggml-org, revision `8cd0821`) | Q4_0 18.9 GB, the same tier as our other big MoEs, plus an MTP head (`mtp-…-Q4_0.gguf`, 1.16 GB); hybrid Mamba-2 MoE with 6 attention layers, so a long context is cheap | The official, smaller way into the family ThinkingCap (next row) builds on. A Mac test with stock llama.cpp ([llama-modchip](#modchip) below) measured 57 tok/s decode and 2.8× on copy-heavy code edits with `ngram-mod`. Read the license before downloading. |
@@ -283,6 +284,95 @@ does it already, and our [pruning study](../bench/moe-cache/README.md#pruned-qwe
 says Qwen3.6 is sensitive); the Claude Code gateway and HARP-Cache (pi reprocesses only ~25 tokens a turn).
 One aside it led to: in our own pibench transcripts, LFM2.5 starts every new session with nothing cached, while
 Qwen3.6, Flint and Groot usually reuse ~1.3–1.9K tokens of pi's prompt. Seconds per session; not urgent.
+
+<a id="inference-optimisation"></a>
+
+### 📈 inference-optimisation skill: speed-tuning method, ideas only ([sybil-solutions/inference-optimisation-skill](https://github.com/sybil-solutions/inference-optimisation-skill), MIT, read 2026-11-21 at `fda968e`)
+
+An agent skill for tuning a server's speed step by step, with results from vLLM, SGLang and EXL3 on Intel Arc,
+RTX 3090 and H200. Nothing on llama.cpp with experts in RAM. **Not installed as a skill:** its prompt tells the
+agent to open a PR and to store a sudo password in a file, against our rules. Its `bench.py` was not read and
+must not be run unread. Its `ceiling.py` assumes the whole model is in GPU or unified memory; our real limit (CPU
+expert reads + PCIe) is already modelled in [`bench/moe-cache/estimate.py`](../bench/moe-cache/estimate.py).
+All numbers below are theirs, not checked here. Ideas worth taking:
+
+1. **A fixed accept rule for speed changes:** ≥6 decode samples per run and their median; run order control,
+   candidate, control; a candidate wins only if it beats *both* neighbouring controls and slows no other metric
+   by more than ~3%; repeat any surprising win. We interleave already, but by eye, and several model pages quote
+   single runs (Flint's say ±13% noise). Cheapest step: an `--interleave` mode in `srvbench` that prints the
+   verdict.
+2. **Trim the MTP draft head's vocabulary.** The draft's LM head is read on every draft step; keep only the most
+   used tokens (they kept 512 of 1,940 blocks, 98.6% coverage) while the target still checks against the full
+   vocabulary, so the output is unchanged. They report +27% (vLLM, Arc Pro B70) and +14% (SGLang, Arc B390) at
+   one user. Their worked example is Ornith-1.5-35B-A3B, which we run: its 248K-token LM head is 0.38 GB of the
+   1.65 GB read per token (EXL3 sizes; ours differ). In llama.cpp this needs fork work (not checked yet: whether
+   the MTP head has its own output tensor or shares the model's), so measure first how much of an MTP step is the
+   LM head.
+3. **Sweep the draft length per context length.** At 128K, one draft ran 29.6 tok/s vs 15.5 for three, though
+   three won at short context. We picked `--spec-draft-n-max 2` once, at short context.
+4. **q8_0 KV speed on models where few layers have KV.** They measured 45.4 → 27.0 tok/s in llama.cpp with KV in
+   16 of 64 layers. Several of our launchers default to q8_0 KV (Bonsai 2, Groot, Flint, Dory); Dory's page
+   compares quality only. One f16-vs-q8_0 decode run per model, at a context where both fit, ~10 min each.
+5. **Flag looping output in speed runs.** Their 117 tok/s "record" was a model repeating a numbered list. A
+   repeated-shingle check in `srvbench`/`qwen-bench.py` would catch it.
+
+Not for us: the vLLM/SGLang/Intel XPU gotchas, the Docker memory script (`mem.sh`), the run queue (we run one GPU
+job at a time anyway) and the publishing flow.
+
+**To revisit:** repo <https://github.com/sybil-solutions/inference-optimisation-skill>; the version read is
+[`fda968e`](https://github.com/sybil-solutions/inference-optimisation-skill/tree/fda968e7fc1996aa23c67139c755fe541c9d4be0)
+(single commit, 2026-11-16). Worth rereading, under `skills/inference-optimisation/`: `references/levers.md` (every
+lever with its measured effect), `references/methodology.md` (measurement traps) and `references/ceilings.md`
+(the theoretical-maximum arithmetic, worked on Ornith-1.5). Their raw hill-climb logs are linked from the README
+(sybil-solutions/local-ai-registry, trellis-serve, qwen-serve); not read here.
+
+<a id="kintsugi"></a>
+
+### 🏺 Kintsugi-27B: a 2.5-bit Qwen3.8-27B for 12 GB cards, engine ideas only ([professorpalmer/Kintsugi-27B](https://github.com/professorpalmer/Kintsugi-27B), Apache 2.0, engine MIT, read 2026-11-21 at `9e60a64`)
+
+Qwen3.8-27B (dense) at 2.47 bits per weight in EXL3 trellis code ("Escha W2"), a 10.5 GB GGUF that only its own
+llama.cpp fork loads, shipped as prebuilt Windows/Linux bundles plus source tarballs. Full 262K context on an RTX
+4070 12 GB; their numbers: decode 67 tok/s at 64K, 31 at 245K, HumanEval 161 / 164, AppWorld 151 / 168. The
+write-ups set pass lines before each run and published a correction when an AppWorld claim turned out to be
+biased (scored on the seeds the bit map was chosen on).
+
+**The model is not for us:** the coded weights alone are 7.51 GB, on an 8 GB card with ~6.3 GB free by
+day (the desktop holds ~1.7 GB), before the head, MTP, linear-attention state, KV and compute buffers. Splitting a dense 27B
+with the CPU already died at 2.5 tok/s ([graveyard](graveyard.md#qwen38-27b-dense-in-i-quants-25-toks)), compute-bound
+on decoding the weights, and trellis code is likely costlier on a CPU. Their engine and binaries fall under "ideas,
+not code"; the slot is held by [Bonsai 2 27B](models/bonsai2-27b.md) (5.95 GB, all on the GPU, 38 tok/s). Ideas
+worth taking:
+
+1. **A two-stage output head** (`LLAMA_HEAD2=N` in their engine): a small q4_0 copy of the head in VRAM scores
+   every token; the exact Q8_0 head in system RAM re-scores the N best. Qwen-family heads have a ~248K-token
+   vocabulary, so this frees VRAM on our tight models (Bonsai 2 first, which needs a quiet desktop). Goes with
+   draft-head trimming ([inference-optimisation](#inference-optimisation), item 2). Questions: what N keeps
+   sampling at temperature 1.0 unchanged (top-k 20 suggests N ≥ 20 for Qwen), and what the RAM re-score costs per
+   token over our PCIe. Fork work.
+2. **A KV cache split between VRAM and RAM** (`--kv-vram-cells N`): the first N cells of each K/V tensor in VRAM,
+   the rest in pinned system RAM in one CUDA address range, the next layer's cold cells copied while the GPU
+   computes. Upstream only has all-GPU or all-CPU (`--no-kv-offload`). Past the VRAM line, decode is set by the
+   PCIe stream: at 245K they stream 1.87 GB per step at 24 GB/s; we measured 6.45 GB/s
+   ([estimate.py](../bench/moe-cache/estimate.py)), so the drop past the line would be much steeper here. Worth it
+   only for long-context runs. Their [long-context study](https://github.com/professorpalmer/Kintsugi-27B/blob/9e60a64a640ddaa0b98677a2268c44598839f0e8/research/long-context-decode/README.md)
+   documents a real bug in this design (when K isn't a whole number of 2 MiB pages, V spans two host runs and
+   the write-back must cover both) and what didn't help (sparse V read, two copy pipelines, 3-bit K, 2-bit head
+   stage).
+3. **Lowest KL is not best on tasks.** Their own bit maps had up to 9% lower KL than the shipped one but lost
+   recall at 117K, AppWorld or long chat ([bit-allocation study](https://github.com/professorpalmer/Kintsugi-27B/blob/9e60a64a640ddaa0b98677a2268c44598839f0e8/research/bit-allocation/README.md)).
+   For our [expert pruning](#️-pruning-experts-from-the-moe-models-reap) and quant choices: gate candidates on
+   recall and agent tasks, not only KL or perplexity, and choose on one set of seeds, report on fresh ones.
+
+Not for us: batch-invariant kernels, delta slot saves (pi reprocesses only ~25 tokens a turn), their saved-chat
+Python layer, and the Qwen3.8 template fix (a system message after the first turn, sent by Claude Code and Codex;
+pi doesn't, as far as we know: check before dismissing).
+
+**To revisit:** repo <https://github.com/professorpalmer/Kintsugi-27B>; the version read is
+[`9e60a64`](https://github.com/professorpalmer/Kintsugi-27B/tree/9e60a64a640ddaa0b98677a2268c44598839f0e8)
+(2026-11-21). Read: the README, `model/`, `engine/`, `benchmarks/`, `research/README.md`, and the first part of
+`research/long-context-decode/` and `research/bit-allocation/`. Not read: the bundle scripts and Python layer,
+the engine source, `harnesses/`, and the other studies. The engine source is a release asset
+(`Kintsugi-27B-v1.1-engine-src-5f393adb5.tar.gz`, sha256 `ded8fd4e…`); if we ever read it, ideas only.
 
 <a id="sd-scripts"></a>
 
